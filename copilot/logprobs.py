@@ -17,7 +17,7 @@ from .llm import URL, build_messages
 from .values import LETTERS
 
 FLOOR = -30.0  # log-probability given to a letter the server did not list
-TOP_N = 10     # letters are not always the top-5 tokens; ask for a few more
+TOP_N = 200    # probabilities come before the grammar: letters can rank below 50 other tokens
 CONTENT_FREE = ("N/A", "", "[MASK]")
 _prior_cache = {}
 
