@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Question-Driven Decision Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="dashboard_data.js"></script>
+  <style>
+    :root {
+      --bg: #0b1120; --surface: #131c31; --surface-2: #1b2640;
+      --border: #2a3958; --text: #f1f5f9; --muted: #94a3b8;
+      --accent: #38bdf8; --good: #34d399; --warn: #fbbf24; --danger: #f87171;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 24px; max-width: 1320px; margin-inline: auto; }
+
+    /* Header */
+    header {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px;
+    }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
+    .badge {
+      font-size: 12px; padding: 4px 10px; border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14); color: var(--accent); font-weight: 600;
+    }
+    .badge.neutral { background: var(--surface-2); color: var(--muted); }
+    button {
+      background: var(--accent); color: #0b1120; border: none; padding: 9px 15px;
+      border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.9; }
+    button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    /* Question Selector Tabs */
+    .question-nav {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px; margin-bottom: 22px;
+    }
+    .q-tab {
+      text-align: left; background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .q-tab:hover { border-color: var(--accent); }
+    .q-tab.active {
+      background: var(--surface-2); border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .q-tag {
+      display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--accent); font-weight: 700; margin-bottom: 6px;
+    }
+    .q-prompt { font-size: 14px; font-weight: 600; line-height: 1.4; margin: 0; }
+
+    /* KPI Row */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px;
+    }
+    .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 8px; }
+    .kpi-val { font-size: 28px; font-weight: 700; }
+    .kpi-null { color: var(--muted); font-style: italic; font-size: 19px; font-weight: 500; }
+
+    /* Main Workspace: Adaptive Chart + Code Evidence */
+    .main-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: 18px; margin-bottom: 20px; }
+    @media (max-width: 920px) { .main-grid { grid-template-columns: 1fr; } }
+
+    .section-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px; gap: 10px;
+    }
+    .section-title { margin: 0; font-size: 15px; font-weight: 600; }
+    .chart-wrapper { height: 290px; position: relative; }
+    .empty-overlay {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+      color: var(--muted); font-size: 13px; border: 1px dashed var(--border);
+      border-radius: 8px; background: rgba(11, 17, 32, 0.65); text-align: center; padding: 16px;
+    }
+
+    /* Code Evidence Trail */
+    .evidence-list { display: flex; flex-direction: column; gap: 10px; max-height: 290px; overflow-y: auto; }
+    .evidence-item {
+      background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+      border-radius: 6px; padding: 10px 12px; font-size: 13px;
+    }
+    .evidence-file { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); font-weight: 600; }
+    .evidence-param { color: var(--text); margin-top: 4px; }
+
+    /* Decision & Threshold Bar */
+    .decision-card {
+      display: grid; grid-template-columns: 260px 1fr; gap: 22px; align-items: center;
+      border-left: 4px solid var(--good);
+    }
+    @media (max-width: 768px) { .decision-card { grid-template-columns: 1fr; } }
+    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    code { background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1 style="margin:0; font-size:22px;">Decision Intelligence Dashboard</h1>
+      <div class="meta-row">
+        <span id="status-badge" class="badge">Status: Awaiting Scan (null)</span>
+        <span id="project-badge" class="badge neutral">Workspace: Not Scanned</span>
+      </div>
+    </div>
+    <div>
+      <button id="mock-btn" class="secondary" onclick="toggleMockMode()">Preview with Sample Scan Data</button>
+    </div>
+  </header>
+
+  <!-- QUESTION SELECTOR (Dynamically built from dashboard_data.js) -->
+  <nav class="question-nav" id="question-nav"></nav>
+
+  <!-- KPI CARDS -->
+  <section class="kpi-grid" id="kpi-grid"></section>
+
+  <!-- ADAPTIVE VISUALIZATION + SCANNED CODE EVIDENCE -->
+  <section class="main-grid">
+    <div class="card">
+      <div class="section-head">
+        <h2 class="section-title" id="chart-title">Parameter Visualization</h2>
+        <span class="badge neutral" id="chart-type-badge">Chart: --</span>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="adaptiveChart"></canvas>
+        <div id="chart-empty" class="empty-overlay">
+          <strong>No scanned parameters yet (null)</strong>
+          <span>Run your VS Code scanner to populate <code>chartData</code> for this question.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h2 class="section-title">Scanned Code Evidence Trail</h2>
+        <span class="badge neutral" id="evidence-count">0 matches</span>
+      </div>
+      <div class="evidence-list" id="evidence-list"></div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE THRESHOLD & COHERENT VERDICT -->
+  <section class="card decision-card">
+    <div>
+      <div class="kpi-label">DECISION SENSITIVITY THRESHOLD</div>
+      <div style="font-size:20px; font-weight:700; margin-bottom:6px;">
+        Cutoff: <span id="cutoff-label">70</span>
+      </div>
+      <input type="range" id="cutoff-slider" min="0" max="100" value="70" oninput="renderDashboard()" />
+      <div style="font-size:12px; color:var(--muted); margin-top:6px;">
+        Adjust cutoff to re-evaluate qualifying modules and update the decision verdict live.
+      </div>
+    </div>
+    <div>
+      <div class="kpi-label">SUBSTANTIATED CONCLUSION & DECISION</div>
+      <h3 id="verdict-title" style="margin:0 0 6px 0; font-size:18px; color:var(--good);">
+        Awaiting deterministic scan...
+      </h3>
+      <p id="verdict-desc" style="margin:0; font-size:14px; line-height:1.55; color:var(--muted);">
+        Select a decision question above or click <strong>Preview with Sample Scan Data</strong> to test how different questions morph the visualization and lock conclusions to code evidence.
+      </p>
+    </div>
+  </section>
+
+  <script>
+    let useMock = false;
+    let selectedQuestionId = null;
+    let activeChartInstance = null;
+
+    // Sample dataset illustrating 3 distinct question geometries (bar, scatter, line)
+    const SAMPLE_SCAN_DATA = {
+      meta: {
+        projectScanned: "workspace/core-engine",
+        activeQuestionId: "q1",
+        lastScanTimestamp: "Sample Preview"
+      },
+      questions: {
+        q1: {
+          prompt: "Where is our highest technical or operational bottleneck?",
+          chartType: "bar",
+          xLabel: "Scanned Module",
+          yLabel: "Bottleneck Risk Score",
+          kpis: [
+            { label: "Max Complexity Score", value: 88, suffix: " pts" },
+            { label: "Coupling Density", value: 42, suffix: "%" },
+            { label: "Critical Hotspots", value: 2, suffix: " files" }
+          ],
+          chartData: {
+            labels: ["pipeline/sync.py", "auth/tokens.py", "api/routes.py", "utils/parser.py"],
+            values: [88, 76, 49, 31]
+          },
+          evidence: [
+            { file: "pipeline/sync.py", line: 114, parameter: "Cyclomatic complexity = 19 (nested loop + blocking I/O)" },
+            { file: "auth/tokens.py", line: 62, parameter: "14 incoming module dependencies (high coupling)" },
+            { file: "api/routes.py", line: 208, parameter: "4 uncached synchronous DB queries per request" }
+          ],
+          verdict: "Prioritize refactoring pipeline/sync.py before scaling traffic."
+        },
+        q2: {
+          prompt: "Which optimization gives the highest impact for the lowest effort?",
+          chartType: "scatter",
+          xLabel: "Implementation Effort (1-100)",
+          yLabel: "Projected Impact Score",
+          kpis: [
+            { label: "Top ROI Candidate", value: "Batch Queue" },
+            { label: "Est. Effort Score", value: 24, suffix: "/100" },
+            { label: "Projected Gain", value: 91, suffix: "%" }
+          ],
+          chartData: {
+            points: [
+              { label: "Batch Queue (sync.py)", x: 24, y: 91 },
+              { label: "Token Cache (tokens.py)", x: 38, y: 79 },
+              { label: "Full Async Rewrite", x: 85, y: 94 },
+              { label: "Schema Index", x: 18, y: 62 }
+            ]
+          },
+          evidence: [
+            { file: "pipeline/sync.py", line: 114, parameter: "Single-item commits detected; batching cuts latency ~68%" },
+            { file: "auth/tokens.py", line: 29, parameter: "Repeated signature verification on identical session keys" }
+          ],
+          verdict: "Implement Batch Queue in sync.py first (91 impact at only 24 effort)."
+        },
+        q3: {
+          prompt: "How will response latency scale as workload grows 5x?",
+          chartType: "line",
+          xLabel: "Simulated Load Multiplier",
+          yLabel: "Projected Latency (ms)",
+          kpis: [
+            { label: "1x Baseline Latency", value: 45, suffix: " ms" },
+            { label: "5x Projected Latency", value: 310, suffix: " ms" },
+            { label: "SLA Breach Point", value: "3.2x Load" }
+          ],
+          chartData: {
+            labels: ["1x Load", "2x Load", "3x Load", "4x Load", "5x Load"],
+            values: [45, 82, 145, 220, 310],
+            thresholdLine: [150, 150, 150, 150, 150]
+          },
+          evidence: [
+            { file: "pipeline/sync.py", line: 98, parameter: "O(n^2) list lookup scales non-linearly past 2,500 items" },
+            { file: "config/pool.py", line: 12, parameter: "Max worker pool capped at 4 threads" }
+          ],
+          verdict: "Current architecture breaches 150ms SLA at 3.2x load without pooling changes."
+        }
+      }
+    };
+
+    const CHART_TYPE_LABELS = {
+      bar: "Bar Chart (Category Ranking)",
+      scatter: "Scatter Plot (2D Trade-Off)",
+      line: "Line Chart (Scaling Trajectory)"
+    };
+
+    function toggleMockMode() {
+      useMock = !useMock;
+      const btn = document.getElementById("mock-btn");
+      btn.textContent = useMock ? "Return to Live Null Contract" : "Preview with Sample Scan Data";
+      btn.classList.toggle("secondary", !useMock);
+      renderDashboard();
+    }
+
+    function selectQuestion(qId) {
+      selectedQuestionId = qId;
+      renderDashboard();
+    }
+
+    function renderDashboard() {
+      const data = useMock ? SAMPLE_SCAN_DATA : (window.DASHBOARD_DATA || { meta: {}, questions: {} });
+      const questions = data.questions || {};
+      const qIds = Object.keys(questions);
+
+      if (!selectedQuestionId || !questions[selectedQuestionId]) {
+        selectedQuestionId = (data.meta?.activeQuestionId && questions[data.meta.activeQuestionId])
+          ? data.meta.activeQuestionId
+          : qIds[0];
+      }
+
+      const activeQ = questions[selectedQuestionId] || {};
+      const cutoff = Number(document.getElementById("cutoff-slider").value);
+      document.getElementById("cutoff-label").textContent = cutoff;
+
+      // Update Header Badges
+      const hasLiveData = Boolean(data.meta?.lastScanTimestamp);
+      document.getElementById("status-badge").textContent = useMock
+        ? "Mode: Sample Scan Preview"
+        : (hasLiveData ? `Scanned: ${data.meta.lastScanTimestamp}` : "Status: Awaiting Scan (null)");
+      document.getElementById("project-badge").textContent =
+        `Workspace: ${data.meta?.projectScanned || "Not Scanned (null)"}`;
+
+      // Render Question Tabs
+      const navEl = document.getElementById("question-nav");
+      navEl.innerHTML = qIds.map((id, idx) => {
+        const q = questions[id];
+        const isActive = id === selectedQuestionId;
+        const typeTag = (q.chartType || "bar").toUpperCase();
+        return `
+          <button class="q-tab ${isActive ? "active" : ""}" onclick="selectQuestion('${id}')">
+            <span class="q-tag">Question ${idx + 1} • ${typeTag}</span>
+            <p class="q-prompt">${q.prompt}</p>
+          </button>`;
+      }).join("");
+
+      // Render KPIs (Null-Safe)
+      const kpiGrid = document.getElementById("kpi-grid");
+      kpiGrid.innerHTML = (activeQ.kpis || []).map(k => {
+        const isNull = k.value === null || k.value === undefined;
+        const displayVal = isNull
+          ? `<span class="kpi-null">-- (null)</span>`
+          : `${k.prefix || ""}${typeof k.value === "number" ? k.value.toLocaleString() : k.value}${k.suffix || ""}`;
+        return `
+          <div class="card">
+            <div class="kpi-label">${k.label}</div>
+            <div class="kpi-val">${displayVal}</div>
+          </div>`;
+      }).join("");
+
+      // Render Adaptive Chart
+      renderAdaptiveChart(activeQ, cutoff);
+
+      // Render Scanned Code Evidence Trail
+      const evidence = activeQ.evidence || [];
+      document.getElementById("evidence-count").textContent = `${evidence.length} ${evidence.length === 1 ? "match" : "matches"}`;
+      const evidenceList = document.getElementById("evidence-list");
+      if (evidence.length === 0) {
+        evidenceList.innerHTML = `
+          <div class="empty-overlay" style="position:static; height:220px;">
+            <strong>No code evidence recorded (null)</strong>
+            <span>When your scanner inspects files for this question, exact file paths, line numbers, and parameter triggers appear here.</span>
+          </div>`;
+      } else {
+        evidenceList.innerHTML = evidence.map(ev => `
+          <div class="evidence-item">
+            <div class="evidence-file">${ev.file}${ev.line ? ` : line ${ev.line}` : ""}</div>
+            <div class="evidence-param">${ev.parameter}</div>
+          </div>`).join("");
+      }
+
+      // Render Coherent Verdict
+      updateVerdict(activeQ, cutoff);
+    }
+
+    function renderAdaptiveChart(q, cutoff) {
+      const type = q.chartType || "bar";
+      document.getElementById("chart-title").textContent = q.prompt || "Parameter Visualization";
+      document.getElementById("chart-type-badge").textContent = CHART_TYPE_LABELS[type] || `Chart: ${type}`;
+
+      if (activeChartInstance) {
+        activeChartInstance.destroy();
+      }
+
+      const cData = q.chartData || {};
+      const hasData = type === "scatter"
+        ? (cData.points && cData.points.length > 0)
+        : (cData.values && cData.values.length > 0);
+
+      document.getElementById("chart-empty").style.display = hasData ? "none" : "flex";
+
+      const ctx = document.getElementById("adaptiveChart");
+      let config = { type, data: {}, options: { responsive: true, maintainAspectRatio: false } };
+
+      if (type === "bar") {
+        const vals = cData.values || [];
+        config.data = {
+          labels: cData.labels || [],
+          datasets: [{
+            label: q.yLabel || "Score",
+            data: vals,
+            backgroundColor: vals.map(v => v >= cutoff ? "#f87171" : "#38bdf8"),
+            borderRadius: 6
+          }]
+        };
+        config.options.plugins = { legend: { display: false } };
+      } else if (type === "scatter") {
+        const pts = cData.points || [];
+        config.data = {
+          datasets: [{
+            label: "Evaluated Options",
+            data: pts,
+            backgroundColor: pts.map(p => p.y >= cutoff ? "#34d399" : "#fbbf24"),
+            pointRadius: 8,
+            pointHoverRadius: 10
+          }]
+        };
+        config.options.plugins = {
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const raw = ctx.raw;
+                return `${raw.label || "Point"}: (Effort: ${raw.x}, Impact: ${raw.y})`;
+              }
+            }
+          }
+        };
+        config.options.scales = {
+          x: { title: { display: true, text: q.xLabel || "Effort / Cost", color: "#94a3b8" } },
+          y: { title: { display: true, text: q.yLabel || "Impact", color: "#94a3b8" } }
+        };
+      } else if (type === "line") {
+        const datasets = [{
+          label: q.yLabel || "Projected Metric",
+          data: cData.values || [],
+          borderColor: "#38bdf8",
+          backgroundColor: "rgba(56, 189, 248, 0.15)",
+          fill: true,
+          tension: 0.3
+        }];
+        if (cData.thresholdLine) {
+          datasets.push({
+            label: "SLA / Limit",
+            data: cData.thresholdLine,
+            borderColor: "#f87171",
+            borderDash: [6, 6],
+            pointRadius: 0
+          });
+        }
+        config.data = { labels: cData.labels || [], datasets };
+      }
+
+      activeChartInstance = new Chart(ctx, config);
+    }
+
+    function updateVerdict(q, cutoff) {
+      const titleEl = document.getElementById("verdict-title");
+      const descEl = document.getElementById("verdict-desc");
+      const cData = q.chartData || {};
+      const type = q.chartType || "bar";
+
+      const hasData = type === "scatter"
+        ? (cData.points && cData.points.length > 0)
+        : (cData.values && cData.values.length > 0);
+
+      if (!hasData) {
+        titleEl.style.color = "var(--muted)";
+        titleEl.textContent = "Awaiting deterministic scan (null)...";
+        descEl.textContent = "No parameter values are populated for this question yet. Run your VS Code scanner script or toggle 'Preview with Sample Scan Data' above.";
+        return;
+      }
+
+      titleEl.style.color = "var(--good)";
+
+      if (type === "bar") {
+        const flagged = (cData.labels || [])
+          .map((lbl, i) => ({ lbl, val: cData.values[i] }))
+          .filter(x => x.val >= cutoff)
+          .sort((a, b) => b.val - a.val);
+
+        titleEl.textContent = q.verdict || (flagged.length
+          ? `Action Needed: ${flagged.length} module(s) exceed cutoff (${cutoff})`
+          : `Healthy: All modules below risk cutoff (${cutoff})`);
+        descEl.textContent = flagged.length
+          ? `Highest flagged target is ${flagged[0].lbl} (${flagged[0].val}). Inspect the ${q.evidence?.length || 0} code evidence items above before modifying.`
+          : `No scanned modules exceed your current cutoff of ${cutoff}. Lower the sensitivity slider to inspect lower-severity hotspots.`;
+      } else if (type === "scatter") {
+        const winners = (cData.points || [])
+          .filter(p => p.y >= cutoff)
+          .sort((a, b) => (b.y / (b.x || 1)) - (a.y / (a.x || 1)));
+
+        titleEl.textContent = q.verdict || (winners.length
+          ? `Best Efficiency Target: ${winners[0].label}`
+          : `No candidate reaches impact cutoff (${cutoff})`);
+        descEl.textContent = winners.length
+          ? `${winners[0].label} delivers ${winners[0].y} impact for ${winners[0].x} effort—highest efficiency ratio among options meeting your ${cutoff} cutoff.`
+          : `Lower the impact cutoff slider to compare trade-offs across lower-impact options.`;
+      } else {
+        const vals = cData.values || [];
+        const peak = Math.max(...vals);
+        titleEl.textContent = q.verdict || `Peak Trajectory Reaches ${peak}`;
+        descEl.textContent = `Across ${vals.length} evaluated checkpoints, values move from ${vals[0]} to ${vals[vals.length - 1]}. Cross-reference the evidence panel to see which code constraints drive the curve.`;
+      }
+    }
+
+    renderDashboard();
+  </script>
+</body>
+</html>
