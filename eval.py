@@ -43,6 +43,8 @@ def main():
     p.add_argument("--input", default="data/val.jsonl")
     p.add_argument("--limit", type=int, default=50, help="0 means every problem")
     p.add_argument("--languages", default="", help="e.g. eng,cat")
+    p.add_argument("--text-only", action="store_true",
+                   help="only problems marked text_only, like the hidden test set")
     p.add_argument("--rag", type=int, default=0, metavar="K")
     p.add_argument("--index", default="data/index.db")
     p.add_argument("--steps", default=DEFAULT_STEPS,
@@ -56,6 +58,8 @@ def main():
     languages = set(filter(None, args.languages.split(",")))
     if languages:
         problems = [x for x in problems if x["language"] in languages]
+    if args.text_only:
+        problems = [x for x in problems if x.get("text_only")]
     random.Random(42).shuffle(problems)  # the same sample every run, so runs compare
     if args.limit:
         problems = problems[:args.limit]
