@@ -6,13 +6,13 @@ Entry point for any AI agent (Claude Code, Codex, Cursor, Copilot…) working in
 
 Our team's entry to the **Datathon FME 2026, Qualcomm challenge: "Math on the Edge"**. We must build a **math copilot that runs entirely offline on an Arduino UNO Q (4 GB)** and uses the **M3Kang** dataset (multilingual Kangaroo competition problems) to help students learn to reason mathematically.
 
-The copilot must either **Teach** (hints, adaptive practice, error analysis, physical interaction) or **Reason** (pick the right letter A–E on a hidden test set). `predict.py` is scored on the hidden test set whatever else we build.
+Our team will deliver both **Teach** (hints, adaptive practice, error analysis, physical interaction) and **Reason** (pick the right letter A–E on a hidden test set). `predict.py` is scored on the hidden test set whatever else we build.
 
 This repository started from the organizers' template. The template's step-by-step guide is [README.md](README.md) (steps 0–15). Our own documentation lives in [docs/](docs/).
 
 ## Current state (update this line when it changes)
 
-**Main challenge setup pending.** The board isn't set up, there's no baseline and no idea chosen. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
+**Teach and Reason are both required main workstreams.** The team reports that the board model responds; setup verification, baseline measurements and the specific implementation scopes are pending. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
 
 ## Hard rules: never break these
 

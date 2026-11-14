@@ -31,3 +31,9 @@ Template:
 ## D-003 · Idea to build (pending)
 **Status:** pending, see TODO T-020
 **Context / Decision:** to be filled in after the brainstorm: the idea, the metric we'll measure, and the first experiment.
+
+## D-004 · Deliver both Teach and Reason (2026-11-14)
+**Status:** accepted
+**Context:** the task list treated Teach approaches as optional candidates alongside the official Reason score.
+**Decision:** the team will deliver both Teach and Reason as required main workstreams, each with a P0 MVP and an owner. T-020 chooses the Teach approach and scopes the first Reason experiment; it does not choose between the two workstreams.
+**Consequences:** evaluate Reason accuracy and latency, validate the selected Teach learning flow, and demonstrate both offline on the UNO Q. The specific approach in D-003 remains pending.

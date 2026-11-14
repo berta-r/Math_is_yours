@@ -6,7 +6,9 @@
 
 ## Summary
 
-The main challenge is still at the organizers' template stage: the board isn't set up, there's no data, no baseline and no idea chosen. The [Tukey side project](../side-project/README.md) has a workspace and dashboard brief; implementation and measurements are pending.
+Conversation update (14 November): the user reports that the board model is installed and answering questions; this has not been independently verified here. Teach is delegated to a teammate and Reason improvements remain unmeasured. The setup checklist below has not yet been reconciled with the board.
+
+The main challenge code is still based on the organizers' template. Prepared data availability, setup completion and baseline measurements remain unverified; the specific Teach approach and Reason improvement are pending. The [Tukey side project](../side-project/README.md) has a workspace and dashboard brief; implementation and measurements are pending.
 
 ## Setup progress (README steps)
 
@@ -51,9 +53,9 @@ States: ⬜ pending · 🟨 in progress · ✅ done · ❌ blocked (say why).
 | RAG k=1 accuracy | — | |
 | Best accuracy so far | — | |
 
-## Chosen idea
+## Main workstreams
 
-Not chosen. See TODO T-020 and [DECISIONS.md](DECISIONS.md).
+Both **Teach and Reason are required main deliverables** (TODO T-023 and T-024). Teach is delegated to a teammate; its specific learning flow and the first Reason improvement still need to be scoped in T-020. Neither MVP is marked complete. See [DECISIONS.md](DECISIONS.md).
 
 ## Known issues
 

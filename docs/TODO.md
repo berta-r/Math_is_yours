@@ -2,7 +2,7 @@
 
 > The task list for people and agents. Each task has a stable ID, where it runs, what "done" means and the files it touches. Pick the first unblocked task with the highest priority. When you finish one, tick it, add the date, and update [STATUS.md](STATUS.md).
 >
-> **We haven't chosen our idea yet**, so phases A–C are concrete, and phase D lists candidate tasks for each idea. Once the idea is chosen (T-020), delete the candidates we won't do and split the chosen ones into smaller tasks.
+> **We will deliver both Teach and Reason as main workstreams.** Reason covers the official `predict.py` score; Teach covers the student learning experience. The Teach approach is still to be chosen (T-020): keep both workstreams and prune only the unused Teach candidates in phase D.
 
 Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have, **P1** = should have, **P2** = nice to have. Where: board, laptop or team.
 
@@ -28,15 +28,20 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 - [ ] **T-013** [P1] [board] **Run the explorer** and look at 10 wrong baseline answers. Write down the patterns in EXPERIMENTS (error notes).
 - [ ] **T-014** [P1] [board] **Measure baseline accuracy by language** (`--languages cat` vs `--languages eng` on the same sample).
 
-## Phase C · Choose the idea (README step 13)
+## Phase C · Define the Teach and Reason scope (README step 13)
 
-- [ ] **T-020** [P0] [team] **Brainstorm and choose ONE idea** (1 h). Score each candidate against the [step 13.4](../README.md#134-choose-one) questions. Write down in DECISIONS: the idea, the metric we'll measure, and the first experiment. Then prune phase D.
-- [ ] **T-021** [P0] [team] **Split roles:** board/infra, copilot/experiments, UI (App Lab + LED), docs/pitch.
+- [ ] **T-020** [P0] [team] **Define the minimum deliverable for both Teach and Reason** (1 h). Choose one Teach approach using the [step 13.4](../README.md#134-choose-one) questions, and define the Reason improvement to measure first. Record both scopes, success metrics and first experiments in DECISIONS. Prune only unused Teach candidates in phase D; both workstreams remain P0.
+- [ ] **T-021** [P0] [team] **Assign owners for both main workstreams:** Teach (learning experience + UI) and Reason (copilot + experiments), with board/infra and docs/pitch support. Done when each workstream has an owner and a first deliverable.
 - [ ] **T-022** [P1] [laptop] **Link the skills** for Claude Code: `mkdir -p .claude && ln -s ../.skills .claude/skills`.
 
-## Phase D · Implementation (README step 14). Candidates, prune after T-020.
+## Phase D · Implement both Teach and Reason (README step 14)
 
-### D0 · Always: the Reason score (predict.py runs on the hidden test set for every team)
+- [ ] **T-023** [P0] [board] **Deliver the Reason MVP.** Run `predict.py` offline with one A–E answer per problem, deterministic settings and the 60 s limit. Record baseline and selected improvements in EXPERIMENTS, including accuracy and latency.
+- [ ] **T-024** [P0] [board] **Deliver the Teach MVP.** Implement the learning flow selected in T-020 and demonstrate it offline on the UNO Q. Define and record its teaching-quality checks and latency; complete the selected Teach tasks below.
+
+D0 is the Reason workstream. D1–D5 are candidate approaches within the required Teach workstream; select and detail the chosen tasks in T-020.
+
+### D0 · Reason: official score (required main workstream)
 
 - [ ] **T-030** [P0] [board] **Fix the letter bias.** Request `logprobs` (`top_logprobs: 5`) and calibrate against the letter prior from the train set. Measure it with `eval.py --name debias-v1`.
 - [ ] **T-031** [P1] [board] **Retrieval tuning:** a similarity threshold, same-level examples, hybrid keyword + embedding search. Keep it under 60 s.
@@ -81,8 +86,8 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 - [ ] **T-070** [P0] [board] **Final evaluation** with `--limit 0` on the chosen configuration. Put it in EXPERIMENTS and STATUS.
 - [ ] **T-071** [P0] [laptop] **Error analysis by topic, language and level**: join `results/eval-*.csv` with `val.jsonl`, plus 10 wrong answers by hand.
-- [ ] **T-072** [P0] [team] **Demo:** Wi-Fi off, services started at boot, problems chosen in advance, a backup video recorded.
-- [ ] **T-073** [P0] [team] **3-minute pitch**, rehearsed twice with a timer.
+- [ ] **T-072** [P0] [team] **Demo both Teach and Reason:** Wi-Fi off, services started at boot, problems chosen in advance, a backup video recorded. Done when the Teach learning flow and the Reason A–E prediction both run on the board.
+- [ ] **T-073** [P0] [team] **3-minute pitch covering both Teach and Reason**, including the learning experience and measured Reason results, rehearsed twice with a timer.
 - [ ] **T-074** [P0] [laptop] **Rewrite the root README** for our project: what it does, architecture, replication, results, error analysis, what didn't work, team, license. Use the `publish-project` skill.
 - [ ] **T-075** [P0] [laptop] **Arduino Project Hub write-up.**
 - [ ] **T-076** [P0] [laptop] **Pre-publish check:** no M3Kang data, an MIT LICENSE, a clean clone that follows our README. Make the repo public and send both links.
@@ -90,5 +95,8 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 ---
 
 ## Done
+
+- [x] **T-083** [P0] [team] **Establish Teach and Reason as required main workstreams.** Added separate P0 MVPs, ownership and acceptance criteria, and updated scope selection and the demo to cover both. (2026-11-14)
+
 
 - [x] **T-080** [P1] [laptop] **Create the Tukey side-project workspace.** Added the brief, judging criteria, proposed decision views, data sources, and next steps in [side-project/README.md](../side-project/README.md). Dashboard implementation is pending. (2026-11-14)
