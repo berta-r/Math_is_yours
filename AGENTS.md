@@ -12,7 +12,7 @@ This repository started from the organizers' template. The template's step-by-st
 
 ## Current state (update this line when it changes)
 
-**Nothing done yet.** The board isn't set up, there's no baseline and no idea chosen. See [docs/STATUS.md](docs/STATUS.md).
+**Main challenge setup pending.** The board isn't set up, there's no baseline and no idea chosen. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
 
 ## Hard rules: never break these
 
@@ -24,7 +24,8 @@ This repository started from the organizers' template. The template's step-by-st
 6. **Board code is standard library only.** No `pip` on the board. `laptop/requirements.txt` is for the laptop only.
 7. **Never commit M3Kang data:** no `data/train.jsonl`, `data/val.jsonl`, `data/images/` or `*.db`. The license is research only. `.gitignore` already excludes them. Check `git status` before every commit.
 8. **One change at a time, measured.** Every experiment goes through `eval.py --name <label>` and gets a row in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
-9. If you change `config.env` (model, ports, threads), re-run `board/04_install_services.sh` on the board so the systemd services match.
+9. **Never work directly on `main`:** use a short branch per task (`exp/`, `ui/`, `infra/`, `docs/`, `fix/`), see [docs/06-git-workflow.md](docs/06-git-workflow.md). `main` must always work on the board.
+10. If you change `config.env` (model, ports, threads), re-run `board/04_install_services.sh` on the board so the systemd services match.
 
 ## Repository map
 
@@ -60,6 +61,7 @@ docs/                     ← OUR documentation (see below)
 | Work with problems, JSONL or OCR | [docs/03-data.md](docs/03-data.md) |
 | Change a setting, model or port | [docs/04-configuration.md](docs/04-configuration.md) |
 | Run something (setup, eval, explorer, debugging) | [docs/05-commands.md](docs/05-commands.md) |
+| Create a branch, commit, merge or push | [docs/06-git-workflow.md](docs/06-git-workflow.md) |
 | Know what's done | [docs/STATUS.md](docs/STATUS.md) |
 | Pick the next task | [docs/TODO.md](docs/TODO.md) |
 | Record or compare an experiment | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) |

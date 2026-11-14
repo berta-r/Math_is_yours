@@ -13,6 +13,7 @@ Our team's documentation for the Math on the Edge copilot. The organizers' setup
 | [03-data.md](03-data.md) | You touch M3Kang, JSONL files, OCR, the index or the splits | When the data pipeline changes |
 | [04-configuration.md](04-configuration.md) | You change a model, port, thread count, limit or seed | When `config.env` changes |
 | [05-commands.md](05-commands.md) | You need to run, check or debug something | When a command changes |
+| [06-git-workflow.md](06-git-workflow.md) | You create a branch, commit, merge or push | Rarely |
 | [STATUS.md](STATUS.md) | You want to know what's done and working | **After every finished task** |
 | [TODO.md](TODO.md) | You want to know what to do next | **After every finished or new task** |
 | [EXPERIMENTS.md](EXPERIMENTS.md) | You ran `eval.py`, or want to compare approaches | **After every eval run worth keeping** |

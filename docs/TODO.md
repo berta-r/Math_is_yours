@@ -91,4 +91,4 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ## Done
 
-(Move finished tasks here with their date: `- [x] **T-001** … (2026-11-15)`.)
+- [x] **T-080** [P1] [laptop] **Create the Tukey side-project workspace.** Added the brief, judging criteria, proposed decision views, data sources, and next steps in [side-project/README.md](../side-project/README.md). Dashboard implementation is pending. (2026-11-14)

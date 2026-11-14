@@ -6,7 +6,7 @@
 
 ## Summary
 
-We haven't started. The repository is the organizers' template plus our documentation. The board isn't set up, there's no data, no baseline and no idea chosen.
+The main challenge is still at the organizers' template stage: the board isn't set up, there's no data, no baseline and no idea chosen. The [Tukey side project](../side-project/README.md) has a workspace and dashboard brief; implementation and measurements are pending.
 
 ## Setup progress (README steps)
 
