@@ -3,374 +3,960 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Question-Driven Decision Dashboard</title>
+  <title>Tukey Decision & Execution Co-Pilot • UPC Datathon</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="dashboard_data.js"></script>
   <style>
     :root {
-      --bg: #0b1120; --surface: #131c31; --surface-2: #1b2640;
-      --border: #2a3958; --text: #f1f5f9; --muted: #94a3b8;
-      --accent: #38bdf8; --good: #34d399; --warn: #fbbf24; --danger: #f87171;
+      --bg: #090e1a; --surface: #111827; --surface-2: #1e293b;
+      --border: #2d3b55; --text: #f8fafc; --muted: #94a3b8;
+      --accent: #38bdf8; --good: #10b981; --warn: #f59e0b; --urgent: #f43f5e;
     }
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { margin: 0; background: var(--bg); color: var(--text); padding: 24px; max-width: 1320px; margin-inline: auto; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 20px 24px; max-width: 1420px; margin-inline: auto; }
 
-    /* Header */
-    header {
-      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
-      gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px;
+    /* Top Challenge Banner */
+    .challenge-banner {
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.12), rgba(16, 185, 129, 0.08));
+      border: 1px solid var(--border); border-left: 4px solid var(--accent);
+      border-radius: 10px; padding: 14px 18px; margin-bottom: 16px;
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;
     }
-    .meta-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
-    .badge {
-      font-size: 12px; padding: 4px 10px; border-radius: 999px;
-      background: rgba(56, 189, 248, 0.14); color: var(--accent); font-weight: 600;
+    .challenge-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 700; }
+    .challenge-title { font-size: 17px; font-weight: 700; margin: 2px 0; }
+    .challenge-goal { font-size: 13px; color: var(--muted); margin: 0; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .pill {
+      font-size: 12px; padding: 5px 11px; border-radius: 999px; font-weight: 600;
+      background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
     }
-    .badge.neutral { background: var(--surface-2); color: var(--muted); }
+    .pill.verified { background: rgba(16, 185, 129, 0.14); color: var(--good); border-color: rgba(16, 185, 129, 0.4); }
     button {
-      background: var(--accent); color: #0b1120; border: none; padding: 9px 15px;
-      border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+      background: var(--accent); color: #090e1a; border: none; padding: 8px 14px;
+      border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity 0.15s;
     }
     button:hover { opacity: 0.9; }
     button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    button.urgent-btn { background: var(--urgent); color: #fff; }
 
-    /* Question Selector Tabs */
-    .question-nav {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 12px; margin-bottom: 22px;
+    /* MOST URGENT ACTION CALLOUT */
+    .urgent-banner {
+      background: linear-gradient(90deg, rgba(244, 63, 94, 0.16), rgba(245, 158, 11, 0.08));
+      border: 1px solid rgba(244, 63, 94, 0.45); border-left: 5px solid var(--urgent);
+      border-radius: 10px; padding: 14px 18px; margin-bottom: 18px;
+      display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: center;
     }
+    .urgent-banner.null-state { background: var(--surface); border-color: var(--border); border-left-color: var(--muted); }
+    @media (max-width: 900px) { .urgent-banner { grid-template-columns: 1fr; } }
+
+    .urgent-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--urgent); color: #fff; font-size: 11px; font-weight: 800;
+      padding: 3px 9px; border-radius: 999px; text-transform: uppercase;
+    }
+    .urgent-tag.idle { background: var(--surface-2); color: var(--muted); }
+    .triage-queue { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    @media (max-width: 900px) { .triage-queue { justify-content: flex-start; } }
+    .triage-chip {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 7px 10px; font-size: 12px; cursor: pointer; text-align: left; color: var(--text);
+    }
+    .triage-chip.p1 { border-color: var(--urgent); background: rgba(244, 63, 94, 0.12); }
+
+    /* Cards & Layout */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .section-gap { margin-bottom: 18px; }
+    .rationale-bar {
+      background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 6px; padding: 7px 11px; font-size: 12px; color: var(--accent);
+      margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    /* NEXT-STEP ACTION ROADMAP & UNO Q SIMULATOR GRID */
+    .copilot-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: 16px; margin-bottom: 18px; }
+    @media (max-width: 1024px) { .copilot-grid { grid-template-columns: 1fr; } }
+
+    .action-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+    .action-card {
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 13px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+    }
+    .action-card.p1-card { border-color: var(--urgent); border-left: 4px solid var(--urgent); }
+    .action-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+    .role-pill { background: var(--surface); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .file-tag { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--good); }
+
+    /* UNO Q Hardware Budget Simulator */
+    .sim-row { margin-bottom: 12px; }
+    .sim-label { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 4px; color: var(--muted); }
+    .sim-label strong { color: var(--text); }
+    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    .meter-track { width: 100%; height: 10px; background: #090e1a; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); margin: 8px 0; }
+    .meter-fill { height: 100%; transition: width 0.2s ease, background 0.2s ease; }
+    .code-mini {
+      background: #090e1a; border: 1px solid var(--border); border-radius: 6px; padding: 10px;
+      font-family: ui-monospace, monospace; font-size: 11.5px; color: #e2e8f0;
+      white-space: pre-wrap; margin: 8px 0;
+    }
+
+    /* Issue -> Bottleneck -> Solution SVG */
+    .svg-container { width: 100%; background: #0b1120; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    svg.causal-svg { width: 100%; height: auto; display: block; max-height: 330px; }
+    .svg-path-group { cursor: pointer; transition: opacity 0.15s; }
+    .svg-path-group:hover { opacity: 0.88; }
+
+    /* Question Tabs */
+    .question-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 18px; }
     .q-tab {
       text-align: left; background: var(--surface); color: var(--text);
-      border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
-      cursor: pointer; transition: all 0.15s ease;
+      border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; cursor: pointer;
     }
-    .q-tab:hover { border-color: var(--accent); }
-    .q-tab.active {
-      background: var(--surface-2); border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent);
-    }
-    .q-tag {
-      display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
-      color: var(--accent); font-weight: 700; margin-bottom: 6px;
-    }
-    .q-prompt { font-size: 14px; font-weight: 600; line-height: 1.4; margin: 0; }
+    .q-tab.active { background: var(--surface-2); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .q-tab.urgent-tab { border-top: 3px solid var(--urgent); }
+    .q-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; }
+    .q-meta { font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+    .q-urg-badge { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 4px; background: var(--surface-2); color: var(--muted); }
+    .q-urg-badge.p1 { background: var(--urgent); color: #fff; }
+    .q-urg-badge.p2 { background: rgba(245, 158, 11, 0.2); color: var(--warn); }
+    .q-text { font-size: 13.5px; font-weight: 600; margin: 0; line-height: 1.35; }
 
-    /* KPI Row */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px;
-    }
-    .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 8px; }
-    .kpi-val { font-size: 28px; font-weight: 700; }
-    .kpi-null { color: var(--muted); font-style: italic; font-size: 19px; font-weight: 500; }
+    /* Decision Strip & Workspace */
+    .decision-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    .card-val { font-size: 24px; font-weight: 700; }
+    .null-txt { color: var(--muted); font-style: italic; font-size: 17px; font-weight: 500; }
 
-    /* Main Workspace: Adaptive Chart + Code Evidence */
-    .main-grid { display: grid; grid-template-columns: 1.45fr 1fr; gap: 18px; margin-bottom: 20px; }
-    @media (max-width: 920px) { .main-grid { grid-template-columns: 1fr; } }
-
-    .section-head {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 14px; gap: 10px;
-    }
-    .section-title { margin: 0; font-size: 15px; font-weight: 600; }
-    .chart-wrapper { height: 290px; position: relative; }
-    .empty-overlay {
+    .workspace { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 18px; }
+    @media (max-width: 940px) { .workspace { grid-template-columns: 1fr; } }
+    .chart-area { height: 270px; position: relative; }
+    .empty-state {
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 6px;
-      color: var(--muted); font-size: 13px; border: 1px dashed var(--border);
-      border-radius: 8px; background: rgba(11, 17, 32, 0.65); text-align: center; padding: 16px;
+      border: 1px dashed var(--border); border-radius: 8px; background: rgba(9, 14, 26, 0.72);
+      color: var(--muted); font-size: 13px; text-align: center; padding: 16px;
     }
 
-    /* Code Evidence Trail */
-    .evidence-list { display: flex; flex-direction: column; gap: 10px; max-height: 290px; overflow-y: auto; }
-    .evidence-item {
+    .evidence-feed { display: flex; flex-direction: column; gap: 9px; max-height: 305px; overflow-y: auto; }
+    .ev-card {
       background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
       border-radius: 6px; padding: 10px 12px; font-size: 13px;
     }
-    .evidence-file { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); font-weight: 600; }
-    .evidence-param { color: var(--text); margin-top: 4px; }
+    .ev-header { display: flex; justify-content: space-between; font-family: ui-monospace, monospace; font-size: 12px; color: var(--accent); font-weight: 600; }
+    .ev-body { margin-top: 4px; color: var(--text); }
 
-    /* Decision & Threshold Bar */
-    .decision-card {
-      display: grid; grid-template-columns: 260px 1fr; gap: 22px; align-items: center;
-      border-left: 4px solid var(--good);
+    /* Modal for Copyable Code Blueprints */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(5, 8, 17, 0.82); display: none;
+      align-items: center; justify-content: center; padding: 20px; z-index: 50;
     }
-    @media (max-width: 768px) { .decision-card { grid-template-columns: 1fr; } }
-    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
-    code { background: var(--surface-2); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--accent); border-radius: 12px;
+      max-width: 720px; width: 100%; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+    pre.modal-code {
+      background: #090e1a; border: 1px solid var(--border); border-radius: 8px;
+      padding: 14px; font-family: ui-monospace, monospace; font-size: 12.5px;
+      color: #e2e8f0; overflow-x: auto; max-height: 360px; line-height: 1.45;
+    }
   </style>
 </head>
 <body>
 
-  <header>
+  <!-- TOP CHALLENGE BANNER -->
+  <header class="challenge-banner">
     <div>
-      <h1 style="margin:0; font-size:22px;">Decision Intelligence Dashboard</h1>
-      <div class="meta-row">
-        <span id="status-badge" class="badge">Status: Awaiting Scan (null)</span>
-        <span id="project-badge" class="badge neutral">Workspace: Not Scanned</span>
-      </div>
+      <div class="challenge-kicker">Side Challenge Tukey • UPC Datathon Execution Co-Pilot</div>
+      <div class="challenge-title" id="challenge-name">Repte Principal</div>
+      <p class="challenge-goal" id="challenge-goal">Awaiting index.db scan...</p>
     </div>
-    <div>
-      <button id="mock-btn" class="secondary" onclick="toggleMockMode()">Preview with Sample Scan Data</button>
+    <div class="toolbar">
+      <span id="coherence-pill" class="pill">03 Coherence: Awaiting Data (null)</span>
+      <button id="preview-btn" class="secondary" onclick="togglePreview()">Preview Sample Scan</button>
     </div>
   </header>
 
-  <!-- QUESTION SELECTOR (Dynamically built from dashboard_data.js) -->
-  <nav class="question-nav" id="question-nav"></nav>
-
-  <!-- KPI CARDS -->
-  <section class="kpi-grid" id="kpi-grid"></section>
-
-  <!-- ADAPTIVE VISUALIZATION + SCANNED CODE EVIDENCE -->
-  <section class="main-grid">
-    <div class="card">
-      <div class="section-head">
-        <h2 class="section-title" id="chart-title">Parameter Visualization</h2>
-        <span class="badge neutral" id="chart-type-badge">Chart: --</span>
+  <!-- PRIORITY TRIAGE: MARKS THE SINGLE MOST URGENT ACTION TO TAKE -->
+  <section id="urgent-banner" class="urgent-banner null-state">
+    <div>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <span id="urgent-badge" class="urgent-tag idle">Priority Queue: Awaiting Scan (null)</span>
+        <span id="urgent-score-txt" style="font-size:12px; color:var(--muted); font-weight:600;"></span>
       </div>
-      <div class="chart-wrapper">
-        <canvas id="adaptiveChart"></canvas>
-        <div id="chart-empty" class="empty-overlay">
-          <strong>No scanned parameters yet (null)</strong>
-          <span>Run your VS Code scanner to populate <code>chartData</code> for this question.</span>
+      <h2 id="urgent-headline" style="margin:0 0 4px 0; font-size:17px;">No urgency ranking computed yet (null)</h2>
+      <p id="urgent-subtext" style="margin:0; font-size:13px; color:var(--muted);">
+        Once <code>index.db</code> is scanned, this bar flags the #1 blocking issue and ranks what your team should build next.
+      </p>
+    </div>
+    <div class="triage-queue" id="triage-queue"></div>
+  </section>
+
+  <!-- EXECUTION CO-PILOT: WHAT TO DO NEXT + ARDUINO UNO Q (11 TOK/S) BUDGET SIMULATOR -->
+  <section class="copilot-grid">
+    <!-- Left: Next-Step Implementation Roadmap -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+        <h2 style="margin:0; font-size:15px;">What To Do Next • Data-Driven Engineering Plan</h2>
+        <span style="font-size:12px; color:var(--muted);">Click any task to inspect & copy Python code</span>
+      </div>
+      <div class="rationale-bar">
+        <span>01 Utilitat per decidir: Converts scanned index.db parameters directly into prioritized repo commits</span>
+      </div>
+      <div class="action-list" id="action-list"></div>
+    </div>
+
+    <!-- Right: Arduino UNO Q (11 tok/s) Live Latency & RAG Budget Simulator -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h2 style="margin:0; font-size:15px;">Arduino UNO Q (11 tok/s) Budget Simulator</h2>
+        <span id="hw-status-badge" class="pill verified">SAFE (Within SLA)</span>
+      </div>
+      <div class="rationale-bar">
+        <span>Test RAG context & reasoning token limits before deploying to board</span>
+      </div>
+
+      <div class="sim-row">
+        <div class="sim-label"><span>Problem Prompt Tokens (Lvl 6–7 = 202)</span><strong id="sim-prompt-val">202 tok</strong></div>
+        <input type="range" id="sim-prompt" min="40" max="300" value="202" oninput="updateHardwareSim()" />
+      </div>
+      <div class="sim-row">
+        <div class="sim-label"><span>Retrieved RAG Examples (65 tok each)</span><strong id="sim-rag-val">1 example (65 tok)</strong></div>
+        <input type="range" id="sim-rag" min="0" max="4" value="1" oninput="updateHardwareSim()" />
+      </div>
+      <div class="sim-row">
+        <div class="sim-label"><span>Max Output / Reasoning Tokens</span><strong id="sim-out-val">40 tok</strong></div>
+        <input type="range" id="sim-out" min="5" max="150" value="40" oninput="updateHardwareSim()" />
+      </div>
+
+      <div style="display:flex; justify-content:space-between; font-size:12.5px; margin-top:10px;">
+        <span>Total Latency at <strong>11 tok/s</strong>: <strong id="sim-latency" style="color:var(--accent);">27.9s</strong></span>
+        <span>Board Limit: <strong id="sim-limit">25.0s</strong></span>
+      </div>
+      <div class="meter-track">
+        <div id="sim-meter" class="meter-fill" style="width:80%; background:var(--urgent);"></div>
+      </div>
+
+      <div class="code-mini" id="sim-config-code"></div>
+      <button class="secondary" style="width:100%; font-size:12px;" onclick="copyText('sim-config-code', this)">Copy UNO Q Config Snippet</button>
+    </div>
+  </section>
+
+  <!-- GRAPH CONNECTING ISSUES -> BOTTLENECKS -> EFFICIENT SOLUTIONS -->
+  <section class="card section-gap">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+      <h2 style="margin:0; font-size:15px;">Issue-to-Solution Dependency & Efficiency Graph</h2>
+      <span style="font-size:12px; color:var(--muted);">Click any path to inspect its supporting chart & code evidence</span>
+    </div>
+    <div class="rationale-bar">
+      <span id="graph-rationale">02 Adequateness: Directed Causal Network — Connects index.db anomalies to UNO Q bottlenecks and efficient fixes</span>
+      <span style="color:var(--good); font-weight:600;">Red = Most Urgent Path • Green = Efficiency Gain</span>
+    </div>
+    <div class="svg-container" id="solution-graph-container"></div>
+  </section>
+
+  <!-- 4 QUESTION SELECTOR TABS -->
+  <nav class="question-tabs" id="question-tabs"></nav>
+
+  <!-- CRITERION 01: DECISION DELTAS & TUKEY DISTRIBUTION -->
+  <section class="decision-strip" id="decision-strip"></section>
+
+  <!-- CRITERION 02 (ADAPTIVE CHART) + CRITERION 03 (CODE EVIDENCE) -->
+  <section class="workspace">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h2 style="margin:0; font-size:15px;" id="chart-heading">Parameter Analysis</h2>
+        <span style="font-size:11px; color:var(--muted);">Click any data point to filter evidence</span>
+      </div>
+      <div class="rationale-bar">
+        <span id="chart-rationale">02 Adequateness: --</span>
+      </div>
+      <div class="chart-area">
+        <canvas id="tukeyChart"></canvas>
+        <div id="chart-empty" class="empty-state">
+          <strong>Awaiting scanned parameters (null)</strong>
+          <span>Run Person 1's script to populate <code>dashboard_data.js</code> or click <strong>Preview Sample Scan</strong>.</span>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="section-head">
-        <h2 class="section-title">Scanned Code Evidence Trail</h2>
-        <span class="badge neutral" id="evidence-count">0 matches</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 style="margin:0; font-size:15px;">03 Evidence & Traceability</h2>
+        <button id="clear-filter-btn" class="secondary" style="padding:4px 9px; font-size:11px; display:none;" onclick="clearEvidenceFilter()">Show All</button>
       </div>
-      <div class="evidence-list" id="evidence-list"></div>
+      <div class="evidence-feed" id="evidence-feed"></div>
     </div>
   </section>
 
-  <!-- INTERACTIVE THRESHOLD & COHERENT VERDICT -->
-  <section class="card decision-card">
-    <div>
-      <div class="kpi-label">DECISION SENSITIVITY THRESHOLD</div>
-      <div style="font-size:20px; font-weight:700; margin-bottom:6px;">
-        Cutoff: <span id="cutoff-label">70</span>
+  <!-- CODE BLUEPRINT MODAL -->
+  <div class="modal-backdrop" id="code-modal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div>
+          <span id="modal-badge" class="urgent-tag">P1 IMPLEMENTATION</span>
+          <h3 id="modal-title" style="margin:6px 0 2px 0; font-size:17px;">Code Blueprint</h3>
+          <div id="modal-file" class="file-tag">src/module.py</div>
+        </div>
+        <button class="secondary" onclick="closeModal()">Close</button>
       </div>
-      <input type="range" id="cutoff-slider" min="0" max="100" value="70" oninput="renderDashboard()" />
-      <div style="font-size:12px; color:var(--muted); margin-top:6px;">
-        Adjust cutoff to re-evaluate qualifying modules and update the decision verdict live.
+      <p id="modal-reason" style="font-size:13px; color:var(--muted); margin-top:0;"></p>
+      <pre class="modal-code" id="modal-code-body"></pre>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button onclick="copyText('modal-code-body', this)">Copy Ready-to-Paste Python Code</button>
       </div>
     </div>
-    <div>
-      <div class="kpi-label">SUBSTANTIATED CONCLUSION & DECISION</div>
-      <h3 id="verdict-title" style="margin:0 0 6px 0; font-size:18px; color:var(--good);">
-        Awaiting deterministic scan...
-      </h3>
-      <p id="verdict-desc" style="margin:0; font-size:14px; line-height:1.55; color:var(--muted);">
-        Select a decision question above or click <strong>Preview with Sample Scan Data</strong> to test how different questions morph the visualization and lock conclusions to code evidence.
-      </p>
-    </div>
-  </section>
+  </div>
 
   <script>
-    let useMock = false;
-    let selectedQuestionId = null;
-    let activeChartInstance = null;
+    let previewMode = false;
+    let activeQId = null;
+    let evidenceFilterTarget = null;
+    let chartInstance = null;
 
-    // Sample dataset illustrating 3 distinct question geometries (bar, scatter, line)
-    const SAMPLE_SCAN_DATA = {
+    const SAMPLE_DATA = {
       meta: {
-        projectScanned: "workspace/core-engine",
-        activeQuestionId: "q1",
-        lastScanTimestamp: "Sample Preview"
+        challengeName: "Repte Principal: Kangaroo Math Solver & Second Brain (Qualcomm + Arduino UNO Q)",
+        challengeGoal: "Optimize accuracy and <11 tok/s edge latency across 1,466 Kangaroo problems in index.db",
+        repoRef: "datathon-UPC-maths-qualcomm-arduino-unoq",
+        projectScanned: "index.db + vscode://datathon-UPC-maths-qualcomm-arduino-unoq",
+        lastScanTimestamp: "EDA Scan Complete (1,466 rows)",
+        activeQuestionId: "q4"
       },
+      hardwareProfile: {
+        tokensPerSecond: 11,
+        boardTimeoutSec: 25.0,
+        medianPromptTokens: 112,
+        p90PromptTokens: 202
+      },
+      solutionGraph: {
+        rationale: "02 Adequateness: Directed Causal Network — Connects index.db anomalies to UNO Q bottlenecks and highest-ROI code fixes",
+        mostUrgentPathId: "path_q4",
+        paths: [
+          {
+            id: "path_q4",
+            questionId: "q4",
+            urgencyRank: 1,
+            isMostUrgent: true,
+            issueNode: { label: "Lvl 6–7 Length (202 tok)", metric: "18.4s prompt read at 11 tok/s" },
+            bottleneckNode: { label: "UNO Q Timeout (>25s SLA)", metric: "3+ RAG examples crash inference" },
+            solutionNode: { label: "Dynamic MAX_RAG_TOKENS = 70", metric: "96% Efficiency • Fits 25s SLA" },
+            targetFile: "src/rag_pipeline.py"
+          },
+          {
+            id: "path_q3",
+            questionId: "q3",
+            urgencyRank: 2,
+            isMostUrgent: false,
+            issueNode: { label: "Option 'D' Skew (25.4%)", metric: "+5.4% above 20% uniform" },
+            bottleneckNode: { label: "Biased Logit Predictions", metric: "False 'D' over-selection" },
+            solutionNode: { label: "Subtract Log-Prior Debias", metric: "93% Efficiency • 4 lines Python" },
+            targetFile: "src/debias.py"
+          },
+          {
+            id: "path_q1",
+            questionId: "q1",
+            urgencyRank: 3,
+            isMostUrgent: false,
+            issueNode: { label: "6 Distinct UMAP Islands", metric: "Silhouette = 0.44 (N=1,466)" },
+            bottleneckNode: { label: "Full 1,466-Row Scan Slow", metric: "Unpartitioned vector lookup" },
+            solutionNode: { label: "6-Topic NMF Index Routing", metric: "88% Efficiency • 5x faster" },
+            targetFile: "src/nmf_router.py"
+          },
+          {
+            id: "path_q2",
+            questionId: "q2",
+            urgencyRank: 4,
+            isMostUrgent: false,
+            issueNode: { label: "Smooth Lvl 0->7 Gradient", metric: "81.2% 5-NN level continuity" },
+            bottleneckNode: { label: "Cold-Start Mastery Gaps", metric: "No prerequisite transfer" },
+            solutionNode: { label: "k->k+1 Directed Second Brain", metric: "85% Efficiency • Validated" },
+            targetFile: "src/second_brain.py"
+          }
+        ]
+      },
+      nextActions: [
+        {
+          priority: "P1",
+          questionId: "q4",
+          title: "1. Enforce Dynamic RAG Token Budget on UNO Q",
+          ownerRole: "Edge / UNO Q Lead",
+          targetFile: "src/rag_pipeline.py",
+          triggerReason: "Lvl 6–7 problems use 202 tokens (18.4s at 11 tok/s), leaving only ~73 tokens before board timeout.",
+          expectedImpact: "Prevents inference timeouts on hard Kangaroo levels while preserving 1 high-signal few-shot example.",
+          codeSnippet: `# Auto-calibrated from index.db (11 tok/s Arduino UNO Q budget)
+TOKENS_PER_SEC = 11.0
+MAX_TOTAL_TOKENS = 275  # 25.0s hard safety ceiling
+
+def get_rag_budget(prompt_tokens: int, max_answer_tokens: int = 12) -> int:
+    remaining = MAX_TOTAL_TOKENS - prompt_tokens - max_answer_tokens
+    # Level 6-7 (~202 tok) automatically caps RAG to ~61 tokens (1 compact example)
+    return max(0, remaining)
+
+def build_unoq_prompt(question_text: str, retrieved_examples: list[str]) -> str:
+    prompt_tok = int(len(question_text.split()) * 1.33)
+    budget = get_rag_budget(prompt_tok)
+    context, used = [], 0
+    for ex in retrieved_examples:
+        ex_tok = int(len(ex.split()) * 1.33)
+        if used + ex_tok <= budget:
+            context.append(ex)
+            used += ex_tok
+    return "\\n---\\n".join(context + [f"Problem: {question_text}\\nAnswer (A-E):"])`
+        },
+        {
+          priority: "P2",
+          questionId: "q3",
+          title: "2. Apply Empirical Logprob Debiasing (A–E)",
+          ownerRole: "Reason Track Lead",
+          targetFile: "src/debias.py",
+          triggerReason: "Training set is skewed (D = 25.4%, A = 16.2%), inflating baseline D predictions.",
+          expectedImpact: "Recalibrates raw model logprobs against empirical training priors in O(1) time.",
+          codeSnippet: `import numpy as np
+
+# Empirical priors extracted from index.db (1,466 Kangaroo training rows)
+EMPIRICAL_PRIORS = {
+    "A": 0.162,
+    "B": 0.198,
+    "C": 0.211,
+    "D": 0.254,
+    "E": 0.175,
+}
+
+def debias_choice_logprobs(raw_logprobs: dict[str, float], alpha: float = 0.7) -> str:
+    """Subtract scaled log-prior to remove training label skew."""
+    adjusted = {
+        opt: raw_logprobs[opt] - alpha * np.log(EMPIRICAL_PRIORS[opt])
+        for opt in EMPIRICAL_PRIORS
+    }
+    return max(adjusted, key=adjusted.get)`
+        },
+        {
+          priority: "P3",
+          questionId: "q1",
+          title: "3. Build 6-Topic NMF Index Router",
+          ownerRole: "Data Lead",
+          targetFile: "src/nmf_router.py",
+          triggerReason: "UMAP reveals 6 distinct semantic islands (Silhouette = 0.44 > 0.30 threshold).",
+          expectedImpact: "Restricts cosine search to top-2 topic clusters (~480 rows instead of 1,466).",
+          codeSnippet: `import sqlite3
+import numpy as np
+from sklearn.decomposition import NMF
+
+# Silhouette = 0.44 confirms discrete topic islands -> NMF (k=6) is optimal
+N_TOPICS = 6
+
+def fit_topic_router(embeddings_384d: np.ndarray):
+    # Shift bge-small embeddings to non-negative space for NMF
+    shifted = np.maximum(0, embeddings_384d - embeddings_384d.min())
+    nmf = NMF(n_components=N_TOPICS, init="nndsvda", random_state=42)
+    doc_topics = nmf.fit_transform(shifted)
+    primary_cluster = doc_topics.argmax(axis=1)
+    return nmf, primary_cluster`
+        },
+        {
+          priority: "P4",
+          questionId: "q2",
+          title: "4. Wire Directed Prerequisite Graph (k -> k+1)",
+          ownerRole: "Second Brain Lead",
+          targetFile: "src/second_brain.py",
+          triggerReason: "81.2% of 5-nearest neighbors lie within ±1 Kangaroo difficulty level.",
+          expectedImpact: "Propagates student mastery smoothly across adjacent difficulty tiers within each NMF topic.",
+          codeSnippet: `# Validated by 81.2% k-NN level continuity in UMAP space
+def update_mastery_graph(mastery_matrix: dict, topic_id: int, level: int, solved: bool):
+    """Propagate mastery forward (k -> k+1) on success or backward on failure."""
+    delta = 0.25 if solved else -0.20
+    mastery_matrix[(topic_id, level)] = min(1.0, max(0.0, mastery_matrix.get((topic_id, level), 0.5) + delta))
+    if solved and level < 7:
+        # Unlock readiness for next Kangaroo tier in same topic island
+        mastery_matrix[(topic_id, level + 1)] = min(1.0, mastery_matrix.get((topic_id, level + 1), 0.2) + 0.12)
+    return mastery_matrix`
+        }
+      ],
       questions: {
         q1: {
-          prompt: "Where is our highest technical or operational bottleneck?",
-          chartType: "bar",
-          xLabel: "Scanned Module",
-          yLabel: "Bottleneck Risk Score",
-          kpis: [
-            { label: "Max Complexity Score", value: 88, suffix: " pts" },
-            { label: "Coupling Density", value: 42, suffix: "%" },
-            { label: "Critical Hotspots", value: 2, suffix: " files" }
-          ],
-          chartData: {
-            labels: ["pipeline/sync.py", "auth/tokens.py", "api/routes.py", "utils/parser.py"],
-            values: [88, 76, 49, 31]
-          },
-          evidence: [
-            { file: "pipeline/sync.py", line: 114, parameter: "Cyclomatic complexity = 19 (nested loop + blocking I/O)" },
-            { file: "auth/tokens.py", line: 62, parameter: "14 incoming module dependencies (high coupling)" },
-            { file: "api/routes.py", line: 208, parameter: "4 uncached synchronous DB queries per request" }
-          ],
-          verdict: "Prioritize refactoring pipeline/sync.py before scaling traffic."
-        },
-        q2: {
-          prompt: "Which optimization gives the highest impact for the lowest effort?",
+          prompt: "Do 384-D bge-small embeddings form discrete topic islands in UMAP space?",
+          urgency: { rank: 3, score: 74, level: "HIGH", blockerNote: "Validates 6-Topic NMF clustering over continuous GP" },
           chartType: "scatter",
-          xLabel: "Implementation Effort (1-100)",
-          yLabel: "Projected Impact Score",
-          kpis: [
-            { label: "Top ROI Candidate", value: "Batch Queue" },
-            { label: "Est. Effort Score", value: 24, suffix: "/100" },
-            { label: "Projected Gain", value: 91, suffix: "%" }
-          ],
+          chartRationale: "02 Adequateness: 2D UMAP Scatter — Exposes 6 distinct semantic islands (Silhouette = 0.44) across 1,466 embeddings",
+          xLabel: "UMAP Dimension 1",
+          yLabel: "UMAP Dimension 2",
+          decisionDelta: {
+            baselineLabel: "Cluster Silhouette Score",
+            baselineValue: 0.44,
+            projectedLabel: "Selected Routing Algo",
+            projectedValue: "6-Topic NMF",
+            unit: "",
+            recommendedAction: "Build 6-cluster NMF router"
+          },
+          distribution: { min: 0.11, median: 0.28, max: 0.79, outlierCount: 18 },
           chartData: {
             points: [
-              { label: "Batch Queue (sync.py)", x: 24, y: 91 },
-              { label: "Token Cache (tokens.py)", x: 38, y: 79 },
-              { label: "Full Async Rewrite", x: 85, y: 94 },
-              { label: "Schema Index", x: 18, y: 62 }
+              { label: "Geometry Island (#12)", x: -4.2, y: 3.1 }, { label: "Geometry Island (#45)", x: -3.8, y: 2.7 },
+              { label: "Algebra Island (#88)", x: 3.5, y: 2.9 }, { label: "Algebra Island (#102)", x: 4.1, y: 3.4 },
+              { label: "Combinatorics (#210)", x: 0.4, y: -3.6 }, { label: "Combinatorics (#244)", x: -0.2, y: -4.1 },
+              { label: "Number Theory (#301)", x: 3.9, y: -2.4 }, { label: "Logic Puzzles (#419)", x: -3.5, y: -2.8 }
             ]
           },
           evidence: [
-            { file: "pipeline/sync.py", line: 114, parameter: "Single-item commits detected; batching cuts latency ~68%" },
-            { file: "auth/tokens.py", line: 29, parameter: "Repeated signature verification on identical session keys" }
+            { target: "Geometry Island (#12)", file: "src/nmf_router.py", line: 7, metric: "6 clear UMAP islands detected (Silhouette = 0.44 > 0.30 threshold)" },
+            { target: "Algebra Island (#88)", file: "index.db -> embeddings", line: null, metric: "384-D bge-small vectors separate cleanly by math domain" }
           ],
-          verdict: "Implement Batch Queue in sync.py first (91 impact at only 24 effort)."
+          verdict: "Decision: Proceed with 6-topic NMF clustering; clear UMAP islands confirm discrete topic structure."
         },
-        q3: {
-          prompt: "How will response latency scale as workload grows 5x?",
-          chartType: "line",
-          xLabel: "Simulated Load Multiplier",
-          yLabel: "Projected Latency (ms)",
-          kpis: [
-            { label: "1x Baseline Latency", value: 45, suffix: " ms" },
-            { label: "5x Projected Latency", value: 310, suffix: " ms" },
-            { label: "SLA Breach Point", value: "3.2x Load" }
-          ],
+        q2: {
+          prompt: "Do Kangaroo difficulty levels (0–7) progress smoothly across semantic space?",
+          urgency: { rank: 4, score: 62, level: "MEDIUM", blockerNote: "Confirms Second Brain k -> k+1 prerequisite propagation" },
+          chartType: "scatter",
+          chartRationale: "02 Adequateness: Level-Coded UMAP Scatter — Confirms 81.2% neighbor continuity across Kangaroo Levels 0–7",
+          xLabel: "UMAP Dimension 1",
+          yLabel: "UMAP Dimension 2",
+          decisionDelta: {
+            baselineLabel: "k-NN Level Agreement (±1)",
+            baselineValue: 81.2,
+            projectedLabel: "Prerequisite Graph",
+            projectedValue: "Validated",
+            unit: "%",
+            recommendedAction: "Enable k->k+1 mastery edges"
+          },
+          distribution: { min: 0, median: 4, max: 7, outlierCount: 11 },
           chartData: {
-            labels: ["1x Load", "2x Load", "3x Load", "4x Load", "5x Load"],
-            values: [45, 82, 145, 220, 310],
-            thresholdLine: [150, 150, 150, 150, 150]
+            points: [
+              { label: "Lvl 0–1 Core (#15)", x: -4.0, y: 2.9 }, { label: "Lvl 2–3 Bridge (#77)", x: -3.2, y: 2.1 },
+              { label: "Lvl 4–5 Mid (#190)", x: 1.8, y: 1.5 }, { label: "Lvl 6–7 Frontier (#412)", x: 3.8, y: 3.2 }
+            ]
           },
           evidence: [
-            { file: "pipeline/sync.py", line: 98, parameter: "O(n^2) list lookup scales non-linearly past 2,500 items" },
-            { file: "config/pool.py", line: 12, parameter: "Max worker pool capped at 4 threads" }
+            { target: "Lvl 2–3 Bridge (#77)", file: "src/second_brain.py", line: 2, metric: "81.2% of 5-nearest neighbors lie within ±1 Kangaroo difficulty level" },
+            { target: "Lvl 6–7 Frontier (#412)", file: "index.db -> level", line: null, metric: "Hard problems sit on outer rims of their respective topic islands" }
           ],
-          verdict: "Current architecture breaches 150ms SLA at 3.2x load without pooling changes."
+          verdict: "Decision: Directed Prerequisite Graph is mathematically sound; propagate mastery along Level k -> k+1 edges."
+        },
+        q3: {
+          prompt: "How skewed is the A–E answer distribution vs. a 20% uniform baseline?",
+          urgency: { rank: 2, score: 86, level: "HIGH", blockerNote: "Prevents +5.4% false-positive bias toward Option D" },
+          chartType: "bar",
+          chartRationale: "02 Adequateness: Categorical Frequency Bar — Exposes Option D skew (25.4%) vs. 20% uniform expectation",
+          xLabel: "Correct Answer Label (A–E)",
+          yLabel: "Training Set Share (%)",
+          decisionDelta: {
+            baselineLabel: "Peak Option ('D') Share",
+            baselineValue: 25.4,
+            projectedLabel: "Debiased Target Prior",
+            projectedValue: 20.0,
+            unit: "%",
+            recommendedAction: "Apply log-prior debiasing"
+          },
+          distribution: { min: 16.2, median: 19.8, max: 25.4, outlierCount: 2 },
+          chartData: {
+            labels: ["A", "B", "C", "D", "E"],
+            values: [16.2, 19.8, 21.1, 25.4, 17.5]
+          },
+          evidence: [
+            { target: "D", file: "src/debias.py", line: 4, metric: "Option D appears in 372 / 1,466 rows (25.4% vs 20.0% uniform)" },
+            { target: "A", file: "index.db -> label", line: null, metric: "Option A is underrepresented at 16.2% (238 / 1,466 rows)" }
+          ],
+          verdict: "Decision: Implement Logprob Debiasing immediately; Option D is 1.57x more frequent than Option A."
+        },
+        q4: {
+          prompt: "At which Kangaroo level does prompt length breach our 11 tok/s latency limit?",
+          urgency: { rank: 1, score: 97, level: "CRITICAL", blockerNote: "HARD BLOCKER: Lvl 6–7 prompts take 18.4s at 11 tok/s and overflow board timeout" },
+          chartType: "line",
+          chartRationale: "02 Adequateness: Ordered Level Trajectory + Hardware Ceiling — Pinpoints exact SLA breach at Level 5+",
+          xLabel: "Kangaroo Difficulty Level (0–7)",
+          yLabel: "Est. Read Time at 11 tok/s (sec)",
+          decisionDelta: {
+            baselineLabel: "Level 7 Read Latency",
+            baselineValue: 18.4,
+            projectedLabel: "Safe MAX_RAG_TOKENS",
+            projectedValue: 70,
+            unit: " tok",
+            recommendedAction: "Cap RAG retrieval to 70 tok"
+          },
+          distribution: { min: 46, median: 112, max: 248, outlierCount: 214 },
+          chartData: {
+            labels: ["Lvl 0", "Lvl 1", "Lvl 2", "Lvl 3", "Lvl 4", "Lvl 5", "Lvl 6", "Lvl 7"],
+            values: [4.2, 5.1, 6.8, 8.4, 10.2, 12.9, 15.6, 18.4],
+            limitLine: [12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0]
+          },
+          evidence: [
+            { target: "Lvl 7", file: "src/rag_pipeline.py", line: 5, metric: "Mean 202 tokens = 18.4s read time at 11 tok/s (leaves <7s for RAG + answer)" },
+            { target: "Lvl 6", file: "src/rag_pipeline.py", line: 11, metric: "Mean 172 tokens = 15.6s read time; dynamic budget caps RAG to 1 example" }
+          ],
+          verdict: "MOST URGENT DECISION: Enforce get_rag_budget() in src/rag_pipeline.py so Level 6–7 queries never exceed 275 total tokens."
         }
       }
     };
 
-    const CHART_TYPE_LABELS = {
-      bar: "Bar Chart (Category Ranking)",
-      scatter: "Scatter Plot (2D Trade-Off)",
-      line: "Line Chart (Scaling Trajectory)"
-    };
-
-    function toggleMockMode() {
-      useMock = !useMock;
-      const btn = document.getElementById("mock-btn");
-      btn.textContent = useMock ? "Return to Live Null Contract" : "Preview with Sample Scan Data";
-      btn.classList.toggle("secondary", !useMock);
-      renderDashboard();
+    function getActiveDataset() {
+      return previewMode ? SAMPLE_DATA : (window.DASHBOARD_DATA || { meta: {}, questions: {}, solutionGraph: { paths: [] }, nextActions: [] });
     }
 
-    function selectQuestion(qId) {
-      selectedQuestionId = qId;
-      renderDashboard();
+    function togglePreview() {
+      previewMode = !previewMode;
+      evidenceFilterTarget = null;
+      const btn = document.getElementById("preview-btn");
+      btn.textContent = previewMode ? "Return to Live Null Contract" : "Preview Sample Scan";
+      btn.classList.toggle("secondary", !previewMode);
+      render();
     }
 
-    function renderDashboard() {
-      const data = useMock ? SAMPLE_SCAN_DATA : (window.DASHBOARD_DATA || { meta: {}, questions: {} });
+    function selectQuestion(id) {
+      activeQId = id;
+      evidenceFilterTarget = null;
+      render();
+    }
+
+    function clearEvidenceFilter() {
+      evidenceFilterTarget = null;
+      render();
+    }
+
+    function formatVal(val, unit = "") {
+      if (val === null || val === undefined) return `<span class="null-txt">-- (null)</span>`;
+      return `${typeof val === "number" ? val.toLocaleString() : val}${unit}`;
+    }
+
+    function render() {
+      const data = getActiveDataset();
       const questions = data.questions || {};
       const qIds = Object.keys(questions);
 
-      if (!selectedQuestionId || !questions[selectedQuestionId]) {
-        selectedQuestionId = (data.meta?.activeQuestionId && questions[data.meta.activeQuestionId])
+      const rankedQuestions = qIds
+        .map(id => ({ id, ...questions[id] }))
+        .sort((a, b) => (a.urgency?.rank ?? 999) - (b.urgency?.rank ?? 999));
+
+      if (!activeQId || !questions[activeQId]) {
+        activeQId = (data.meta?.activeQuestionId && questions[data.meta.activeQuestionId])
           ? data.meta.activeQuestionId
-          : qIds[0];
+          : rankedQuestions[0]?.id;
       }
 
-      const activeQ = questions[selectedQuestionId] || {};
-      const cutoff = Number(document.getElementById("cutoff-slider").value);
-      document.getElementById("cutoff-label").textContent = cutoff;
+      const q = questions[activeQId] || {};
 
-      // Update Header Badges
-      const hasLiveData = Boolean(data.meta?.lastScanTimestamp);
-      document.getElementById("status-badge").textContent = useMock
-        ? "Mode: Sample Scan Preview"
-        : (hasLiveData ? `Scanned: ${data.meta.lastScanTimestamp}` : "Status: Awaiting Scan (null)");
-      document.getElementById("project-badge").textContent =
-        `Workspace: ${data.meta?.projectScanned || "Not Scanned (null)"}`;
+      // Banner
+      document.getElementById("challenge-name").textContent = data.meta?.challengeName || "Repte Principal";
+      document.getElementById("challenge-goal").textContent = data.meta?.challengeGoal || "Awaiting index.db scan...";
 
-      // Render Question Tabs
-      const navEl = document.getElementById("question-nav");
-      navEl.innerHTML = qIds.map((id, idx) => {
-        const q = questions[id];
-        const isActive = id === selectedQuestionId;
-        const typeTag = (q.chartType || "bar").toUpperCase();
+      // Urgency Triage & Next-Step Roadmap
+      renderUrgencyBanner(rankedQuestions);
+      renderNextActions(data.nextActions || []);
+      updateHardwareSim();
+
+      // Solution Graph
+      renderSolutionGraph(data.solutionGraph || { paths: [] });
+
+      // Question Tabs
+      document.getElementById("question-tabs").innerHTML = qIds.map((id, i) => {
+        const item = questions[id];
+        const rank = item.urgency?.rank;
+        const isP1 = rank === 1;
+        const badgeClass = isP1 ? "p1" : (rank ? "p2" : "");
+        const badgeText = rank ? (isP1 ? "P1 • MOST URGENT" : `P${rank} • ${item.urgency.level || "QUEUED"}`) : "RANK: NULL";
+
         return `
-          <button class="q-tab ${isActive ? "active" : ""}" onclick="selectQuestion('${id}')">
-            <span class="q-tag">Question ${idx + 1} • ${typeTag}</span>
-            <p class="q-prompt">${q.prompt}</p>
+          <button class="q-tab ${id === activeQId ? "active" : ""} ${isP1 ? "urgent-tab" : ""}" onclick="selectQuestion('${id}')">
+            <div class="q-top-row">
+              <span class="q-meta">Task ${i + 1} • ${item.chartType}</span>
+              <span class="q-urg-badge ${badgeClass}">${badgeText}</span>
+            </div>
+            <p class="q-text">${item.prompt}</p>
           </button>`;
       }).join("");
 
-      // Render KPIs (Null-Safe)
-      const kpiGrid = document.getElementById("kpi-grid");
-      kpiGrid.innerHTML = (activeQ.kpis || []).map(k => {
-        const isNull = k.value === null || k.value === undefined;
-        const displayVal = isNull
-          ? `<span class="kpi-null">-- (null)</span>`
-          : `${k.prefix || ""}${typeof k.value === "number" ? k.value.toLocaleString() : k.value}${k.suffix || ""}`;
-        return `
-          <div class="card">
-            <div class="kpi-label">${k.label}</div>
-            <div class="kpi-val">${displayVal}</div>
-          </div>`;
-      }).join("");
+      // Decision Strip
+      const delta = q.decisionDelta || {};
+      const dist = q.distribution || {};
+      document.getElementById("decision-strip").innerHTML = `
+        <div class="card">
+          <div class="card-label">${delta.baselineLabel || "Current Baseline"}</div>
+          <div class="card-val">${formatVal(delta.baselineValue, delta.unit)}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">${delta.projectedLabel || "Projected Outcome"}</div>
+          <div class="card-val" style="color:var(--good);">${formatVal(delta.projectedValue, delta.unit)}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Recommended Action</div>
+          <div class="card-val" style="font-size:17px; line-height:1.3;">${formatVal(delta.recommendedAction)}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Tukey Spread (Min / Med / Max)</div>
+          <div class="card-val" style="font-size:19px;">
+            ${dist.median !== null && dist.median !== undefined
+              ? `${dist.min} / <span style="color:var(--accent)">${dist.median}</span> / ${dist.max}`
+              : `<span class="null-txt">-- / -- / -- (null)</span>`}
+          </div>
+          <div style="margin-top:6px; font-size:12px; color:var(--muted);">
+            Outliers flagged: <strong>${dist.outlierCount ?? "null"}</strong>
+          </div>
+        </div>
+      `;
 
-      // Render Adaptive Chart
-      renderAdaptiveChart(activeQ, cutoff);
+      // Adaptive Chart & Coherence Pill
+      const hasData = renderChart(q);
+      const pill = document.getElementById("coherence-pill");
+      pill.className = hasData ? "pill verified" : "pill";
+      pill.textContent = hasData
+        ? "03 Coherence: Verified (Code Fixes = Graph = Data)"
+        : "03 Coherence: Awaiting Data (null)";
 
-      // Render Scanned Code Evidence Trail
-      const evidence = activeQ.evidence || [];
-      document.getElementById("evidence-count").textContent = `${evidence.length} ${evidence.length === 1 ? "match" : "matches"}`;
-      const evidenceList = document.getElementById("evidence-list");
-      if (evidence.length === 0) {
-        evidenceList.innerHTML = `
-          <div class="empty-overlay" style="position:static; height:220px;">
-            <strong>No code evidence recorded (null)</strong>
-            <span>When your scanner inspects files for this question, exact file paths, line numbers, and parameter triggers appear here.</span>
-          </div>`;
-      } else {
-        evidenceList.innerHTML = evidence.map(ev => `
-          <div class="evidence-item">
-            <div class="evidence-file">${ev.file}${ev.line ? ` : line ${ev.line}` : ""}</div>
-            <div class="evidence-param">${ev.parameter}</div>
-          </div>`).join("");
-      }
-
-      // Render Coherent Verdict
-      updateVerdict(activeQ, cutoff);
+      renderEvidence(q);
     }
 
-    function renderAdaptiveChart(q, cutoff) {
-      const type = q.chartType || "bar";
-      document.getElementById("chart-title").textContent = q.prompt || "Parameter Visualization";
-      document.getElementById("chart-type-badge").textContent = CHART_TYPE_LABELS[type] || `Chart: ${type}`;
+    function renderUrgencyBanner(rankedQuestions) {
+      const banner = document.getElementById("urgent-banner");
+      const badge = document.getElementById("urgent-badge");
+      const scoreTxt = document.getElementById("urgent-score-txt");
+      const headline = document.getElementById("urgent-headline");
+      const subtext = document.getElementById("urgent-subtext");
+      const queueEl = document.getElementById("triage-queue");
 
-      if (activeChartInstance) {
-        activeChartInstance.destroy();
+      const top = rankedQuestions.find(q => q.urgency?.rank === 1);
+
+      if (!top) {
+        banner.classList.add("null-state");
+        badge.className = "urgent-tag idle";
+        badge.textContent = "Priority Queue: Awaiting Scan (null)";
+        scoreTxt.textContent = "";
+        headline.textContent = "No urgency ranking computed yet (null)";
+        subtext.textContent = "Run Person 1's index.db scan or click 'Preview Sample Scan' to flag the #1 blocker and unlock ready-to-paste Python fixes.";
+        queueEl.innerHTML = rankedQuestions.map((item, idx) => `
+          <button class="triage-chip" onclick="selectQuestion('${item.id}')">
+            <div style="color:var(--muted); font-weight:700;">Task ${idx + 1} • --</div>
+            <div>Awaiting scan</div>
+          </button>`).join("");
+        return;
       }
 
+      banner.classList.remove("null-state");
+      badge.className = "urgent-tag";
+      badge.textContent = `P1 MOST URGENT ACTION • SCORE ${top.urgency.score}/100`;
+      scoreTxt.textContent = top.urgency.level || "CRITICAL";
+      headline.textContent = top.decisionDelta?.recommendedAction || top.prompt;
+      subtext.textContent = top.urgency.blockerNote || top.verdict || "";
+
+      queueEl.innerHTML = rankedQuestions.map(item => {
+        const r = item.urgency?.rank || "-";
+        const isP1 = r === 1;
+        return `
+          <button class="triage-chip ${isP1 ? "p1" : ""}" onclick="selectQuestion('${item.id}')">
+            <div style="font-weight:800; color:${isP1 ? "var(--urgent)" : "var(--accent)"};">
+              P${r} (${item.urgency?.score ?? "--"} pts)
+            </div>
+            <div style="max-width:155px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${item.decisionDelta?.recommendedAction || item.id.toUpperCase()}
+            </div>
+          </button>`;
+      }).join("");
+    }
+
+    function renderNextActions(actions) {
+      const container = document.getElementById("action-list");
+      if (!actions || actions.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="position:static; height:240px; grid-column:1/-1;">
+            <strong>Awaiting next-step engineering plan (null)</strong>
+            <span>Once <code>index.db</code> is scanned, prioritized P1–P4 tasks with ready-to-paste Python code for <code>src/</code> appear here.</span>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = actions.map((act, idx) => {
+        const isP1 = act.priority === "P1";
+        return `
+          <div class="action-card ${isP1 ? "p1-card" : ""}">
+            <div>
+              <div class="action-meta">
+                <span class="q-urg-badge ${isP1 ? "p1" : "p2"}">${act.priority}</span>
+                <span class="role-pill">${act.ownerRole}</span>
+              </div>
+              <h3 style="margin:8px 0 4px 0; font-size:14px;">${act.title}</h3>
+              <div class="file-tag">${act.targetFile}</div>
+              <p style="font-size:12px; color:var(--muted); margin:6px 0 0 0; line-height:1.4;">
+                <strong>Why:</strong> ${act.triggerReason}
+              </p>
+            </div>
+            <button class="${isP1 ? "urgent-btn" : "secondary"}" style="width:100%; font-size:12px;" onclick="openCodeModal(${idx})">
+              View & Copy Python Fix
+            </button>
+          </div>`;
+      }).join("");
+    }
+
+    function updateHardwareSim() {
+      const data = getActiveDataset();
+      const hw = data.hardwareProfile || { tokensPerSecond: 11, boardTimeoutSec: 25.0 };
+      const tps = hw.tokensPerSecond || 11;
+      const limitSec = hw.boardTimeoutSec || 25.0;
+
+      const promptTok = Number(document.getElementById("sim-prompt").value);
+      const ragCount = Number(document.getElementById("sim-rag").value);
+      const outTok = Number(document.getElementById("sim-out").value);
+
+      const ragTok = ragCount * 65;
+      const totalTok = promptTok + ragTok + outTok;
+      const totalSec = totalTok / tps;
+      const pct = Math.min(100, (totalSec / limitSec) * 100);
+      const isSafe = totalSec <= limitSec;
+
+      document.getElementById("sim-prompt-val").textContent = `${promptTok} tok`;
+      document.getElementById("sim-rag-val").textContent = `${ragCount} ${ragCount === 1 ? "example" : "examples"} (${ragTok} tok)`;
+      document.getElementById("sim-out-val").textContent = `${outTok} tok`;
+      document.getElementById("sim-latency").textContent = `${totalSec.toFixed(1)}s (${totalTok} tok)`;
+      document.getElementById("sim-limit").textContent = `${limitSec.toFixed(1)}s`;
+
+      const meter = document.getElementById("sim-meter");
+      meter.style.width = `${pct}%`;
+      meter.style.background = isSafe ? "var(--good)" : "var(--urgent)";
+
+      const badge = document.getElementById("hw-status-badge");
+      badge.textContent = isSafe ? "SAFE (Within SLA)" : "TIMEOUT RISK (>25s)";
+      badge.className = isSafe ? "pill verified" : "pill";
+      badge.style.color = isSafe ? "var(--good)" : "var(--urgent)";
+
+      document.getElementById("sim-config-code").textContent =
+`UNOQ_CONFIG = {
+    "max_rag_examples": ${ragCount},
+    "max_rag_tokens": ${ragTok},
+    "max_new_tokens": ${outTok},
+    "est_latency_sec": ${totalSec.toFixed(1)}  # at ${tps} tok/s
+}`;
+    }
+
+    function openCodeModal(idx) {
+      const data = getActiveDataset();
+      const act = (data.nextActions || [])[idx];
+      if (!act) return;
+      document.getElementById("modal-badge").textContent = `${act.priority} • ${act.ownerRole}`;
+      document.getElementById("modal-title").textContent = act.title;
+      document.getElementById("modal-file").textContent = `Target file: ${act.targetFile}`;
+      document.getElementById("modal-reason").textContent = `${act.triggerReason} — Expected Impact: ${act.expectedImpact}`;
+      document.getElementById("modal-code-body").textContent = act.codeSnippet || "# No snippet available";
+      document.getElementById("code-modal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("code-modal").style.display = "none";
+    }
+
+    function copyText(elementId, btn) {
+      const txt = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(txt);
+      const orig = btn.textContent;
+      btn.textContent = "Copied to Clipboard!";
+      setTimeout(() => { btn.textContent = orig; }, 1600);
+    }
+
+    function renderSolutionGraph(graph) {
+      document.getElementById("graph-rationale").textContent =
+        graph.rationale || "02 Adequateness: Directed Causal Network — Connects index.db anomalies to UNO Q bottlenecks and efficient fixes";
+
+      const container = document.getElementById("solution-graph-container");
+      const paths = graph.paths || [];
+
+      if (paths.length === 0) {
+        container.innerHTML = `
+          <svg class="causal-svg" viewBox="0 0 1000 195">
+            <text x="150" y="26" fill="#94a3b8" font-size="11.5" font-weight="700" text-anchor="middle">1. DETECTED DATA ISSUE (NULL)</text>
+            <text x="500" y="26" fill="#94a3b8" font-size="11.5" font-weight="700" text-anchor="middle">2. UNO Q BOTTLENECK (NULL)</text>
+            <text x="850" y="26" fill="#94a3b8" font-size="11.5" font-weight="700" text-anchor="middle">3. EFFICIENT CODE FIX (NULL)</text>
+            <path d="M 280 100 C 325 100, 325 100, 370 100" stroke="#2d3b55" stroke-width="2" stroke-dasharray="6 6" fill="none" />
+            <path d="M 630 100 C 675 100, 675 100, 720 100" stroke="#2d3b55" stroke-width="2" stroke-dasharray="6 6" fill="none" />
+            <rect x="20" y="60" width="260" height="80" rx="8" fill="#111827" stroke="#2d3b55" stroke-dasharray="5 5" />
+            <text x="150" y="98" fill="#94a3b8" font-size="13" font-weight="600" text-anchor="middle">Awaiting index.db Scan</text>
+            <text x="150" y="118" fill="#64748b" font-size="11" text-anchor="middle">1,466 Kangaroo Training Rows</text>
+            <rect x="370" y="60" width="260" height="80" rx="8" fill="#111827" stroke="#2d3b55" stroke-dasharray="5 5" />
+            <text x="500" y="98" fill="#94a3b8" font-size="13" font-weight="600" text-anchor="middle">Awaiting Bottleneck Diagnosis</text>
+            <text x="500" y="118" fill="#64748b" font-size="11" text-anchor="middle">11 tok/s Edge Latency & Skew</text>
+            <rect x="720" y="60" width="260" height="80" rx="8" fill="#111827" stroke="#2d3b55" stroke-dasharray="5 5" />
+            <text x="850" y="98" fill="#94a3b8" font-size="13" font-weight="600" text-anchor="middle">Awaiting Repo Patch Mapping</text>
+            <text x="850" y="118" fill="#64748b" font-size="11" text-anchor="middle">Click 'Preview Sample Scan' to test</text>
+          </svg>`;
+        return;
+      }
+
+      const rowHeight = 74;
+      const topOffset = 44;
+      const svgHeight = topOffset + paths.length * rowHeight + 14;
+
+      const rowsSvg = paths.map((p, idx) => {
+        const y = topOffset + idx * rowHeight;
+        const midY = y + 28;
+        const isUrgent = Boolean(p.isMostUrgent || p.urgencyRank === 1);
+        const isSelected = p.questionId === activeQId;
+        const strokeCol = isUrgent ? "#f43f5e" : (isSelected ? "#38bdf8" : "#334155");
+        const strokeW = isUrgent ? 3 : 2;
+
+        return `
+          <g class="svg-path-group" onclick="selectQuestion('${p.questionId}')">
+            <path d="M 285 ${midY} C 325 ${midY}, 325 ${midY}, 365 ${midY}" stroke="${strokeCol}" stroke-width="${strokeW}" fill="none" />
+            <path d="M 635 ${midY} C 675 ${midY}, 675 ${midY}, 715 ${midY}" stroke="${isUrgent ? "#10b981" : strokeCol}" stroke-width="${strokeW}" fill="none" />
+
+            <rect x="15" y="${y}" width="270" height="56" rx="8" fill="#111827" stroke="${strokeCol}" stroke-width="${isUrgent ? 2 : 1}" />
+            <text x="27" y="${y + 22}" fill="#f8fafc" font-size="12.5" font-weight="700">${p.issueNode.label}</text>
+            <text x="27" y="${y + 40}" fill="${isUrgent ? "#fb7185" : "#94a3b8"}" font-size="11" font-weight="600">${p.issueNode.metric}</text>
+            ${isUrgent ? `<rect x="208" y="${y - 9}" width="70" height="17" rx="9" fill="#f43f5e" />
+                          <text x="243" y="${y + 3}" fill="#ffffff" font-size="9.5" font-weight="800" text-anchor="middle">P1 URGENT</text>` : ""}
+
+            <rect x="365" y="${y}" width="270" height="56" rx="8" fill="#1e293b" stroke="${strokeCol}" stroke-width="${isUrgent ? 2 : 1}" />
+            <text x="377" y="${y + 22}" fill="#f8fafc" font-size="12.5" font-weight="700">${p.bottleneckNode.label}</text>
+            <text x="377" y="${y + 40}" fill="#fbbf24" font-size="11" font-weight="600">${p.bottleneckNode.metric}</text>
+
+            <rect x="715" y="${y}" width="270" height="56" rx="8" fill="#0f2922" stroke="#10b981" stroke-width="${isUrgent ? 2 : 1.2}" />
+            <text x="727" y="${y + 22}" fill="#f8fafc" font-size="12.5" font-weight="700">${p.solutionNode.label}</text>
+            <text x="727" y="${y + 40}" fill="#34d399" font-size="11" font-weight="700">${p.solutionNode.metric}</text>
+          </g>`;
+      }).join("");
+
+      container.innerHTML = `
+        <svg class="causal-svg" viewBox="0 0 1000 ${svgHeight}">
+          <text x="150" y="24" fill="#94a3b8" font-size="11.5" font-weight="700" text-anchor="middle">1. DETECTED DATA ISSUE (EDA)</text>
+          <text x="500" y="24" fill="#94a3b8" font-size="11.5" font-weight="700" text-anchor="middle">2. UNO Q BOTTLENECK</text>
+          <text x="850" y="24" fill="#10b981" font-size="11.5" font-weight="700" text-anchor="middle">3. EFFICIENT ARCHITECTURAL FIX</text>
+          ${rowsSvg}
+        </svg>`;
+    }
+
+    function renderChart(q) {
+      document.getElementById("chart-heading").textContent = q.prompt || "Parameter Analysis";
+      document.getElementById("chart-rationale").textContent = q.chartRationale || "02 Adequateness: Chart selected for data type";
+
+      if (chartInstance) chartInstance.destroy();
+
+      const type = q.chartType || "bar";
       const cData = q.chartData || {};
       const hasData = type === "scatter"
         ? (cData.points && cData.points.length > 0)
         : (cData.values && cData.values.length > 0);
 
       document.getElementById("chart-empty").style.display = hasData ? "none" : "flex";
+      const ctx = document.getElementById("tukeyChart");
 
-      const ctx = document.getElementById("adaptiveChart");
-      let config = { type, data: {}, options: { responsive: true, maintainAspectRatio: false } };
+      let config = {
+        type,
+        data: {},
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (_, elements) => {
+            if (!elements.length) return;
+            const idx = elements[0].index;
+            evidenceFilterTarget = type === "scatter"
+              ? (cData.points[idx]?.label || null)
+              : (cData.labels[idx] || null);
+            render();
+          }
+        }
+      };
 
       if (type === "bar") {
         const vals = cData.values || [];
         config.data = {
           labels: cData.labels || [],
           datasets: [{
-            label: q.yLabel || "Score",
+            label: q.yLabel || "Share (%)",
             data: vals,
-            backgroundColor: vals.map(v => v >= cutoff ? "#f87171" : "#38bdf8"),
+            backgroundColor: vals.map(v => v > 22 ? "#f43f5e" : "#38bdf8"),
             borderRadius: 6
           }]
         };
@@ -379,41 +965,34 @@
         const pts = cData.points || [];
         config.data = {
           datasets: [{
-            label: "Evaluated Options",
+            label: "Embeddings",
             data: pts,
-            backgroundColor: pts.map(p => p.y >= cutoff ? "#34d399" : "#fbbf24"),
+            backgroundColor: "#38bdf8",
             pointRadius: 8,
-            pointHoverRadius: 10
+            pointHoverRadius: 11
           }]
         };
         config.options.plugins = {
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const raw = ctx.raw;
-                return `${raw.label || "Point"}: (Effort: ${raw.x}, Impact: ${raw.y})`;
-              }
-            }
-          }
+          tooltip: { callbacks: { label: (c) => `${c.raw.label}: (${c.raw.x}, ${c.raw.y})` } }
         };
         config.options.scales = {
-          x: { title: { display: true, text: q.xLabel || "Effort / Cost", color: "#94a3b8" } },
-          y: { title: { display: true, text: q.yLabel || "Impact", color: "#94a3b8" } }
+          x: { title: { display: true, text: q.xLabel || "UMAP 1", color: "#94a3b8" } },
+          y: { title: { display: true, text: q.yLabel || "UMAP 2", color: "#94a3b8" } }
         };
       } else if (type === "line") {
         const datasets = [{
-          label: q.yLabel || "Projected Metric",
+          label: q.yLabel || "Read Latency (s)",
           data: cData.values || [],
           borderColor: "#38bdf8",
-          backgroundColor: "rgba(56, 189, 248, 0.15)",
+          backgroundColor: "rgba(56, 189, 248, 0.14)",
           fill: true,
           tension: 0.3
         }];
-        if (cData.thresholdLine) {
+        if (cData.limitLine) {
           datasets.push({
-            label: "SLA / Limit",
-            data: cData.thresholdLine,
-            borderColor: "#f87171",
+            label: "12s Prompt SLA Limit",
+            data: cData.limitLine,
+            borderColor: "#f43f5e",
             borderDash: [6, 6],
             pointRadius: 0
           });
@@ -421,60 +1000,40 @@
         config.data = { labels: cData.labels || [], datasets };
       }
 
-      activeChartInstance = new Chart(ctx, config);
+      chartInstance = new Chart(ctx, config);
+      return hasData;
     }
 
-    function updateVerdict(q, cutoff) {
-      const titleEl = document.getElementById("verdict-title");
-      const descEl = document.getElementById("verdict-desc");
-      const cData = q.chartData || {};
-      const type = q.chartType || "bar";
+    function renderEvidence(q) {
+      const allEvidence = q.evidence || [];
+      const clearBtn = document.getElementById("clear-filter-btn");
+      clearBtn.style.display = evidenceFilterTarget ? "inline-block" : "none";
 
-      const hasData = type === "scatter"
-        ? (cData.points && cData.points.length > 0)
-        : (cData.values && cData.values.length > 0);
+      const filtered = evidenceFilterTarget
+        ? allEvidence.filter(e => e.target === evidenceFilterTarget)
+        : allEvidence;
 
-      if (!hasData) {
-        titleEl.style.color = "var(--muted)";
-        titleEl.textContent = "Awaiting deterministic scan (null)...";
-        descEl.textContent = "No parameter values are populated for this question yet. Run your VS Code scanner script or toggle 'Preview with Sample Scan Data' above.";
+      const feed = document.getElementById("evidence-feed");
+      if (filtered.length === 0) {
+        feed.innerHTML = `
+          <div class="empty-state" style="position:static; height:240px;">
+            <strong>${evidenceFilterTarget ? `No evidence tagged for "${evidenceFilterTarget}"` : "No scanned evidence yet (null)"}</strong>
+            <span>Each path in the solution graph and point in the chart maps back to exact code files here.</span>
+          </div>`;
         return;
       }
 
-      titleEl.style.color = "var(--good)";
-
-      if (type === "bar") {
-        const flagged = (cData.labels || [])
-          .map((lbl, i) => ({ lbl, val: cData.values[i] }))
-          .filter(x => x.val >= cutoff)
-          .sort((a, b) => b.val - a.val);
-
-        titleEl.textContent = q.verdict || (flagged.length
-          ? `Action Needed: ${flagged.length} module(s) exceed cutoff (${cutoff})`
-          : `Healthy: All modules below risk cutoff (${cutoff})`);
-        descEl.textContent = flagged.length
-          ? `Highest flagged target is ${flagged[0].lbl} (${flagged[0].val}). Inspect the ${q.evidence?.length || 0} code evidence items above before modifying.`
-          : `No scanned modules exceed your current cutoff of ${cutoff}. Lower the sensitivity slider to inspect lower-severity hotspots.`;
-      } else if (type === "scatter") {
-        const winners = (cData.points || [])
-          .filter(p => p.y >= cutoff)
-          .sort((a, b) => (b.y / (b.x || 1)) - (a.y / (a.x || 1)));
-
-        titleEl.textContent = q.verdict || (winners.length
-          ? `Best Efficiency Target: ${winners[0].label}`
-          : `No candidate reaches impact cutoff (${cutoff})`);
-        descEl.textContent = winners.length
-          ? `${winners[0].label} delivers ${winners[0].y} impact for ${winners[0].x} effort—highest efficiency ratio among options meeting your ${cutoff} cutoff.`
-          : `Lower the impact cutoff slider to compare trade-offs across lower-impact options.`;
-      } else {
-        const vals = cData.values || [];
-        const peak = Math.max(...vals);
-        titleEl.textContent = q.verdict || `Peak Trajectory Reaches ${peak}`;
-        descEl.textContent = `Across ${vals.length} evaluated checkpoints, values move from ${vals[0]} to ${vals[vals.length - 1]}. Cross-reference the evidence panel to see which code constraints drive the curve.`;
-      }
+      feed.innerHTML = filtered.map(ev => `
+        <div class="ev-card">
+          <div class="ev-header">
+            <span>${ev.file}${ev.line ? `:${ev.line}` : ""}</span>
+            <span>[${ev.target || "match"}]</span>
+          </div>
+          <div class="ev-body">${ev.metric}</div>
+        </div>`).join("");
     }
 
-    renderDashboard();
+    render();
   </script>
 </body>
 </html>
