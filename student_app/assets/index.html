@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kangaroo · Math companion</title><link rel="stylesheet" href="/style.css"><script src="/graph.js" defer></script><script src="/app.js" defer></script></head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">k↗</span> kangaroo</a><span class="connection">● Offline practice</span></header>
+<main id="main">
+<section class="intro"><p class="eyebrow">A LITTLE PRACTICE. A NEW PERSPECTIVE.</p><h1>Make room for <em>discovery.</em></h1><p>Try an idea. Follow a hint. Find your own way through.</p></section>
+<form id="profile-form"><div class="profile-label"><label for="student">Your notebook</label><small>Use the same nickname to return to your progress.</small></div><div class="row"><input id="student" maxlength="40" required value="Explorer" autocomplete="off" aria-label="Your nickname" aria-describedby="profile-note"><button type="submit">Open my notebook →</button></div><small id="profile-note">Use a nickname without personal information. Local profiles have no password.</small></form>
+<div id="workspace" hidden>
+<section class="learning-overview" aria-label="Learning progress">
+<div><span id="stat-evidence">0</span><small>independent checks</small></div>
+<div><span id="stat-demonstrated">0</span><small>skills demonstrated</small></div>
+<div><span id="stat-due">0</span><small>skills due for review</small></div>
+<button id="download-report" class="secondary">Download my notebook ↓</button>
+</section>
+<section class="recommendation" aria-labelledby="recommendation-title">
+<div><p class="eyebrow" id="recommendation-kind">YOUR NEXT STEP</p><h2 id="recommendation-title">Finding a useful place to start</h2><p id="recommendation-reason" role="status"></p></div>
+<button id="start-recommended">Try this next →</button>
+</section>
+<p id="dataset-info" class="muted" role="status"></p>
+<div class="display-controls"><div><label for="language-filter">Language</label><select id="language-filter"><option value="">All languages</option></select></div><div><label for="display-mode">Display</label><select id="display-mode"><option value="combined">Text + image</option><option value="text">Text only</option><option value="image">Image only</option></select></div></div>
+<div class="layout">
+<section class="card practice" aria-labelledby="practice-title">
+<div class="section-heading"><p class="eyebrow">01 / EXPLORE</p><span id="skill" class="badge"></span></div>
+<h2 id="practice-title">A fresh challenge</h2>
+<div class="problem-picker"><div><label for="problem-select">Choose a problem</label><select id="problem-select"></select></div><button id="open-problem" class="secondary">Open ↗</button></div>
+<h3 id="question" tabindex="-1"></h3>
+<figure id="problem-figure" hidden><button id="image-link" type="button" aria-label="Enlarge problem image" aria-haspopup="dialog" aria-controls="image-viewer"><img id="problem-image" alt="Original problem with its diagrams and answer choices"></button><figcaption>Original problem · Select the image to enlarge it. Close the viewer to return.</figcaption></figure>
+<p id="media-note" role="status" class="muted"></p>
+<section class="reflection-box" aria-labelledby="reflection-heading"><p class="eyebrow">PAUSE / NOTICE / PLAN</p><h4 id="reflection-heading">Start with an idea</h4><label id="reflection-prompt" for="reflection">What do you notice, and what could you try first?</label><textarea id="reflection" rows="3" minlength="5" maxlength="1200" placeholder="I notice… My first step could be…" aria-describedby="reflection-note"></textarea><button id="save-reflection" class="secondary">Explore answer choices →</button><small id="reflection-note" role="status">A rough idea is enough. You can ask for a hint before choosing.</small></section>
+<div id="answer-stage" hidden><p class="answer-label">TRY YOUR IDEA</p><div id="options" role="group" aria-label="Answer choices"></div><button id="submit">Check my answer →</button></div>
+<div class="row tools"><button id="hint" class="secondary">Help me think</button><button id="reveal" class="text-button" aria-describedby="solution-gate">Review the answer</button><button id="solution" class="text-button" aria-describedby="solution-gate">Explain solution</button></div><small id="solution-gate">Try your idea and a hint before reviewing an answer.</small><p id="feedback" role="status" aria-live="polite">Start with what you notice about this problem.</p><small id="hint-source"></small></section>
+<section class="card map-card" aria-labelledby="map-title">
+<p class="eyebrow">02 / CONNECT THE DOTS</p><h2 id="map-title">A landscape of ideas</h2><p class="muted">Explore connected skills. Find a useful next step from what you already know.</p>
+<div class="graph-search"><label for="graph-search">Find a knowledge area</label><input id="graph-search" type="search" autocomplete="off" placeholder="Try multiplication…" aria-controls="graph-results"><ul id="graph-results" aria-label="Matching knowledge areas" hidden></ul></div>
+<div class="graph-stage"><div class="graph-toolbar" role="group" aria-label="Map controls"><button id="graph-zoom-in" title="Zoom in" aria-label="Zoom in">+</button><button id="graph-zoom-out" title="Zoom out" aria-label="Zoom out">−</button><button id="graph-reset" title="Fit all skills">Fit map</button><button id="graph-focus" aria-pressed="false">Focus connections</button></div><svg id="graph" viewBox="0 0 600 520" role="group" tabindex="0" aria-label="Connected knowledge map. Drag to pan or move a skill. Use plus and minus to zoom." aria-describedby="graph-help"></svg><p id="graph-help">Drag the map or a dot · Use + / − to zoom · Select a skill to explore</p></div>
+<div class="edge-legend"><span><i class="key-prerequisite"></i>Supports learning →</span><span><i class="key-related"></i>Related ideas</span><span><i class="key-path"></i>Your path</span></div>
+<small id="graph-method"></small>
+<div class="legend"><span>○ Not assessed</span><span>↗ Developing</span><span>✓ Demonstrated</span><span>◷ Due for review</span></div>
+<div class="evidence"><p class="eyebrow">YOUR PRACTICE NOTES</p><p id="skill-detail" role="status">Select a skill to see the evidence behind its state.</p><p id="skill-review" class="muted"></p><div class="skill-actions"><button id="practice-skill" class="secondary" disabled>Practise this skill →</button><button id="set-goal" class="text-button" disabled>Build a path here</button></div><p id="total" class="muted"></p></div>
+<section class="path-panel" aria-labelledby="path-title"><p class="eyebrow">ONE STEP AT A TIME</p><h3 id="path-title">Your learning path</h3><label for="learning-goal">Where would you like to go?</label><select id="learning-goal"><option value="">Guide me from my progress</option></select><p id="path-reason" class="muted"></p><ol id="learning-path"></ol><small id="path-strengths"></small></section>
+<small>Estimates use provisional learning parameters. “Not assessed” means unknown. Being due for review does not lower your estimate. Related ideas do not automatically become prerequisites.</small></section>
+</div></div>
+<section id="history-section" class="card" hidden><p class="eyebrow">03 / YOUR TRAIL</p><h2>Recent practice</h2><ul id="history"></ul><small>Earlier prototype attempts remain saved. New skill estimates start with the richer evidence recorded by this version.</small></section>
+<p id="error" role="alert"></p><footer><span>Made for curiosity. Built for your own pace.</span><span>Progress stays on the machine running this app.</span></footer>
+</main>
+<dialog id="image-viewer" aria-labelledby="image-viewer-title">
+<div class="viewer-heading"><h2 id="image-viewer-title">Problem image</h2><button id="close-image" type="button" autofocus>Close ×</button></div>
+<p class="viewer-help">Press Escape or click outside the viewer to return to your problem.</p>
+<div class="viewer-content"><img id="enlarged-image" alt="Enlarged original problem with diagrams and answer choices"></div>
+<p id="viewer-error" role="status"></p>
+</dialog>
+</body></html>

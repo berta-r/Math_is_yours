@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "problems": {
+    "sample-1": {
+      "skills": [
+        "arithmetic",
+        "multiplication"
+      ],
+      "assessment_skill": null,
+      "hints": [
+        "Identify how many equal groups Anna starts with.",
+        "Find the total in the bags before accounting for what she eats.",
+        "Subtract the amount eaten from the starting total."
+      ],
+      "solution": "3 × 4 = 12 apples. After eating 2, Anna has 10 left.",
+      "status": "reviewed",
+      "language": "eng",
+      "provenance": "Authored sample scaffolding"
+    },
+    "sample-2": {
+      "skills": [
+        "order_of_operations"
+      ],
+      "assessment_skill": "order_of_operations",
+      "hints": [
+        "Which operation should happen first?",
+        "Do multiplication before addition.",
+        "Rewrite the expression after doing the multiplication."
+      ],
+      "solution": "3 × 4 = 12, then 2 + 12 = 14.",
+      "status": "reviewed",
+      "language": "eng",
+      "provenance": "Authored sample scaffolding"
+    },
+    "sample-3": {
+      "skills": [
+        "geometry_measurement"
+      ],
+      "assessment_skill": "geometry_measurement",
+      "hints": [
+        "A square has four equal sides.",
+        "Use the perimeter to find one side.",
+        "The area is side multiplied by side."
+      ],
+      "solution": "Each side is 36 ÷ 4 = 9 cm. The area is 9 × 9 = 81 cm².",
+      "status": "reviewed",
+      "language": "eng",
+      "provenance": "Authored sample scaffolding"
+    },
+    "sample-4": {
+      "skills": [
+        "arithmetic"
+      ],
+      "assessment_skill": "arithmetic",
+      "language": "cat",
+      "hints": [
+        "En Pau dóna cromos: en tindrà més o menys?",
+        "Identifica quants en tenia i quants en dóna.",
+        "Resta els cromos que dóna dels que tenia."
+      ],
+      "solution": "15 − 6 = 9 cromos.",
+      "status": "reviewed",
+      "provenance": "Authored sample scaffolding"
+    },
+    "sample-5": {
+      "skills": [
+        "systematic_counting"
+      ],
+      "assessment_skill": "systematic_counting",
+      "language": "cat",
+      "hints": [
+        "Organitza els nombres segons la xifra de les desenes.",
+        "La xifra de les desenes no pot ser zero.",
+        "Comprova cada parella de xifres i evita repeticions."
+      ],
+      "solution": "Els nombres són 14, 23, 32, 41 i 50: n'hi ha 5.",
+      "status": "reviewed",
+      "provenance": "Authored sample scaffolding"
+    }
+  }
+}

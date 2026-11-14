@@ -29,5 +29,54 @@ Template:
 **Consequences:** every finished task updates TODO and STATUS in the same commit.
 
 ## D-003 · Idea to build (pending)
-**Status:** pending, see TODO T-020
+**Status:** superseded by D-007
 **Context / Decision:** to be filled in after the brainstorm: the idea, the metric we'll measure, and the first experiment.
+
+## D-004 · Local-first teaching prototype (2026-11-14)
+**Status:** accepted
+**Context:** the team requested both reasoning and teaching, with an offline browser interface and persistent student skill evidence.
+**Decision:** start with a standard-library Python web server and SQLite in `student_app/`, using invented sample problems and reviewed hints. The same server can run on the PC or board and be accessed through USB port forwarding. Use fixed illustrative topic edges until clustering is validated.
+**Consequences:** no runtime dependencies or cloud hosting; no changes to the official solver. Nicknames are prototype profile selectors, not authenticated accounts. Model integration and the App Lab LED adapter are subsequent work. First-exposure success is tracked separately from assisted or repeated practice; the graph does not claim measured mastery.
+
+## D-005 · Prepared M3Kang media in the student app (2026-11-14)
+**Status:** accepted
+**Context:** students must view question text, original diagrams and image-based answer choices offline.
+**Decision:** load prepared JSONL on startup, defaulting to training only, and serve original local images via catalog keys. Identify translations with `id|language`. Display text plus image by default, with optional text/image views. Use the backend answer key for grading, never include it in public problem responses. Real problems remain unclassified until reviewed tags exist, with unavailable hints/explanations disabled.
+**Consequences:** laptop-only preparation dependencies; board runtime remains standard library. A 60-row English starter subset (52 train, 8 validation) is prepared with original images and no OCR. Answer choices can be read directly from images. The app makes no dataset network requests during practice. Official solver evaluation remains separate.
+
+## D-006 · Choice extraction is separate from answer correctness (2026-11-14)
+**Status:** accepted
+**Context:** missing OCR left A–E buttons without readable content; students also need an explicit way to reveal the correct choice.
+**Decision:** enrich existing local JSONL using laptop-only OCR. For diagram options with a detected full A–E marker sequence, save layout-based image previews. Grade and reveal only using the dataset's existing official label. Showing an answer marks the session as assisted. Do not describe answer revelation as an SLM solution or an explanation.
+**Consequences:** automatic text/crops may need review against the preserved original; runtime stays offline and standard-library only. Official labels are never modified by OCR. The `predict.py` algorithm is unchanged; no reasoning accuracy improvement is claimed.
+
+## D-007 · Shared curriculum graph, separate student state (2026-11-14)
+**Status:** accepted; supersedes D-003 and the illustrative graph in D-004
+**Context:** the user requested implementation of the proposed knowledge-graph teaching architecture in the working student interface.
+**Decision:** extend `student_app/` with ten authored skills, explicit prerequisites, thirty original diagnostics, provisional standard-library BKT, conservative first-exposure attribution and separate review dates. Keep SQLite history and offer an explainable deterministic selector plus Markdown export. Use laptop k-means to propose groups and explicit reviewed mappings to label problems. The optional SLM selects authored hints in a bounded background worker; it never grades or authors unchecked mathematics.
+**Alternatives:** moving practice into the organizer's explorer would duplicate the working interface. Inferring prerequisites or mastery directly from clusters lacks supporting evidence. Freeform model hints cannot be assumed correct.
+**Consequences:** no new board dependencies or official-solver imports. Parameters, 1/3/7-day intervals and initial Codex topic annotations need validation. Embedding quality, live model selection, RAM/latency on the board, physical controls and real learning outcomes remain to be evaluated. A correct multi-skill answer can be logged as independent performance without assigning mastery to every skill.
+
+## D-008 · Connected map, reflection and portable board deployment (2026-11-14)
+**Status:** accepted
+**Context:** the user requested an Obsidian-like knowledge map, a progressive route from strengths/weaknesses, thinking before answering and automatic opening when plugging in the UNO Q.
+**Decision:** render a settled force graph in the browser with distinct similarity and prerequisite edges. Export compact skill relationships on the laptop; the board reads edges only. Use the same evidence-based route for recommendations and path display. Require a student-written thought before accepting a letter, then two attempts plus available help before answer review unless solved. Store reflections without claiming to grade them. Keep a constrained local hint selector. Provide versioned board deployment, a boot service and an explicitly installed per-user Windows ADB watcher that opens the browser once per connection.
+**Consequences:** no third-party board dependencies, background training or graph-layout work on the board. Current relatedness is an explicit keyword baseline, with embeddings import/local generation supported. Original images can still contain choices. One-time PC setup is required; hardware and live-model tests are deferred by user instruction. Student records persist outside versioned code releases. No automatic OS or board installation was performed while preparing the implementation.
+
+## D-009 · Wi-Fi verification and persistent board service (2026-11-14)
+**Status:** accepted; updates D-008 deployment state
+**Context:** the user connected the UNO Q in App Lab and authorized Wi-Fi setup/testing.
+**Decision:** deploy a separate release over SSH, reuse the pinned local model services and expose the interface to the PC through a loopback SSH tunnel. Generate skill-relatedness metadata from the existing bge model; keep authored prerequisites and BKT evidence separate. The owner authenticates sudo locally to install the system boot service. Verify its real systemd syntax before installation, retain progress under `/var/lib/math-student`, and test automatic process recovery with a synthetic notebook.
+**Consequences:** no changes to teammate Git checkouts, model settings or Windows startup. The app and live hints pass physical-board checks. The 11/30 development solving baseline trails always-D on this small validation set; the tutor continues to grade against the dataset key. USB opening, full-board reboot and educator validation remain separate checks. The PC's earlier prototype database was not migrated into the fresh board database.
+
+## D-010 · Temporary USB demonstration without additional installation (2026-11-14)
+**Status:** accepted
+**Context:** the user requested plug-in opening without installing anything further.
+**Decision:** run the existing repository watcher temporarily with Python and ADB already available on this PC. Do not run its installation command or register Windows startup. Match the connected board identity before forwarding its app port. Observe a real shutdown, unplug/replug and automatic browser reopening.
+**Consequences:** the test succeeds and saved board progress survives. This PC still executes a watcher; it does not resume after Windows restarts. Ordinary USB does not provide reliable zero-setup browser autorun on arbitrary computers. An installation-free product needs a manual opening step or a separately designed browser-accessible connection; persistent automatic opening requires host preparation. No keyboard emulation or OS security-setting changes were introduced.
+
+## D-011 · Explicit first-time PC setup carried by the Arduino (2026-11-14)
+**Status:** accepted; supersedes D-010's no-installation constraint for the new requested flow
+**Context:** the user asked whether the Arduino could configure a small launcher on each computer on first connection, then instructed us to implement it.
+**Decision:** package an offline Windows x64 setup executable containing Python/Tk and ADB. A student runs it and clicks setup once; subsequent user logins start a board-specific watcher. Offer the installer on a read-only USB mass-storage function added beside existing ADB/serial. Preserve the original gadget descriptors for rollback and use ADB's WinUSB compatibility descriptors. Install a separate dependent board service, leaving the vendor ADB service intact.
+**Consequences:** the authorized standalone launcher is installed on this PC. Its registered login command works with only Windows System32 on PATH and no external Python. First execution remains manual on every new Windows user account. The unsigned prototype requires a fresh-PC check; Windows ARM, macOS and Linux packages are outside this implementation. Models, problems and notebooks remain on the board. The owner authenticated sudo to enable the drive; Windows mounted it and selected inbox storage, WinUSB and serial drivers. Automatic browser reopening succeeded after reconfiguration and after a full shutdown/replug; the drive returned and test progress survived. No hidden autorun, keyboard emulation, cloud runtime or machine-wide PC installation is used.

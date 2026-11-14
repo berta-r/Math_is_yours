@@ -86,3 +86,37 @@ pgrep -a llama-server                    # who is holding a port?
 | SSH drops with Wi-Fi off | Expected. Use `adb shell` |
 
 The full table is in [../README.md#troubleshooting](../README.md#troubleshooting).
+
+## Student teaching app (PC or board Linux)
+
+```bash
+python3 student_app/server.py                # http://127.0.0.1:7011
+python3 student_app/server.py --local-tutor  # optional loopback SLM hint selection
+python3 -m unittest discover -s student_app -v
+python3 laptop/eval_teaching.py              # synthetic logic comparison only
+```
+
+Use `python` on Windows. For the board app over Wi-Fi, run on the **PC**:
+
+```powershell
+ssh -o ExitOnForwardFailure=yes -N -L 127.0.0.1:7012:127.0.0.1:7011 arduino@BOARD_IP
+```
+
+Add `-i PATH_TO_PRIVATE_KEY` when using a dedicated key. Keep the command running
+and open **http://127.0.0.1:7012**. The laptop prototype can keep using port 7011.
+Wi-Fi and USB app/model testing passed on the UNO Q. USB reconnect reopens the
+page while the temporary watcher runs; Windows login startup remains untested. Use [deployment instructions](../board/STUDENT_DEPLOYMENT.md)
+for the boot service and USB helper, [student app instructions](../student_app/README.md)
+for practice, and [annotation workflow](../knowledge/README.md) for preparation.
+
+For the temporary USB test on this already prepared **PC**, without installing
+anything or changing startup settings:
+
+```powershell
+python laptop/usb_launcher.py watch --serial 2727288917 --port 7013
+```
+
+Use that serial only for the tested board; run `devices` to identify another one.
+Open **http://127.0.0.1:7013** when ready. Keep the watcher running, and use Ctrl+C
+to stop it if you started it in your own terminal. It does not restart after a PC
+reboot. The Arduino boot service is independent and starts with the board.

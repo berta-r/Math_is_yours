@@ -10,20 +10,20 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ## Phase A · Board setup (README steps 0–8). Minimum required.
 
-- [ ] **T-001** [P0] [laptop] **Update the board and connect over SSH.** Follow [README step 0](../README.md#step-0-connect-to-the-board). Done when `ssh arduino@<ip>` works and the IP is written in STATUS.
+- [x] **T-001** [P0] [laptop] **Update the board and connect over SSH.** Follow [README step 0](../README.md#step-0-connect-to-the-board). Done when `ssh arduino@<ip>` works and the IP is written in STATUS. SSH verified at `10.198.34.77`; App Lab session supplied by the owner. (2026-11-14)
 - [ ] **T-002** [P0] [board] **Check the board.** Run `bash board/00_check_board.sh`. Done when it reports no problems: enough RAM and disk, the right clock, internet.
 - [ ] **T-003** [P0] [board] **Install the build tools and build llama.cpp.** README steps 2–3, or scripts `01` and `02`. Done when `~/llama.cpp/build/bin/llama-server --version` shows the pinned commit.
-- [ ] **T-004** [P0] [board] **Download and verify the models.** README step 4, or `03_download_models.sh`. Done when the SHA256 of both GGUF files matches.
+- [x] **T-004** [P0] [board] **Download and verify the models.** README step 4, or `03_download_models.sh`. Done when the SHA256 of both GGUF files matches. Existing board models verified against both pinned SHA-256 values. (2026-11-14)
 - [ ] **T-005** [P0] [board] **Hello world with both models.** README steps 5–6. Done when we know the tokens/s on our own board (write it in STATUS).
-- [ ] **T-006** [P0] [board] **Run the models as services.** README step 7, or `04_install_services.sh`. Done when both are `active` after a reboot and `/health` answers on 8081 and 8082.
-- [ ] **T-007** [P0] [board] **First test.** Clone the repo on the board, then run `predict.py` on `data/sample_problems.jsonl`, or `05_smoke_test.sh`. Done when there are 5 rows with one letter each and status `ok`.
+- [x] **T-006** [P0] [board] **Run the models as services.** README step 7, or `04_install_services.sh`. Done when both are `active` after a reboot and `/health` answers on 8081 and 8082. Both model services and math-student are active after the subsequent board boot; loopback health is ready. (2026-11-14)
+- [x] **T-007** [P0] [board] **First test.** Clone the repo on the board, then run `predict.py` on `data/sample_problems.jsonl`, or `05_smoke_test.sh`. Done when there are 5 rows with one letter each and status `ok`. Five valid letters/status ok on the UNO Q; repeated answer sequence identical. Run from isolated development release. (2026-11-14)
 
 ## Phase B · Data and baseline (README steps 9–12)
 
 - [ ] **T-008** [P0] [team] **Decide the languages and the split.** Default `eng,cat`, 15% of IDs held out. Do we add `esp`? Hold out years? Log it in DECISIONS.
 - [ ] **T-009** [P0] [laptop] **Prepare M3Kang.** `pip install -r laptop/requirements.txt`, then `python3 laptop/prepare_m3kang.py --languages <…> --save-images`. Done when `train.jsonl` and `val.jsonl` exist, and the counts and the share of problems with options are in [03-data.md](03-data.md).
-- [ ] **T-010** [P0] [laptop] **Copy the data to the board** (JSONL, plus images if we want the explorer). Check `git status` shows no data files.
-- [ ] **T-011** [P0] [board] **Measure our baseline.** `python3 eval.py --limit 50 --name baseline`, then `--limit 0 --name baseline-full` when there's time. Done when the numbers are in EXPERIMENTS and STATUS, with the letter bias noted.
+- [x] **T-010** [P0] [laptop] **Copy the data to the board** (JSONL, plus images if we want the explorer). Check `git status` shows no data files. 170 train originals and JSONL deployed; 30 validation records copied separately for QA. No data tracked by Git. (2026-11-14)
+- [ ] **T-011** [P0] [board] **Measure our baseline.** `python3 eval.py --limit 50 --name baseline`, then `--limit 0 --name baseline-full` when there's time. Done when the numbers are in EXPERIMENTS and STATUS, with the letter bias noted. Development-release check measured 11/30, 10.4 s mean, 25.6 s worst; main-branch confirmation remains pending. (2026-11-14)
 - [ ] **T-012** [P0] [board] **Build the RAG index and measure k=1 and k=2.** `build_index.py --only-with-options`, then `eval.py --rag 1 --name rag1` and `--rag 2 --name rag2`. Done when both rows are in EXPERIMENTS, with their latency.
 - [ ] **T-013** [P1] [board] **Run the explorer** and look at 10 wrong baseline answers. Write down the patterns in EXPERIMENTS (error notes).
 - [ ] **T-014** [P1] [board] **Measure baseline accuracy by language** (`--languages cat` vs `--languages eng` on the same sample).
@@ -56,7 +56,7 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 - [ ] **T-045** A problem map: embedding + level + topic, in SQLite.
 - [ ] **T-046** A policy: right → a neighbour one level up; wrong → same topic, one level down. Student profile in SQLite.
-- [ ] **T-047** Simulated students to measure whether the path stays on topic and settles at the right level.
+- [x] **T-047** Synthetic selector comparison implemented in `laptop/eval_teaching.py`: adaptive, random and correct-harder policies, fixed response probabilities, targeting/coverage/freshness metrics. Calibrated difficulty, real student learning and board latency remain unmeasured. (2026-11-14)
 
 ### D3 · Teach: classroom debate box
 
@@ -91,4 +91,24 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ## Done
 
+- [x] **T-090** [P1] [board/laptop] **Ship one-time Windows setup from the Arduino.** Standalone x64 installer, bundled Python/Tk/ADB, per-user login watcher, Start-menu control and read-only FAT16 delivery image built. Installed and checked on this PC without external Python on PATH; nine setup/rollback checks pass on the board. Setup-drive service active/enabled, Windows volume and installer verified, inbox drivers loaded. Full shutdown/replug passed: all services resumed, drive returned, installed watcher opened the tutor, model became ready and test progress survived. User confirmed both drive and browser. A fresh Windows PC and actual Windows reboot/login remain separate validation. (2026-11-14)
+
+- [x] **T-087** [P1] **Prepare the connected learning map and plug-in deployment.** Browser force graph with related/prerequisite/path links, compact offline graph export, evidence-based paths, server-enforced reflection and delayed answer review, reasoning snapshots, board systemd installer, versioned deployment bundle and per-user Windows USB launcher. Wi-Fi deployment is now verified in T-088; USB testing remains in T-089. See [deployment guide](../board/STUDENT_DEPLOYMENT.md). (2026-11-14)
+
+- [x] **T-086** [P1] [laptop] **Build the knowledge graph and separate student model.** Ten Markdown skills, thirty original diagnostics, conservative BKT, persistent rich events, prerequisite/transfer/review recommendations, Markdown reports, reviewed-label export and optional bounded local SLM hint selection. 51 local M3Kang topic mappings need educator validation. 28 automated tests and desktop/mobile-width browser checks pass. Live SLM, board deployment and physical controls remain pending. (2026-11-14)
+
+- [x] **T-085** [P1] [laptop] **Extract answer choices and reveal official answers.** Added laptop-only OCR enrichment and choice-image previews, plus a session-aware answer-reveal endpoint/control. Revealed answers count as assisted practice. Grading uses the official label, independent of OCR. Ten HTTP integration tests pass. (2026-11-14)
+
+- [x] **T-084** [P1] [laptop] **Make enlarged images dismissible.** Replaced raw-image navigation with an accessible native dialog, Close button, Escape and backdrop dismissal, scroll lock and focus restoration. Practice state is preserved. (2026-11-14)
+
+- [x] **T-083** [P1] [laptop] **Load M3Kang in the student app with multimodal display.** Added JSONL catalog, composite ID/language identity, local image serving, combined/text/image modes, language filter, missing-image warnings and view-only handling for absent answer keys. Prepared 60 real English rows with images (52 train / 8 validation) without OCR. Eight integration tests and a real-data HTTP check pass; board and visual browser QA remain pending. (2026-11-14)
+
+- [x] **T-082** [P1] [laptop] **Polish the student web-app design.** Compact notebook header, clearer practice hierarchy, answer badges, symbol-labelled graph states, pointer press feedback and responsive layouts. Backend checks pass; visual browser and device QA remain pending. (2026-11-14)
+
+- [x] **T-081** [P1] [laptop] **Create the offline student web-app prototype.** Added standard-library server, sample practice, reviewed hints, persistent local profiles and an illustrative skill graph in `student_app/`. Board deployment, model integration and learned clusters remain pending. (2026-11-14)
+
 - [x] **T-080** [P1] [laptop] **Create the Tukey side-project workspace.** Added the brief, judging criteria, proposed decision views, data sources, and next steps in [side-project/README.md](../side-project/README.md). Dashboard implementation is pending. (2026-11-14)
+
+- [x] **T-088** [P1] [board/laptop] **Deploy and test the tutor over Wi-Fi.** Verified UNO Q identity, pinned models, 51 tests, all training images, real SLM hints, semantic skill relations, desktop/mobile-width browser flow, persistent evidence and automatic service recovery. Owner installed the enabled boot service; official-entry-point development benchmark recorded. Fixed and tested systemd path parsing. (2026-11-14)
+
+- [x] **T-089** [P1] [board/laptop] **Verify full boot and temporary USB automatic opening.** Confirm retained profiles, services, exact USB identity and browser opening on reconnection using the already available Python/ADB watcher. The user requested no additional installation. Boot persistence, USB browser tests and a physical unplug/replug passed. The watcher reopened the page after 29 seconds of observed disconnection, the model became ready, and test progress was retained. User confirmation recorded. (2026-11-14) Windows login startup is a separate optional installation and has not been changed.
