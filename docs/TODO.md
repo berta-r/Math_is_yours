@@ -43,7 +43,10 @@ D0 is the Reason workstream. D1–D5 are candidate approaches within the require
 
 ### D0 · Reason: official score (required main workstream)
 
-- [ ] **T-030** [P0] [board] **Fix the letter bias.** Request `logprobs` (`top_logprobs: 5`) and calibrate against the letter prior from the train set. Measure it with `eval.py --name debias-v1`.
+- [ ] **T-030** [P0] [board] **Fix the letter bias.** 🟨 Code done on `exp/reason-strategies` (`copilot/logprobs.py`: letter probabilities minus the content-free prior). Measure: `eval.py --limit 100 --steps logprobs --name logprobs` vs `--steps letter --name baseline`, and `CALIBRATION=none` to isolate the calibration.
+- [ ] **T-036** [P0] [board] **Near-duplicate answers.** 🟨 Code done (`copilot/dedup.py`): copy the *value* of a near-identical train problem. Needs `build_index.py`. Measure `--steps dedup,logprobs`; tune `DEDUP_THRESHOLD` from the `detail` column.
+- [ ] **T-037** [P0] [board] **Program of thought.** 🟨 Code done (`copilot/pot.py` + `copilot/safe_eval.py`): the model writes one Python expression, Python computes it, the result is matched to a numeric option. Measure `--steps logprobs,pot`, check latency on the board (`over 60 s` must stay 0).
+- [ ] **T-038** [P1] [laptop] **Judge / fusion.** Combine the calibrated letter scores, option features (rank among the values, appears in the text) and neighbour votes with a small logistic regression or shallow tree trained on `train.jsonl`; export the weights as JSON for the board. Only after T-030/036/037 are measured.
 - [ ] **T-031** [P1] [board] **Retrieval tuning:** a similarity threshold, same-level examples, hybrid keyword + embedding search. Keep it under 60 s.
 - [ ] **T-032** [P1] [board] **Problem decomposition:** classify the type, then compute arithmetic and counting in Python, and ask the model only for what it's good at.
 - [ ] **T-033** [P2] [laptop] **Better OCR** (crop the options area), then re-run T-009 and compare accuracy with and without options.

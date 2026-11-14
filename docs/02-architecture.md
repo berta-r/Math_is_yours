@@ -34,7 +34,20 @@
    - the target problem as text, `A) … E)`, then `Answer:`. If the options are missing: "(The options are in a picture…)". If `image_b64` is set, an `image_url` part is added.
 6. It POSTs to `:8081/v1/chat/completions` with `grammar: root ::= [A-E]`, `max_tokens 1`, `temperature 0`, `seed 42`, `cache_prompt true`.
 7. On a timeout, status is `timeout` and the answer stays `D`. On another URL error, status is `error: …`.
-8. It returns `{answer, seconds, status, prompt_tokens, retrieved, examples}`, and `predict.py` writes the CSV row.
+8. It returns `{answer, seconds, status, prompt_tokens, retrieved, examples, method, detail}`, and `predict.py` writes the CSV row.
+
+### Pipeline steps (`--steps`, `REASON_STEPS`)
+
+The flow above is the `letter` step. `solve(..., steps=...)` runs a list of steps in this fixed order; a later step only replaces the answer when it finds a letter.
+
+| Step | Module | What it does | Cost |
+| --- | --- | --- | --- |
+| `dedup` | `copilot/dedup.py` | Nearest train problem by embedding; if cosine ≥ `DEDUP_THRESHOLD` (0.92), its correct *value* is looked up among the new options (`copilot/values.py`). Letter copied directly only at ≥ 0.98 with no options. Settles the problem without the model | one embedding call |
+| `letter` | `copilot/llm.py` | Baseline: one token under the grammar `[A-E]` | 1 model call |
+| `logprobs` | `copilot/logprobs.py` | Same call with `logprobs: true, top_logprobs: 10`; `score = log p(letter) − log p_cf(letter)`, where `p_cf` is measured once on content-free problems (`prepare()`), `CALIBRATION=cf|none` | 1 model call |
+| `pot` | `copilot/pot.py`, `copilot/safe_eval.py` | Only when the 5 options are numbers and ≥ `POT_MIN_SECONDS` remain: the model writes one Python expression (≤ `POT_MAX_TOKENS`), an AST whitelist evaluates it with a 2 s limit, the result is matched to an option. No match → previous answer stands | 1 model call, ~100 generated tokens |
+
+`eval.py` prints accuracy per `method` and writes `method` and `detail` per problem.
 
 ## Modules
 
@@ -45,9 +58,14 @@
 | `copilot/llm.py` | Prompt format and LLM call | `SYSTEM`, `format_problem(p, sees_image)`, `build_messages(p, examples, image_b64)`, `answer_letter(p, examples, timeout, image_b64, url)` → `(letter, timings)` | `timings.prompt_n` = tokens actually read |
 | `copilot/embed.py` | Embeddings | `embed(texts, query=False)` → unit vectors | Truncates to 1400 characters (about 512 tokens). Adds the query prefix only when `query=True` |
 | `copilot/rag.py` | Vector index in SQLite | `build(db_path, problems)` (generator), `Index(db_path).search(problem, k, exclude_id)` | Table `problems(key='id\|lang', problem JSON, vec float32 BLOB)`. Loads everything into RAM. `exclude_id` skips the same problem in every language |
-| `copilot/pipeline.py` | **The copilot.** One problem in, one letter out | `solve(problem, index=None, k=0, exclude_id=None, image_b64=None, llm_url=URL, time_limit=60)` | **Change this first.** `MARGIN = 3.0` s |
-| `predict.py` | Official entry point | CLI `--input --output [--rag K] [--index]` | Flushes the CSV after each row |
-| `eval.py` | Accuracy and latency on validation | CLI `--input --limit --languages --rag --index --name` | Shuffles with seed 42 (same sample every run). Writes `results/eval-<stamp>-<name>.csv` and appends a row to `results/ablations.csv` with the git commit |
+| `copilot/pipeline.py` | **The copilot.** One problem in, one letter out | `solve(problem, index=None, k=0, exclude_id=None, image_b64=None, llm_url=URL, time_limit=60, steps=None)`, `parse_steps()`, `prepare()` | **Change this first.** `MARGIN = 3.0` s. Steps: see above |
+| `copilot/values.py` | Option values | `parse_number("1,5 cm") → Fraction`, `numeric_options(options)`, `match_option(value, options) → letter or None` | Ambiguous matches return None |
+| `copilot/logprobs.py` | Calibrated letter choice | `letter_logprobs()`, `content_free_prior()`, `choose(scores, prior)` | Prior cached per process |
+| `copilot/dedup.py` | Near-duplicate lookup | `find_duplicate(problem, index, exclude_id) → (letter or None, detail)` | Thresholds in `config.env` |
+| `copilot/pot.py` | Program of thought | `applicable(problem)`, `solve_with_program(problem, timeout) → (letter or None, detail, timings)` | Few-shot system prompt, cached by the server |
+| `copilot/safe_eval.py` | Whitelisted expression evaluator | `safe_eval(expr, timeout=2.0)`, `extract_expression(text)` | AST whitelist, empty builtins, SIGALRM timeout, size caps. `tests/test_safe_eval.py` |
+| `predict.py` | Official entry point | CLI `--input --output [--rag K] [--index] [--steps …]` | Flushes the CSV after each row |
+| `eval.py` | Accuracy and latency on validation | CLI `--input --limit --languages --rag --index --steps --name` | Shuffles with seed 42 (same sample every run). Writes `results/eval-<stamp>-<name>.csv` and appends a row to `results/ablations.csv` with the git commit |
 | `build_index.py` | Builds `data/index.db` from the train set | CLI `--input --db --languages --only-with-options` | Deletes the existing DB first. Only the train set goes in |
 | `explorer/server.py` | Web app (stdlib `http.server`) to inspect problems | `GET /`, `/api/info`, `/api/problems`, `/api/problem?key=`, `/api/similar?key=`; `POST /api/check`, `/api/ask` | Default `127.0.0.1:8000`. Needs `data/images` for pictures. Can use the vision server on :8083 |
 | `laptop/prepare_m3kang.py` | Builds the dataset | see [03-data.md](03-data.md) | Laptop only; needs pip packages |

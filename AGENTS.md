@@ -12,7 +12,7 @@ This repository started from the organizers' template. The template's step-by-st
 
 ## Current state (update this line when it changes)
 
-**Teach and Reason are both required main workstreams.** The team reports that the board model responds; setup verification, baseline measurements and the specific implementation scopes are pending. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
+**Teach and Reason are both required main workstreams.** Reason strategies (`dedup`, `logprobs`, `pot`) are implemented on `exp/reason-strategies` and await measurement with the real model (`eval.py --steps …`). The team reports that the board model responds; setup verification, baseline measurements and the specific implementation scopes are pending. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
 
 ## Hard rules: never break these
 

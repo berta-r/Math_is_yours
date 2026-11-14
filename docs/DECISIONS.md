@@ -37,3 +37,10 @@ Template:
 **Context:** the task list treated Teach approaches as optional candidates alongside the official Reason score.
 **Decision:** the team will deliver both Teach and Reason as required main workstreams, each with a P0 MVP and an owner. T-020 chooses the Teach approach and scopes the first Reason experiment; it does not choose between the two workstreams.
 **Consequences:** evaluate Reason accuracy and latency, validate the selected Teach learning flow, and demonstrate both offline on the UNO Q. The specific approach in D-003 remains pending.
+
+## D-005 · Reason strategies as composable pipeline steps, one branch (2026-11-14)
+**Status:** accepted
+**Context:** with less than a day left, we discussed several Reason ideas (calibrated logprobs, near-duplicate lookup, program of thought, a learned judge, NMF topics, fine-tuning, long reasoning). We need to compare them on the same validation sample without the overhead of one branch per idea.
+**Decision:** `copilot/pipeline.py` runs a fixed-order list of steps selected with `--steps` (or `REASON_STEPS` in `config.env`): `dedup` → `letter`|`logprobs` → `pot`. A later step only replaces the answer when it finds a letter, so there is always an answer. `main` keeps `REASON_STEPS=letter` until a combination beats the baseline on the same sample. All strategies live on `exp/reason-strategies`; `eval.py --name` plus the `method`/`detail` columns tell which step answered each problem.
+**Alternatives:** one branch per idea (more merges, harder to compare); long chain-of-thought (the organizers measured it: worse and 3× slower); fine-tuning (no workflow, no time); NMF/K-means topics (useful for Teach skill labels, not for picking a letter); a bigger GGUF model (kept as a later option, T-034).
+**Consequences:** every step is measured on the computer with the model first (accuracy), then on the board (latency, `over 60 s` must be 0). Only the winning combination changes `REASON_STEPS` on `main`. The model-written expressions are evaluated through an AST whitelist (`copilot/safe_eval.py`), never with free `exec`.

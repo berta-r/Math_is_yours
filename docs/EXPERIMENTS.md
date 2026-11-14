@@ -12,6 +12,21 @@
 
 The reference points are random guessing at 20%, always-D at about 25%, and the organizers' baseline at 22.5% (40 English problems).
 
+**Reason strategies** (branch `exp/reason-strategies`): compare on the same sample, in this order.
+
+```bash
+python3 analyze_data.py data                                        # data facts: numeric options, duplicates, label bias
+python3 eval.py --limit 100 --steps letter   --name baseline
+python3 eval.py --limit 100 --steps logprobs --name logprobs       # calibrated letter probabilities
+CALIBRATION=none python3 eval.py --limit 100 --steps logprobs --name logprobs-raw
+python3 build_index.py                                             # once, for dedup
+python3 eval.py --limit 100 --steps dedup,logprobs --name dedup
+python3 eval.py --limit 100 --steps logprobs,pot --name pot        # program of thought
+python3 eval.py --limit 100 --steps dedup,logprobs,pot --name all
+```
+
+Write down the machine (board or which computer) with each row: accuracy transfers between machines with the same GGUF, latency does not. The per-problem CSV has `method` (which step answered) and `detail` (scores, neighbour, expression): read it before deciding.
+
 ## Results
 
 | Date | Name | Commit | Input / langs / n | RAG k | Accuracy | Mean s | Worst s | Over 60 s | Change, and conclusion |

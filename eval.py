@@ -3,6 +3,7 @@
 
     python3 eval.py --limit 50                    # baseline on 50 validation problems
     python3 eval.py --limit 50 --rag 1 --name rag1
+    python3 eval.py --limit 50 --steps dedup,logprobs,pot --name all-steps
     python3 eval.py --languages cat --limit 100
 
 Every run writes per-problem results to results/ and adds one line to
@@ -19,7 +20,7 @@ import time
 from collections import Counter, defaultdict
 
 from copilot.config import CONFIG
-from copilot.pipeline import TIME_LIMIT, solve
+from copilot.pipeline import DEFAULT_STEPS, TIME_LIMIT, parse_steps, prepare, solve
 
 
 def git_commit():
@@ -44,8 +45,11 @@ def main():
     p.add_argument("--languages", default="", help="e.g. eng,cat")
     p.add_argument("--rag", type=int, default=0, metavar="K")
     p.add_argument("--index", default="data/index.db")
+    p.add_argument("--steps", default=DEFAULT_STEPS,
+                   help=f"pipeline steps, e.g. dedup,logprobs,pot (default from config.env: {DEFAULT_STEPS})")
     p.add_argument("--name", default="", help="a label for this experiment in ablations.csv")
     args = p.parse_args()
+    steps = parse_steps(args.steps)
 
     with open(args.input) as f:
         problems = [json.loads(line) for line in f if line.strip()]
@@ -57,28 +61,30 @@ def main():
         problems = problems[:args.limit]
 
     index = None
-    if args.rag:
+    if args.rag or "dedup" in steps:
         from copilot.rag import Index
         index = Index(args.index)
 
     os.makedirs("results", exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    name = args.name or (f"rag{args.rag}" if args.rag else "baseline")
+    name = args.name or ("+".join(steps) + (f"+rag{args.rag}" if args.rag else ""))
     detail_path = f"results/eval-{stamp}-{name}.csv"
 
+    prepare(steps)  # calibration prompts, outside the per-problem clock
     rows = []
     with open(detail_path, "w", newline="") as out:
         writer = csv.writer(out)
         writer.writerow(["id", "language", "level", "has_options", "label", "answer",
-                         "correct", "seconds", "status", "prompt_tokens", "retrieved"])
+                         "correct", "seconds", "status", "prompt_tokens", "retrieved", "method", "detail"])
         for n, problem in enumerate(problems, 1):
-            result = solve(problem, index=index, k=args.rag, exclude_id=problem["id"])
+            result = solve(problem, index=index, k=args.rag, exclude_id=problem["id"], steps=steps)
             correct = result["answer"] == problem["label"]
             row = {**problem, **result, "correct": correct, "has_options": bool(problem.get("options"))}
             rows.append(row)
             writer.writerow([problem["id"], problem["language"], problem["level"], row["has_options"],
                              problem["label"], result["answer"], int(correct), result["seconds"],
-                             result["status"], result["prompt_tokens"], result["retrieved"]])
+                             result["status"], result["prompt_tokens"], result["retrieved"],
+                             result["method"], result["detail"]])
             out.flush()
             running = 100 * sum(r["correct"] for r in rows) / len(rows)
             print(f"[{n}/{len(problems)}] {problem['id']} {problem['language']}: "
@@ -99,7 +105,8 @@ def main():
     print(f"Status: {dict(Counter(r['status'] for r in rows))}")
 
     for field, title in (("language", "By language"), ("level", "By level"),
-                         ("has_options", "By whether OCR found the options")):
+                         ("has_options", "By whether OCR found the options"),
+                         ("method", "By the step that gave the answer")):
         groups = defaultdict(list)
         for r in rows:
             groups[r[field]].append(r["correct"])
@@ -116,10 +123,10 @@ def main():
         writer = csv.writer(f)
         if new:
             writer.writerow(["time", "name", "commit", "input", "languages", "n", "rag_k",
-                             "accuracy", "mean_s", "worst_s", "over_limit"])
+                             "accuracy", "mean_s", "worst_s", "over_limit", "steps"])
         writer.writerow([stamp, name, git_commit(), args.input, args.languages or "all", len(rows),
                          args.rag, f"{accuracy:.1f}", f"{statistics.mean(seconds):.1f}",
-                         f"{max(seconds):.1f}", over])
+                         f"{max(seconds):.1f}", over, ",".join(steps)])
     print(f"\nDetails: {detail_path}\nAblation log: {log}")
 
 
