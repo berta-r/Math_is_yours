@@ -99,6 +99,10 @@ D0 is the Reason workstream. D1–D5 are candidate approaches within the require
 
 ## Done
 
+- [x] **T-084** [P1] [laptop] **Set direct and critical AI communication rules.** Updated AGENTS.md and aligned the proposal guide: answer only the question, challenge unsupported assumptions, keep recommendations realistic and distinguish implementation from measured results. (2026-11-14)
+
+- [x] **T-081** [P0] [laptop] **Restore demo-first AI proposal guidelines.** Recovered AI-PROPOSAL-GUIDE.md from docs/demo-first-proposals and linked it from AGENTS.md without replacing current Reason documentation. (2026-11-14)
+
 - [x] **T-083** [P0] [team] **Establish Teach and Reason as required main workstreams.** Added separate P0 MVPs, ownership and acceptance criteria, and updated scope selection and the demo to cover both. (2026-11-14)
 
 

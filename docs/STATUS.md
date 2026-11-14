@@ -6,6 +6,10 @@
 
 ## Summary
 
+The [demo-first AI proposal guide](AI-PROPOSAL-GUIDE.md) has been recovered from `docs/demo-first-proposals` and is linked from AGENTS.md.
+
+AGENTS.md now requires direct, critical, evidence-based answers limited to the user's question; the proposal guide's full format applies only when requested.
+
 **Reason strategies (14 November, branch `exp/reason-strategies`, unmerged):** `copilot/pipeline.py` now runs a list of steps chosen with `--steps` / `REASON_STEPS` (`dedup`, `letter`, `logprobs`, `pot`; see [02-architecture.md](02-architecture.md)). `main` behaviour is unchanged (`REASON_STEPS=letter`). Verified end-to-end against a mock llama-server on the laptop (contract, timeouts, value matching); **not yet measured with the real model**: a teammate runs `eval.py` on the computer with the model and on the board. Data: the full `train.jsonl`/`val.jsonl` (eng+cat, shard 0) are being prepared by a teammate; a laptop run of `prepare_m3kang.py` takes about an hour (OCR).
 
 Conversation update (14 November): the user reports that the board model is installed and answering questions; this has not been independently verified here. Teach is delegated to a teammate and Reason improvements remain unmeasured. The setup checklist below has not yet been reconciled with the board.

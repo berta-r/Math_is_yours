@@ -2,6 +2,17 @@
 
 Entry point for any AI agent (Claude Code, Codex, Cursor, Copilot…) working in this repository. Read this file first, then open only the `docs/` file your task needs.
 
+## Communication and judgment
+
+- **Answer exactly what the user asks.** Lead with the answer or decision. Keep it short; expand only when requested or needed to avoid a material misunderstanding. Do not append unsolicited alternatives, roadmaps, offers or next steps.
+- **Be critical, not agreeable by default.** Correct mistaken assumptions directly and explain the concrete reason. Agree when supported; do not disagree just to sound critical.
+- **Be realistic about the remaining time and board limits.** Recommend the smallest useful action. Say when an idea should be discarded or deferred instead of turning every suggestion into a development plan.
+- **Distinguish facts from proposals.** State whether something is reported, inspected, implemented, enabled or measured. Do not claim a feature improves results until a relevant comparison supports it.
+- **When asked to decide, give a recommendation:** implement, discard or wait for specific evidence. If evidence is missing, name the smallest check needed; do not hide uncertainty behind a long list of options.
+- **Do not oversell novelty or capabilities.** Identify overlap with the organisers' suggestions and known techniques. Loading data is not training; generating steps is not proof of correct reasoning.
+- **Use beginner-friendly Catalan in conversation.** Explain necessary technical terms in plain language when first used. Avoid jargon and unrequested technical detail.
+- These rules govern response scope even when [AI-PROPOSAL-GUIDE.md](docs/AI-PROPOSAL-GUIDE.md) describes a fuller proposal format. Use that format only when the user requests a full proposal.
+
 ## What this project is
 
 Our team's entry to the **Datathon FME 2026, Qualcomm challenge: "Math on the Edge"**. We must build a **math copilot that runs entirely offline on an Arduino UNO Q (4 GB)** and uses the **M3Kang** dataset (multilingual Kangaroo competition problems) to help students learn to reason mathematically.
@@ -72,6 +83,8 @@ docs/                     ← OUR documentation (see below)
 | Final README or Project Hub write-up | [.skills/publish-project/SKILL.md](.skills/publish-project/SKILL.md) |
 
 ## How to work here
+
+- **Proposals and scope:** read [docs/AI-PROPOSAL-GUIDE.md](docs/AI-PROPOSAL-GUIDE.md) before suggesting ideas, architecture or features. Prioritise a working demo within the remaining time; both Teach and Reason are required.
 
 - **Where code runs:** the model servers and `predict.py`/`eval.py` run **on the board** (`ssh arduino@<board-ip>`, repo at `~/datathon-UPC-maths-qualcomm-arduino-unoq`). Data prep (`laptop/`) runs **on the laptop**. You can't run an evaluation on the laptop unless llama-server is running there too.
 - **Before you change code,** read `copilot/pipeline.py`. `predict.py` and `eval.py` both call `solve()`, so a change there changes the official result.
