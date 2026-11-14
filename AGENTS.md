@@ -23,7 +23,7 @@ This repository started from the organizers' template. The template's step-by-st
 
 ## Current state (update this line when it changes)
 
-**Teach and Reason are both required main workstreams.** Reason strategies (`dedup`, `logprobs`, `pot`) are implemented on `exp/reason-strategies` and await measurement with the real model (`eval.py --steps …`). The team reports that the board model responds; setup verification, baseline measurements and the specific implementation scopes are pending. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
+**Teach and Reason are both required main workstreams.** Reason: on `exp/reason-strategies`, ten strategies were measured on a laptop with the board's model and none beats chance (baseline 20.1% ±0.7 on 3494 problems, always-D 24.7%); what `predict.py` ships is undecided (T-039). See [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md). The team reports that the board model responds; setup verification, baseline measurements and the specific implementation scopes are pending. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
 
 ## Hard rules: never break these
 

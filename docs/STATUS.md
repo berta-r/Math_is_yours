@@ -10,7 +10,7 @@ The [demo-first AI proposal guide](AI-PROPOSAL-GUIDE.md) has been recovered from
 
 AGENTS.md now requires direct, critical, evidence-based answers limited to the user's question; the proposal guide's full format applies only when requested.
 
-**Reason strategies (14 November, branch `exp/reason-strategies`, unmerged):** `copilot/pipeline.py` now runs a list of steps chosen with `--steps` / `REASON_STEPS` (`dedup`, `letter`, `logprobs`, `pot`; see [02-architecture.md](02-architecture.md)). `main` behaviour is unchanged (`REASON_STEPS=letter`). Verified end-to-end against a mock llama-server on the laptop (contract, timeouts, value matching); **not yet measured with the real model**: a teammate runs `eval.py` on the computer with the model and on the board. Data: the full `train.jsonl`/`val.jsonl` (eng+cat, shard 0) are being prepared by a teammate; a laptop run of `prepare_m3kang.py` takes about an hour (OCR).
+**Reason (14 November, branch `exp/reason-strategies`, unmerged; all numbers from a laptop with the board's GGUF and the pinned llama.cpp, CPU only):** the one-letter baseline is at chance, 20.1% ±0.7 on 3494 problems, below always-D (24.7%). Ten variants were measured and none beats chance: calibrated logprobs, 4 fixed examples, option rotation with voting, 80 tokens of reasoning, program of thought, value instead of letter, a learned judge, and Qwen3.5 2B. The model chooses a position, not a value: on trivial additions it picks the right letter 19% of the time but writes the right number 82%. Full table and notes in [EXPERIMENTS.md](EXPERIMENTS.md). Pending: what `predict.py` ships (TODO T-039), board latency, and the hidden-test format. `main` is unchanged (`REASON_STEPS=letter`).
 
 Conversation update (14 November): the user reports that the board model is installed and answering questions; this has not been independently verified here. Teach is delegated to a teammate and Reason improvements remain unmeasured. The setup checklist below has not yet been reconciled with the board.
 
@@ -48,16 +48,16 @@ States: ⬜ pending · 🟨 in progress · ✅ done · ❌ blocked (say why).
 | Board free RAM with both services running | not measured |
 | llama.cpp commit built | not built |
 | Languages in our dataset | not decided |
-| Train / val sizes | — |
+| Train / val sizes | 2932 / 562 (eng+cat, shard 0); text-only 1376 / 246 |
 
 ## Key numbers
 
 | Metric | Value | Conditions |
 | --- | --- | --- |
-| Baseline accuracy | — | |
+| Baseline accuracy | 20.1% ±0.7 | laptop, same GGUF, train+val eng+cat, n=3494. Text-only: 20.6% ±1.0 (n=1622) |
 | Baseline latency (mean / worst) | — | |
 | RAG k=1 accuracy | — | |
-| Best accuracy so far | — | |
+| Best accuracy so far | 24.7% (always D, no model) | n=3494. No model-based variant beats chance |
 
 ## Main workstreams
 
