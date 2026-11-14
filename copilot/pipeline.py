@@ -27,7 +27,10 @@ MARGIN = 3.0  # seconds kept free for Python and for writing the answer
 KNOWN_STEPS = ("dedup", "letter", "logprobs", "pot")
 DEFAULT_STEPS = CONFIG.get("REASON_STEPS", "letter")
 POT_MIN_SECONDS = float(CONFIG.get("POT_MIN_SECONDS", "20"))
-CALIBRATION = CONFIG.get("CALIBRATION", "cf")  # cf = content-free prior, none = raw
+CALIBRATION = CONFIG.get("CALIBRATION", "cf")
+# Measured board speeds, used to estimate the board time of a run made on a faster computer
+BOARD_PREFILL_TPS = float(CONFIG.get("BOARD_PREFILL_TPS", "11"))
+BOARD_GEN_TPS = float(CONFIG.get("BOARD_GEN_TPS", "5.5"))  # cf = content-free prior, none = raw
 
 
 def parse_steps(steps):
@@ -73,9 +76,14 @@ def solve(problem, index=None, k=0, exclude_id=None, image_b64=None, llm_url=URL
     """
     start = time.perf_counter()
     steps = parse_steps(steps)
-    result = {"answer": FALLBACK, "status": "ok", "prompt_tokens": 0, "retrieved": "",
+    result = {"answer": FALLBACK, "status": "ok", "prompt_tokens": 0, "gen_tokens": 0, "retrieved": "",
               "examples": [], "method": "fallback", "detail": ""}
     notes = []
+
+    def count(timings):
+        """Add the tokens one model call read (prompt_n excludes the cached prefix) and wrote."""
+        result["prompt_tokens"] += int(timings.get("prompt_n", 0) or 0)
+        result["gen_tokens"] += int(timings.get("predicted_n", 0) or 0)
 
     def remaining():
         return time_limit - (time.perf_counter() - start) - MARGIN
@@ -104,13 +112,15 @@ def solve(problem, index=None, k=0, exclude_id=None, image_b64=None, llm_url=URL
             scores, grammar_letter, timings = letter_logprobs(
                 problem, examples, timeout=max(remaining(), 1.0), url=llm_url)
             letter, calibrated = choose(scores, prior)
-            result.update(answer=letter, method="logprobs", prompt_tokens=timings.get("prompt_n", 0))
+            result.update(answer=letter, method="logprobs")
+            count(timings)
             notes.append("logprobs=" + " ".join(f"{l}:{calibrated[l]:.2f}" for l in "ABCDE")
                          + f" raw={grammar_letter}")
         elif "letter" in steps:
             letter, timings = answer_letter(problem, examples, timeout=max(remaining(), 1.0),
                                             image_b64=image_b64, url=llm_url)
-            result.update(answer=letter, method="letter", prompt_tokens=timings.get("prompt_n", 0))
+            result.update(answer=letter, method="letter")
+            count(timings)
 
         if "pot" in steps:
             from .pot import applicable, solve_with_program
@@ -123,7 +133,7 @@ def solve(problem, index=None, k=0, exclude_id=None, image_b64=None, llm_url=URL
                     letter, detail, timings = solve_with_program(
                         problem, timeout=max(remaining(), 1.0), url=llm_url)
                     notes.append("pot=" + detail)
-                    result["prompt_tokens"] += timings.get("prompt_n", 0)
+                    count(timings)
                     if letter:
                         result.update(answer=letter, method="pot")
                 except (socket.timeout, TimeoutError, urllib.error.URLError) as error:
@@ -134,4 +144,7 @@ def solve(problem, index=None, k=0, exclude_id=None, image_b64=None, llm_url=URL
         result["status"] = "timeout" if _is_timeout(error) else f"error: {error.reason}"
     result["detail"] = " | ".join(notes)
     result["seconds"] = round(time.perf_counter() - start, 2)
+    # Model time this problem would take on the board (embeddings and Python are not counted)
+    result["board_s_est"] = round(result["prompt_tokens"] / BOARD_PREFILL_TPS
+                                  + result["gen_tokens"] / BOARD_GEN_TPS, 1)
     return result

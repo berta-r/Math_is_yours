@@ -25,7 +25,7 @@ python3 eval.py --limit 100 --steps logprobs,pot --name pot        # program of 
 python3 eval.py --limit 100 --steps dedup,logprobs,pot --name all
 ```
 
-Write down the machine (board or which computer) with each row: accuracy transfers between machines with the same GGUF, latency does not. The per-problem CSV has `method` (which step answered) and `detail` (scores, neighbour, expression): read it before deciding.
+Write down the machine (board or which computer) with each row: accuracy transfers between machines with the same GGUF, latency does not. On a computer, read the **Board estimate** line instead of Latency: it converts the tokens each problem read and wrote into board seconds (`BOARD_PREFILL_TPS`, `BOARD_GEN_TPS` in `config.env`). The per-problem CSV has `method` (which step answered) and `detail` (scores, neighbour, expression): read it before deciding.
 
 ## Results
 

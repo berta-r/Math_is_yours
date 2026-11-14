@@ -75,7 +75,8 @@ def main():
     with open(detail_path, "w", newline="") as out:
         writer = csv.writer(out)
         writer.writerow(["id", "language", "level", "has_options", "label", "answer",
-                         "correct", "seconds", "status", "prompt_tokens", "retrieved", "method", "detail"])
+                         "correct", "seconds", "status", "prompt_tokens", "gen_tokens", "board_s_est",
+                         "retrieved", "method", "detail"])
         for n, problem in enumerate(problems, 1):
             result = solve(problem, index=index, k=args.rag, exclude_id=problem["id"], steps=steps)
             correct = result["answer"] == problem["label"]
@@ -83,7 +84,8 @@ def main():
             rows.append(row)
             writer.writerow([problem["id"], problem["language"], problem["level"], row["has_options"],
                              problem["label"], result["answer"], int(correct), result["seconds"],
-                             result["status"], result["prompt_tokens"], result["retrieved"],
+                             result["status"], result["prompt_tokens"], result["gen_tokens"],
+                             result["board_s_est"], result["retrieved"],
                              result["method"], result["detail"]])
             out.flush()
             running = 100 * sum(r["correct"] for r in rows) / len(rows)
@@ -103,6 +105,13 @@ def main():
     print(f"Latency: mean {statistics.mean(seconds):.1f} s, median {statistics.median(seconds):.1f} s, "
           f"worst {max(seconds):.1f} s, over {TIME_LIMIT:.0f} s: {over}")
     print(f"Status: {dict(Counter(r['status'] for r in rows))}")
+    est = [r["board_s_est"] for r in rows]
+    print(f"Tokens per problem: read {statistics.mean(r['prompt_tokens'] for r in rows):.0f}, "
+          f"written {statistics.mean(r['gen_tokens'] for r in rows):.0f}")
+    print(f"Board estimate ({CONFIG.get('BOARD_PREFILL_TPS', '11')} tok/s read, "
+          f"{CONFIG.get('BOARD_GEN_TPS', '5.5')} tok/s write): mean {statistics.mean(est):.1f} s, "
+          f"worst {max(est):.1f} s, over {TIME_LIMIT - 3:.0f} s: {sum(e > TIME_LIMIT - 3 for e in est)}")
+    print("  (only meaningful on a computer; on the board, trust Latency above)")
 
     for field, title in (("language", "By language"), ("level", "By level"),
                          ("has_options", "By whether OCR found the options"),
@@ -123,10 +132,12 @@ def main():
         writer = csv.writer(f)
         if new:
             writer.writerow(["time", "name", "commit", "input", "languages", "n", "rag_k",
-                             "accuracy", "mean_s", "worst_s", "over_limit", "steps"])
+                             "accuracy", "mean_s", "worst_s", "over_limit", "steps",
+                             "board_est_mean_s", "board_est_worst_s"])
         writer.writerow([stamp, name, git_commit(), args.input, args.languages or "all", len(rows),
                          args.rag, f"{accuracy:.1f}", f"{statistics.mean(seconds):.1f}",
-                         f"{max(seconds):.1f}", over, ",".join(steps)])
+                         f"{max(seconds):.1f}", over, ",".join(steps),
+                         f"{statistics.mean(est):.1f}", f"{max(est):.1f}"])
     print(f"\nDetails: {detail_path}\nAblation log: {log}")
 
 
