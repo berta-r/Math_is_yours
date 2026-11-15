@@ -45,6 +45,8 @@ def parse_args():
     p.add_argument("--out", default="data", help="output folder")
     p.add_argument("--no-ocr", action="store_true", help="skip OCR; options will be empty")
     p.add_argument("--save-images", action="store_true", help="also save problem images as PNG")
+    p.add_argument("--images-only", action="store_true",
+                   help="only write data/images/*.png for the selected languages; skip OCR and leave train/val JSONL untouched")
     p.add_argument("--limit", type=int, default=0, help="only process the first N rows (for testing)")
     return p.parse_args()
 
@@ -134,8 +136,37 @@ def parse_options(boxes):
     return {}
 
 
+def export_images(args):
+    """Write the original problem images without touching the prepared JSONL files.
+
+    The student app only shows a problem image when data/images/<id>_<lang>.png
+    exists next to train.jsonl, so this restores the images on a laptop or a
+    board that only received the JSONL files.
+    """
+    import pyarrow.parquet as pq
+
+    languages = set(args.languages.split(","))
+    folder = os.path.join(args.out, "images")
+    os.makedirs(folder, exist_ok=True)
+    written = 0
+    for path in shard_paths(args):
+        table = pq.read_table(path, columns=["id", "language", "image"])
+        for i, lang in enumerate(table.column("language").to_pylist()):
+            if lang not in languages:
+                continue
+            name = f"{table.column('id')[i].as_py()}_{lang}.png"
+            with open(os.path.join(folder, name), "wb") as f:
+                f.write(table.column("image")[i].as_py()["bytes"])
+            written += 1
+            if args.limit and written >= args.limit:
+                break
+    print(f"Wrote {written} images to {folder}")
+
+
 def main():
     args = parse_args()
+    if args.images_only:
+        return export_images(args)
     import pyarrow.parquet as pq
 
     languages = set(args.languages.split(","))
