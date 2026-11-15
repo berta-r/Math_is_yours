@@ -32,6 +32,7 @@ def forbidden(relative):
 def bundle_files(root, with_data=False):
     root = Path(root).resolve()
     files = [root/'config.env', root/'data/sample_problems.jsonl']
+    files.extend(root / name for name in ('predict.py', 'eval.py', 'build_index.py', 'docs/COMPUTE_SOLVER.md'))
     for folder in ('copilot', 'student_app'):
         files.extend(p for p in (root/folder).glob('*.py') if not p.name.startswith(('test_', 'check_')))
     files.extend((root/'student_app/assets').rglob('*'))
