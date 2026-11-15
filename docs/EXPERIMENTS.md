@@ -14,6 +14,24 @@ The reference points are random guessing at 20%, always-D at about 25%, and the 
 
 ## Results
 
+T-130 board release acceptance (2026-11-15): current-main `f6784df` staged with
+the packaging fixes on `infra/current-board-release`; teammate then activated
+the full-data release matching `ad505c6`. Board app suite: 137 tests (four skipped),
+setup/deployment suite: 35 passed. Three actual generated tutor replies took
+22.64/20.59/20.58 s; arithmetic took 0.02–0.03 s. All model hashes match config.
+All 3,003 files in the active release and its 35 runtime code files were verified;
+existing learning records remained intact. See [the release record](BOARD-RELEASE-20261115.md).
+
+`eval.py --limit 50 --name current-release-acceptance` completed on this PC's
+30-row English validation subset: **3/30 correct (10%)**. It contains 24 figure
+problems and 17 rows with all options, unlike the organisers' practice set;
+this is a deployment smoke benchmark, not an improvement claim. Detailed rows
+are on the board under staged release `20261115-103029-6859bde2b0/results/`.
+Connection loss prevented copying the final CSV and repeating the sample
+contract check after fixing the missing output directory in deployment archives.
+The active full-data release was installed concurrently by a teammate; final
+cleanup/USB acceptance await coordination and reconnection.
+
 ### T-129 integrated offline coach validation (2026-11-15)
 
 Code commit: **`d9513ce`**, `exp/slm-learning-coach`, after merging main `0b42034`

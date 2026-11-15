@@ -205,6 +205,7 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue(info['sha256'])
             self.assertIn('student_app/server.py', names)
             self.assertIn('predict.py', names)
+            self.assertIn('results/.gitkeep', names)
             self.assertIn('eval.py', names)
             self.assertIn('copilot/compute.py', names)
             self.assertIn('board/install_student_service.py', names)

@@ -6,6 +6,16 @@
 
 ## Summary
 
+**T-130 hardware acceptance in progress (2026-11-15):** the teammate's full-data
+release `20261115-104103-4b2961b823` is active and matches latest main `ad505c6`:
+35 runtime files match Git, all 3,003 packaged hashes match, the SLM is ready,
+and the learned map and generated teaching content are installed. Original
+student records are preserved and SQLite integrity is OK. Board tests, model
+hashes, arithmetic and three actual generated replies were verified. The original
+EXE remains compatible with main's restored identity, and this PC's matching
+watcher was restored. Concurrent deployment was detected, so cleanup and physical
+USB acceptance await coordination. See [the release record](BOARD-RELEASE-20261115.md).
+
 **T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) everywhere: app title, docs, pitch, app id kept as `kangaroo-student` so the launcher already installed on the demo PC keeps opening the tutor (fix/launcher-app-id), launcher folder `MathIsYours`, board service description. Reinstall the Windows launcher from a new bundle after deploying, since the app id and folder changed.
 
 **T-129 implemented offline coach (2026-11-15, laptop):** main through `0b42034`
