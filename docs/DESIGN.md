@@ -1,6 +1,6 @@
 # Math Is Yours design rules
 
-The rules the product owner has set for the student app (`student_app/assets/`). Each rule has its reason, so an agent that was not in the review can apply it to new screens. When a rule here conflicts with an older brief (for example [KANGAROO-REDESIGN.md](KANGAROO-REDESIGN.md)), this file wins. CSS is layered: append a new "Studio NN" block at the end of `style.css` and override; do not rewrite old layers.
+The rules the product owner has set for the student app (`student_app/assets/`). Each rule has its reason, so an agent that was not in the review can apply it to new screens. When a rule here conflicts with an older brief (for example [MIY-REDESIGN.md](MIY-REDESIGN.md)), this file wins. CSS is layered: append a new "Studio NN" block at the end of `style.css` and override; do not rewrite old layers.
 
 ## Audience
 

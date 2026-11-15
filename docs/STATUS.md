@@ -6,6 +6,8 @@
 
 ## Summary
 
+**T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) everywhere: app title, docs, pitch, app id `math-is-yours`, launcher folder `MathIsYours`, board service description. Reinstall the Windows launcher from a new bundle after deploying, since the app id and folder changed.
+
 **T-120 Solve and My path layout (2026-11-15, laptop only):** Solve is full width with "Change problem" top-left, the Understand / Plan / Check rail above the statement, a 3px rule before the thinking question and the answers, and feedback shown as large framed bands (glyph, 22–28px headline, 19px body); the optional note and the "Pick an answer first." helper are gone. In My path the skill tree has no legend or state labels (colour and corner glyph carry the state, names 22px), goal buttons are larger, and the path problem cards are whole buttons tinted by difficulty without question text. Design rules now live in [DESIGN.md](DESIGN.md). Playwright checks at 1440 / 1024 / 390 and 113 app tests pass.
 
 **T-118 map problems in My path (2026-11-15, laptop only):** choosing a goal skill now lists, under the tree, the problems the problem map computes as the route (T-117 API), each with difficulty label, level, category and an Open action; verified with the full map data at 1440 and 390 px, 113 app tests pass.
@@ -115,7 +117,11 @@ deployment baseline scored **11/30 (36.7%)**, mean **10.4 s**, worst **25.6 s**,
 no errors/timeouts. This trails always-D (13/30) on the small, D-heavy English set;
 it does not establish reliable mathematical reasoning or hidden-test performance.
 The official solver was unchanged. Main-branch confirmation and broader evaluation
-remain pending. There are ten authored skill nodes, thirty original diagnostics
+remain pending. Since then, `predict.py` uses a compute-first solver (`SOLVER=compute`):
+a code model on a third service, `math-compute` (:8084), writes one Python expression and
+Python computes the answer; it scored 15/30 (50.0%) on the organisers' practice set on the
+board ([COMPUTE_SOLVER.md](COMPUTE_SOLVER.md)). RAM with all services running is not
+measured yet (T-125). There are ten authored skill nodes, thirty original diagnostics
 and 51 provisional M3Kang topic annotations. The Tukey side project is separate
 in [its workspace](../side-project/README.md).
 
@@ -160,7 +166,7 @@ States: ⬜ pending · 🟨 in progress · ✅ done · ❌ blocked (say why).
 | Development baseline accuracy | 11/30 = 36.7% | UNO Q, English starter validation; always-D 43.3%; not main-branch release validation |
 | Baseline latency (mean / worst) | 10.4 / 25.6 s | 30/30 status ok, no requests over 60 s |
 | RAG k=1 accuracy | — | |
-| Best accuracy so far | — | |
+| Best accuracy so far | 15/30 = 50.0% (compute-first solver, board, practice set) | Organisers' practice set, 15 eng + 15 cat; mean 26.2 s, worst 56.0 s, none over 60 s |
 
 ## Main workstreams
 
@@ -168,7 +174,7 @@ Both **Teach and Reason are required main deliverables** (TODO T-023 and T-024).
 
 The team wants reasoning plus adaptive teaching. The teaching path now uses authored Markdown skills, reviewed problem tags, conservative Bayesian Knowledge Tracing, diagnostics and 1/3/7-day reviews. A wrong multi-skill answer never lowers all its connected skills. An optional bounded SLM worker selects permitted stored hints; deterministic Python owns grading, state and recommendations. Laptop k-means exports candidates for explicit review. See [curriculum documentation](../knowledge/README.md) and [student app instructions](../student_app/README.md).
 
-The Kangaroo Studio redesign on `ui/kangaroo-studio` now uses a blue typographic entrance based on the supplied reference, child-facing Solve / My path / My work views, an exercise-first layout and readable skill tiles. The start action is visible at 320–1440px with no horizontal overflow. Chrome checks at desktop and mobile widths report no JavaScript errors; the full three-step answer-to-next-exercise flow and 48 application tests pass locally. A 20-point visual review then removed black surface borders, decorative grid lines, the duplicate wordmark, excess display labels and the repeated current-exercise recommendation; the blue keyboard focus ring remains. Physical touch and board visual validation remain pending.
+The Math Is Yours redesign on `ui/kangaroo-studio` now uses a blue typographic entrance based on the supplied reference, child-facing Solve / My path / My work views, an exercise-first layout and readable skill tiles. The start action is visible at 320–1440px with no horizontal overflow. Chrome checks at desktop and mobile widths report no JavaScript errors; the full three-step answer-to-next-exercise flow and 48 application tests pass locally. A 20-point visual review then removed black surface borders, decorative grid lines, the duplicate wordmark, excess display labels and the repeated current-exercise recommendation; the blue keyboard focus ring remains. Physical touch and board visual validation remain pending.
 
 The follow-up screen review removed the visible nickname label and local-storage note, applied the same blue/black/underline language to all three workspace views, and reserved green/red for answer results. My path now shows its route and skill list before an optional connection map; selecting a skill expands its detail. The recommendation action now opens the exercise and switches to Solve. Desktop and phone Chrome checks found no JavaScript errors or horizontal overflow; physical board and touch validation remains pending.
 

@@ -1,4 +1,4 @@
-# Kangaroo Studio · child-first redesign brief
+# Math Is Yours · child-first redesign brief
 
 > The current rule set for the student app's look is [DESIGN.md](DESIGN.md). This brief is kept as history; where they differ, DESIGN.md wins.
 
@@ -29,7 +29,7 @@ Product promise: **"Solve a math problem, one thought at a time."** The app begi
 
 ## Direction: the student's desk
 
-The visual identity is a professional learning product with enough energy for a child. Signature colour: **Kangaroo Blue `#3254E8`**, used for the primary action, selected state, current step and focus indication. White text on this blue has a calculated contrast ratio of **5.88:1**. Background: warm paper `#FFF9EE`; primary ink `#17251F`; white exercise surface; restrained pale blue for selected options. A small apricot can mark a hint, but it must not become a second competing CTA colour. Correctness uses explicit words and icons alongside colour.
+The visual identity is a professional learning product with enough energy for a child. Signature colour: **MIY blue `#3254E8`**, used for the primary action, selected state, current step and focus indication. White text on this blue has a calculated contrast ratio of **5.88:1**. Background: warm paper `#FFF9EE`; primary ink `#17251F`; white exercise surface; restrained pale blue for selected options. A small apricot can mark a hint, but it must not become a second competing CTA colour. Correctness uses explicit words and icons alongside colour.
 
 Type: a highly readable local system sans for instructions, questions and answers; a warm serif for a small number of display headlines. No web font request. 16–18px body text, 20–26px problem text, 48px minimum option/button height, 24px minimum between major groups. Avoid all-caps microcopy below 14px and long italic passages. Numbers in progress counters use tabular figures. One radius scale: outer panel 16px, inset card 10px, padding 24px, so inner corners never approach the outer radius.
 
@@ -47,7 +47,7 @@ Navigation should always show where the child is, preserve the unfinished proble
 ## Exercise storyboard
 
 ```text
-[ kangaroo studio ]                         [ Solve | My path | My work ]
+[ MATH IS YOURS. ]                         [ Solve | My path | My work ]
 
 Problem 2 of 5   ·   Addition
 How many beads remain?
@@ -86,7 +86,7 @@ Legend: **F** = current interface fails or meaningfully falls short; **P** = par
 | 8 | Group with spacing | P | Problem, thinking step, answer and feedback are distinct groups with stable spacing. |
 | 9 | Make headlines specific | F | "Solve a math problem, one thought at a time" or similarly concrete text. |
 | 10 | Emphasize the CTA | P | Exactly one visually primary action in each state; secondary actions stay quiet. |
-| 11 | Add an accent colour | P | Kangaroo Blue `#3254E8` is the unmistakable signature across key states. |
+| 11 | Add an accent colour | P | MIY blue `#3254E8` is the unmistakable signature across key states. |
 | 12 | Keep icons consistent | F | One icon set/style; no mix of arbitrary glyphs to indicate actions. |
 | 13 | Remove embellishments | P | No decorative status dots, filler punctuation or effects without a learning purpose. |
 | 14 | Inner radius = outer − padding | P | Radius hierarchy is consistent; inset surfaces never look rounder than containers. |
@@ -142,4 +142,4 @@ Chrome checks at 320, 390, 768, 1024 and 1440px show the start action inside the
 | My path | The recommendation, route title and first skill repeated the same topic; ten skill tiles and a large dark graph competed for attention. | Reduced the route title to “Learning path”, removed repeated explanatory copy from sight, flattened the skill list, and placed the functional map inside a disclosure with the same blue and black system. Selecting a skill opens its detail. |
 | My work | A pale page and separately framed metrics looked detached from the first screen. | Made the page blue, with one heading, tabular counts, plain separators and a transparent download action. |
 
-The working palette is Kangaroo blue `#849fc4`, near-black text and cobalt `#3254e8` for focus/selection. Green and red are reserved for answer feedback. Arial is the one type family. Open spacing and thin rules form the shared component language; the graph and answer flow retain their behaviour. Desktop and phone Chrome screenshots show no JavaScript errors or horizontal overflow. Browser interaction verified skill selection and return to Solve, and both wrong and correct answer states remained visible. The local application suite passed 105 tests with one skip.
+The working palette is MIY blue `#849fc4`, near-black text and cobalt `#3254e8` for focus/selection. Green and red are reserved for answer feedback. Arial is the one type family. Open spacing and thin rules form the shared component language; the graph and answer flow retain their behaviour. Desktop and phone Chrome screenshots show no JavaScript errors or horizontal overflow. Browser interaction verified skill selection and return to Solve, and both wrong and correct answer states remained visible. The local application suite passed 105 tests with one skip.

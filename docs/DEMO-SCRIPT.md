@@ -44,8 +44,8 @@ If the files did not ship, rebuild the bundle with `--with-data` (SUBMISSION.md 
 
 1. Board powered, `systemctl status math-llm math-embed math-student --no-pager` all active, `free -m` noted.
 2. Board Wi-Fi off. Laptop opens the tutor over USB: the installed Windows launcher opens it automatically, or `adb forward tcp:7011 tcp:7011` and open `http://127.0.0.1:7011`.
-3. Nickname **`Kanga`**, fresh (never used on this board), so the notebook starts empty and the path starts from the demo problem. Prepare a second nickname **`Kanga2`** the same way as a spare.
-4. In a second browser tab, have `http://127.0.0.1:7011/map?student=Kanga` loaded but not focused (it is 244 KB; loading it live wastes seconds).
+3. Nickname **`Mia`**, fresh (never used on this board), so the notebook starts empty and the path starts from the demo problem. Prepare a second nickname **`Kanga2`** the same way as a spare.
+4. In a second browser tab, have `http://127.0.0.1:7011/map?student=Mia` loaded but not focused (it is 244 KB; loading it live wastes seconds).
 5. Language filter set to **cat**. Open **Change problem**, select `lvl-0_2019_1 · cat · text` (type `lvl-0_2019_1` in the select to jump), but do not click **Open** yet.
 6. Zoom the browser so the problem and three step choices fit on the projector without scrolling.
 7. Crib paper at hand: correct letter, the `sum` letter, the expected goal on the map.
@@ -54,13 +54,13 @@ If the files did not ship, rebuild the bundle with `--with-data` (SUBMISSION.md 
 
 | Time | Click | Say |
 | --- | --- | --- |
-| 0:00–0:08 | Enter nickname `Kanga` → start. Click **Open ↗** on the prepared problem. | "This is Kanga. She opens a real Kangaroo problem, in Catalan." |
+| 0:00–0:08 | Enter nickname `Mia` → start. Click **Open ↗** on the prepared problem. | "This is Mia. She opens a real Kangaroo problem, in Catalan." |
 | 0:08–0:30 | Answer **Understand**, **Plan**, **Check**: click one wrong choice on Plan first, read the one-sentence feedback, then the right one. | "Before the choices appear, three thinking questions. Each choice gets instant feedback from Python; a wrong one can be retried. No model involved." |
 | 0:30–0:45 | Answer choices appear. Click the **`sum` letter** from the crib → **Check my answer →**. Red signal and the misconception sentence. | "Now a wrong answer, on purpose. It doesn't just say wrong: that number could come from adding the two numbers; the problem needs a subtraction. It names the slip without giving the answer." |
 | 0:45–0:58 | Click **Get a hint** (labelled "Help me think" if the redesign renamed it). The Socratic question shows. | "The first hint is a question. A large model wrote it before the event, Python checked it never contains the answer, so it is instant." |
 | 0:58–1:08 | Click the correct letter → **Check my answer →**. Green signal. | "Now she gets it." |
 | 1:08–1:20 | Open **My path**. Point at the recommendation reason: "Triat perquè tinguis prop d'un 70% de probabilitats d'encert: la teva puntuació és … i la dificultat d'aquest problema és …". | "Her next problem is chosen so she has about a 70% chance: her rating against the problem's difficulty." |
-| 1:20–1:30 | Switch to the `/map?student=Kanga` tab, reload once. Her solved problem has a dark ring. Click a dot in a harder region of the same colour cluster. Read the path list on the right; **do not click the step links**. | "Difficulty comes from the position in the Kangaroo papers. Every training problem is on this map, in both languages. She picks a goal, and the tutor lays out stepping stones from what she has solved." |
+| 1:20–1:30 | Switch to the `/map?student=Mia` tab, reload once. Her solved problem has a dark ring. Click a dot in a harder region of the same colour cluster. Read the path list on the right; **do not click the step links**. | "Difficulty comes from the position in the Kangaroo papers. Every training problem is on this map, in both languages. She picks a goal, and the tutor lays out stepping stones from what she has solved." |
 
 Stop at 1:30. If you are ahead, show **My work** and the downloadable notebook for five seconds ("everything stays on the board").
 

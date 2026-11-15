@@ -2,7 +2,7 @@
 
 > Text to paste into a new project on <https://projecthub.arduino.cc/>, one section per Project Hub section. Replace every `[PHOTO: …]` with a photo or screenshot the team took. Do not upload M3Kang problem text, images or screenshots that show a problem: crop them out, or use the original `sample-*` problems in `data/sample_problems.jsonl`. Every number comes from [EXPERIMENTS.md](EXPERIMENTS.md) or [STATUS.md](STATUS.md); keep the conditions when you edit. Code link: <https://github.com/berta-r/datathon_xusigrupoo>.
 
-**Title:** Kangaroo Studio: an offline maths tutor on the Arduino UNO Q
+**Title:** Math Is Yours: an offline maths tutor on the Arduino UNO Q
 
 **One-line summary:** A maths tutor that runs entirely on an Arduino UNO Q 4 GB: thinking steps before the answer, feedback that names the likely slip, and a map of Kangaroo problems with a path for each student.
 
@@ -12,7 +12,7 @@
 
 Maths results in Catalonia are falling in PISA, and a teacher cannot sit next to every student. An AI tutor helps only if it guides the reasoning instead of giving the answer, and only if the student's data stays private.
 
-Kangaroo Studio runs entirely on an Arduino UNO Q 4 GB. It needs no internet while a student uses it. The student's record stays in a SQLite file on the board. A PC or laptop only shows the web page, over the USB cable.
+Math Is Yours runs entirely on an Arduino UNO Q 4 GB. It needs no internet while a student uses it. The student's record stays in a SQLite file on the board. A PC or laptop only shows the web page, over the USB cable.
 
 The student opens a Kangaroo competition problem in English or Catalan. Before the answer choices appear, they answer three short questions: what is asked, what is the plan, how will I check. After a wrong answer, the tutor says which slip could give that number, without giving the answer. The next problem is picked so the student has about a 70% chance of success. A map shows the training problems and a path of gradually harder ones.
 

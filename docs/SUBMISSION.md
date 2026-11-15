@@ -160,7 +160,7 @@ Same five letters both times (seconds may differ).
 
 | Branch | Ahead of / behind `main` | Commits not in `main` | Files touched vs merge base |
 | --- | --- | --- | --- |
-| `exp/ml-tutor` | 0 / 2 | none: merged as `9f39f94` | Already in `main`. The merge resolved docs conflicts with T-083 in `AGENTS.md`, `docs/DECISIONS.md`, `docs/STATUS.md`, `docs/TODO.md`. **Uncommitted in its working tree:** `docs/STATUS.md`, `docs/TODO.md`, `student_app/assets/app.js`, `index.html`, `style.css` (Kangaroo Studio redesign T-096–T-099, being edited now) and untracked `docs/KANGAROO-REDESIGN.md`, plus these three new docs. |
+| `exp/ml-tutor` | 0 / 2 | none: merged as `9f39f94` | Already in `main`. The merge resolved docs conflicts with T-083 in `AGENTS.md`, `docs/DECISIONS.md`, `docs/STATUS.md`, `docs/TODO.md`. **Uncommitted in its working tree:** `docs/STATUS.md`, `docs/TODO.md`, `student_app/assets/app.js`, `index.html`, `style.css` (Math Is Yours redesign T-096–T-099, being edited now) and untracked `docs/MIY-REDESIGN.md`, plus these three new docs. |
 | `ui/kangaroo-studio` | 0 / 10 | none | Its tip `8a697ff` is an ancestor of `exp/ml-tutor`, so it is already in `main`. The later redesign work is the uncommitted working-tree change above, not on this branch. |
 | `ui/thinking-steps` | 0 / 12 | none | Tip `3b6d7be` ("Liam_INTERFACE_done") is in `main`; T-091 itself was committed as `1aff9f7` and is in `main`. |
 | `ui/student-practice` | 0 / 12 | none | Contained in `main`. |

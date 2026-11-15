@@ -14,7 +14,7 @@ Maths results in Catalonia are falling, and a teacher cannot sit next to every c
 
 **[0:20–1:50] Demo**
 
-This is Kanga. She opens a real Kangaroo problem, in Catalan. Before the answer choices appear, she answers three short thinking questions: what is asked, what is the plan, how will I check. Each one gets instant feedback.
+This is Mia. She opens a real Kangaroo problem, in Catalan. Before the answer choices appear, she answers three short thinking questions: what is asked, what is the plan, how will I check. Each one gets instant feedback.
 
 Now she answers wrong, on purpose. The tutor does not just say "wrong". It says: that number could come from adding the two numbers; the problem needs a subtraction. Kangaroo distractors are designed mistakes, and Python can reproduce many of them with one naive operation. So we can name the slip without giving the answer.
 
@@ -55,7 +55,7 @@ Put the intelligence in the data and in Python, and keep the small model off the
 
 | # | Title | Three bullets | Figure / number |
 | --- | --- | --- | --- |
-| 1 | Kangaroo Studio: a maths tutor that lives on the board | Offline on an Arduino UNO Q 4 GB · Catalan and English · Teaches, does not answer | Photo of the board with the tutor open on the laptop over USB |
+| 1 | Math Is Yours: a maths tutor that lives on the board | Offline on an Arduino UNO Q 4 GB · Catalan and English · Teaches, does not answer | Photo of the board with the tutor open on the laptop over USB |
 | 2 | Guide the reasoning, keep the data | PISA maths falling in Catalonia · A tutor must not do the homework · Student records stay on the board (SQLite) | "0 network calls at runtime" |
 | 3 | The difficulty hidden in the papers | Kangaroo papers are ordered by points: thirds = 3/4/5 · Position is a free label for 1747 problems · Gradient boosting on embedding + text features | 0.516 vs 0.395 majority, Spearman 0.435 (years 2023–24 held out) |
 | 4 | One map, two languages | 1466 training problems, kNN graph, 14 clusters · One 384×384 rotation aligns Catalan to English · Paths = cheapest stepping stones (Dijkstra) | Map screenshot; recall@1 0.50 → 0.725 (held out) |

@@ -367,7 +367,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         def do_GET(self):
             path = urlsplit(self.path).path
             if path == '/api/health':
-                return self.send_json({'app': 'kangaroo-student', 'version': 'connected-graph-v2',
+                return self.send_json({'app': 'math-is-yours', 'version': 'connected-graph-v2',
                                        'status': 'ready', 'tutor': 'local' if local_tutor else 'stored',
                                        'model': tutor.health()})
             if path == "/api/image":
