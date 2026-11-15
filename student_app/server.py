@@ -54,7 +54,7 @@ MESSAGES = {
             'practice': 'Practise {skill} with a new problem.',
             'review': 'It is time to review {skill}.',
             'transfer': 'Try {skill} in a new kind of problem.',
-            'path': 'This is the next step towards your goal: {skill}.',
+            'path': 'Next step towards {goal}: {skill}.',
             'chosen': 'You chose to practise {skill}.',
             'stretch': 'A challenge in {skill}. Hints are ready if you need them.',
             'complete': 'You have tried every problem here. Pick any one for extra practice.',
@@ -85,7 +85,7 @@ MESSAGES = {
             'practice': 'Practica {skill} amb un problema nou.',
             'review': 'És hora de repassar {skill}.',
             'transfer': 'Prova {skill} en un problema diferent.',
-            'path': 'Aquest és el pas següent cap al teu objectiu: {skill}.',
+            'path': 'Pas següent cap a {goal}: {skill}.',
             'chosen': 'Has triat practicar {skill}.',
             'stretch': 'Un repte de {skill}. Si et cal, tens pistes.',
             'complete': 'Ja has provat tots els problemes. Tria el que vulguis per practicar més.',
@@ -105,7 +105,7 @@ def child_summary(result, language):
     """A plain sentence for the child; the technical `reason` stays for the method note."""
     table = messages(language)
     kind = result.get('kind') or 'practice'
-    text = table['summary'].get(kind, table['summary']['practice']).format(skill=result.get('skill') or '')
+    text = table['summary'].get(kind, table['summary']['practice']).format(skill=result.get('skill') or '', goal=result.get('goal_name') or result.get('skill') or '')
     if result.get('problem') and result.get('fresh') is False:
         text += ' ' + table['repeat']
     return text
@@ -430,6 +430,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                     if not result['fresh']:
                         result['reason'] += ' This repeats an exposed item; it will not count as new independent evidence.'
                 language = body.get('language') or 'eng'
+                result['goal_name'] = learning_path.get('goal_name') if goal else None
                 result['summary'] = child_summary(result, language)
                 if result.get('language_fallback'):
                     result['language_note'] = messages(language)['language_fallback']
