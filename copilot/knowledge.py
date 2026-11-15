@@ -7,28 +7,48 @@ import json
 import re
 from pathlib import Path
 
+from .content_checks import (STAGES, valid_steps, value_leak, verify_generated_hints, verify_generated_solution,
+                             verify_generated_steps, words)  # noqa: F401 (words, STAGES re-exported)
+
 ROOT = Path(__file__).resolve().parents[1]
-STAGES = ('understand', 'plan', 'check')
 SAMPLE_PROBLEMS = ROOT / 'data/sample_problems.jsonl'
-
-
-def words(text):
-    return len(text.split())
+GENERATED_MAX_BYTES = 8 * 1024 * 1024
 
 
 def leaked(steps, answer_text):
     """True when a step's question, option or explanation contains the correct option value."""
-    value = (answer_text or '').strip()
-    if not value:
-        return False
-    # Token boundaries: the value "5" is not leaked by "15", but "5 cm" or "is 5" is.
-    pattern = re.compile(r'(?<!\w)' + re.escape(value) + r'(?!\w)', re.I)
-    return any(pattern.search(text) for step in steps
+    return any(value_leak(text, answer_text, numeric=False) for step in steps
                for text in [step['question'], step['why'], *step['options']])
 
 
+def load_generated(path, container='problems', keyed_by_language=True):
+    """Read one optional large-model file (D-013): {"version": 1, <container>: {...}}. Absent -> {}."""
+    if path is None or not Path(path).is_file():
+        return {}, {}
+    path = Path(path)
+    if path.stat().st_size > GENERATED_MAX_BYTES:
+        raise ValueError(f'Generated content file is larger than {GENERATED_MAX_BYTES} bytes: {path}')
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise ValueError(f'Generated content file is not valid JSON: {path}: {error}') from error
+    if not isinstance(data, dict) or data.get('version') != 1 or not isinstance(data.get(container), dict):
+        raise ValueError(f'{path}: expected {{"version": 1, "{container}": {{...}}}}')
+    items = data[container]
+    if keyed_by_language:
+        for key in items:
+            pid, sep, language = key.rpartition('|')
+            if not sep or not pid or not language:
+                raise ValueError(f'{path}: keys must be "<id>|<language>", got {key!r}')
+    meta = {k: data.get(k) for k in ('model', 'via', 'generated') if isinstance(data.get(k), str)}
+    return items, meta
+
+
 class Knowledge:
-    def __init__(self, folder=ROOT / 'knowledge', annotations=None):
+    def __init__(self, folder=ROOT / 'knowledge', annotations=None, generated_steps=None, generated_solutions=None,
+                 generated_annotations=None):
+        """`annotations` are human-reviewed files; the `generated_*` files are optional large-model
+        content (knowledge/README.md, "Generated content"), re-verified per problem before use."""
         self.folder = Path(folder)
         self.skills = {}
         for path in sorted((self.folder / 'skills').glob('*.md')):
@@ -102,6 +122,23 @@ class Knowledge:
                         self.validate_steps(steps, f'annotation {pid}')
                         self.problem_steps.setdefault(pid, {})[steps[0]['language']] = steps
                     self.annotations[pid] = item
+        # Large-model content: never overrides a human entry; items are verified lazily per problem.
+        self.generated_steps, self.steps_meta = load_generated(generated_steps)
+        self.generated_solutions, self.solutions_meta = load_generated(generated_solutions)
+        self.generated_tagged, self.generated_tags_dropped = set(), 0
+        for path in [generated_annotations] if generated_annotations else []:
+            items, _ = load_generated(path, keyed_by_language=False)
+            for pid, item in items.items():
+                if pid in self.annotations or not isinstance(item, dict) or item.get('status') != 'reviewed':
+                    continue
+                try:
+                    self.validate_annotation(item)
+                except ValueError:
+                    self.generated_tags_dropped += 1  # e.g. a skill id that no longer exists
+                    continue
+                self.annotations[pid] = dict(item, generated=True)
+                self.generated_tagged.add(pid)
+        self._verified = {}
         diagnostic_ids = set()
         for p in self.diagnostics:
             self.validate_annotation(p)
@@ -149,41 +186,65 @@ class Knowledge:
 
     @staticmethod
     def validate_steps(steps, where):
-        if not isinstance(steps, list) or len(steps) != len(STAGES):
-            raise ValueError(f'Thinking steps for {where}: expected exactly {len(STAGES)} steps')
-        for expected, step in zip(STAGES, steps):
-            if not isinstance(step, dict) or step.get('stage') != expected:
-                raise ValueError(f'Thinking steps for {where}: stages must be {", ".join(STAGES)} in that order')
-            label = f'Thinking step {where}/{expected}'
-            for key in ('language', 'question', 'why'):
-                if not isinstance(step.get(key), str) or not step[key].strip():
-                    raise ValueError(f'{label}: {key} must be non-empty text')
-            options = step.get('options')
-            if not isinstance(options, list) or len(options) != 3 or any(not isinstance(o, str) or not o.strip() for o in options):
-                raise ValueError(f'{label}: exactly three non-empty options are required')
-            if len(set(o.strip().lower() for o in options)) != 3:
-                raise ValueError(f'{label}: options must be distinct')
-            if type(step.get('answer')) is not int or not 0 <= step['answer'] <= 2:
-                raise ValueError(f'{label}: answer must be an integer from 0 to 2')
-            counts = [words(o) for o in options]
-            if max(counts) > 10 or max(counts) - min(counts) > 2:
-                raise ValueError(f'{label}: options need at most 10 words and word counts within 2 of each other')
-            if any(o.split()[0].strip(',.').lower() in ('all', 'none', 'both') for o in options):
-                raise ValueError(f'{label}: options may not start with "All", "None" or "Both"')
-            if words(step['question']) > 25 or words(step['why']) > 25:
-                raise ValueError(f'{label}: question and why must be at most 25 words')
-            why = step['why'].strip()
-            if why[-1] not in '.!?' or re.search(r'[.!?]\s', why):
-                raise ValueError(f'{label}: why must be exactly one sentence')
-        if len({step['language'] for step in steps}) != 1:
-            raise ValueError(f'Thinking steps for {where}: all steps need the same language')
+        valid_steps(steps, where)
+
+    def verified(self, kind, problem):
+        """The generated item of `kind` for this problem and language if it passes re-verification, else None.
+
+        Results are memoised per (kind, id, language); make_handler warms the cache at startup."""
+        key = f"{problem.get('id')}|{problem.get('language')}"
+        memo = (kind, key)
+        if memo not in self._verified:
+            item, ok = None, False
+            if kind == 'steps' and key in self.generated_steps:
+                item = self.generated_steps[key]
+                ok, _ = verify_generated_steps(item, problem)
+            elif kind == 'solution' and key in self.generated_solutions:
+                item = self.generated_solutions[key]
+                ok, _ = verify_generated_solution(item, problem)
+            elif kind == 'annotation':
+                entry = self.annotations.get(problem.get('id'), {})
+                if entry.get('generated') and entry.get('language', 'eng') == problem.get('language') and entry.get('hints'):
+                    item = entry
+                    ok, _ = verify_generated_hints(entry['hints'], problem)
+            self._verified[memo] = (item, ok)
+        item, ok = self._verified[memo]
+        return item if ok else None
+
+    def generated_report(self, problems):
+        """Counts of generated items that match the loaded problems: served, dropped by re-verification."""
+        report = {}
+        for kind, source in (('steps', self.generated_steps), ('solution', self.generated_solutions), ('annotation', None)):
+            loaded = dropped = 0
+            for p in problems:
+                key = f"{p.get('id')}|{p.get('language')}"
+                entry = self.annotations.get(p.get('id'), {})
+                present = (key in source) if source is not None else bool(
+                    entry.get('generated') and entry.get('hints') and entry.get('language', 'eng') == p.get('language'))
+                if present:
+                    if self.verified(kind, p) is None:
+                        dropped += 1
+                    else:
+                        loaded += 1
+            report[kind] = {'loaded': loaded, 'dropped': dropped}
+        report['tags'] = {'loaded': len(self.generated_tagged), 'dropped': self.generated_tags_dropped}
+        return report
+
+    def tag_source(self, problem):
+        """'human', 'generated' or None for an untagged problem."""
+        if not self.annotation(problem)['skills']:
+            return None
+        return 'generated' if problem.get('id') in self.generated_tagged else 'human'
 
     def thinking_steps(self, problem):
-        """Return (steps, scope): reviewed problem steps, else the general skill steps, else none."""
+        """Return (steps, scope): reviewed problem steps, else verified generated steps, else skill steps, else none."""
         item = self.annotation(problem)
         steps = self.problem_steps.get(problem.get('id'), {}).get(problem.get('language'))
         if steps and item['skills']:
             return steps, 'problem'
+        generated = self.verified('steps', problem)
+        if generated:
+            return generated, 'generated'
         primary = item.get('assessment_skill') or (item['skills'][0] if item['skills'] else None)
         if primary and primary in self.skill_steps:
             return self.skill_steps[primary], 'skill'
@@ -208,13 +269,27 @@ class Knowledge:
         return self.annotations.get(problem['id'], {'skills': [], 'assessment_skill': None})
 
     def hints(self, problem):
+        """(hints, scope): human annotation, else verified generated ladder, else the skill's hints, else none."""
         item = self.annotation(problem)
-        if item.get('hints') and item.get('language', 'eng') == problem.get('language'):
+        if not item.get('generated') and item.get('hints') and item.get('language', 'eng') == problem.get('language'):
             return item['hints'], 'problem'
+        generated = self.verified('solution', problem) or self.verified('annotation', problem)
+        if generated:
+            return generated['hints'], 'generated'
         primary = item.get('assessment_skill')
         if primary:
             return self.skills[primary]['hints'], 'skill'
         return [], 'none'
+
+    def solution(self, problem):
+        """(text, scope): human annotation solution, else a verified generated one, else (None, 'none')."""
+        item = self.annotation(problem)
+        if not item.get('generated') and item.get('solution') and item.get('language', 'eng') == problem.get('language'):
+            return item['solution'], 'problem'
+        for generated in (self.verified('solution', problem), self.verified('annotation', problem)):
+            if generated and isinstance(generated.get('solution'), str) and generated['solution'].strip():
+                return generated['solution'], 'generated'
+        return None, 'none'
 
     def public_graph(self):
         return [{'source': pre, 'target': sid, 'kind': 'supports_learning'}

@@ -55,14 +55,18 @@ def initialize(db):
         student_model.initialize(con)
 
 
+GENERATED = {'steps': ROOT / 'data/ml/thinking_steps_generated.json', 'solutions': ROOT / 'data/ml/solutions_generated.json',
+             'annotations': ROOT / 'data/teaching_annotations.generated.json', 'explanations': ROOT / 'data/ml/slm_explanations.json'}
+
+
 def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, local_tutor=False, signatures=None,
-                 difficulty=None, map_path=None):
+                 difficulty=None, map_path=None, explanations=GENERATED['explanations'], log=None):
     catalog = catalog or Catalog([ROOT / "data/sample_problems.jsonl"], ROOT / "data/images")
     knowledge = knowledge or Knowledge(annotations=[ROOT / 'data/teaching_annotations.json'])
     graph = LearningGraph(knowledge, artifact=ROOT / 'data/skill_graph.json')
     tutor = Tutor(enabled=local_tutor, port=int(CONFIG['LLM_PORT']))
     # Optional laptop artifact (T-108); missing file means no misconception feedback.
-    misconceptions = Misconceptions(signatures) if signatures else Misconceptions()
+    misconceptions = Misconceptions(signatures or ROOT / 'data/ml/signatures.json', generated=explanations)
     # Optional laptop artifacts (T-102, T-106); missing files keep today's behaviour.
     difficulty = difficulty if difficulty is not None else Difficulty()
     difficulty_enabled = bool(difficulty.problems)
@@ -77,6 +81,12 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         label = p.get('label')
         if scope == 'problem' and label in list('ABCDE') and leaked(steps, p.get('options', {}).get(label)):
             raise ValueError(f'Thinking steps for {key} contain the correct option value')
+    # Large-model content (D-013) is re-verified against each loaded problem; failures are dropped, not served.
+    report = knowledge.generated_report(problems.values())
+    report['explanations'] = misconceptions.generated_report(problems.values())
+    if log and any(v['loaded'] or v['dropped'] for v in report.values()):
+        log('Generated content: ' + ', '.join(f"{name} {v['loaded']} served/{v['dropped']} dropped"
+                                               for name, v in report.items()) + ' (dropped = failed re-verification)')
     with connection(db) as con:
         for sid, skill in knowledge.skills.items():
             con.execute('INSERT OR REPLACE INTO curriculum_skills(id,title) VALUES(?,?)', (sid, skill['title']))
@@ -94,7 +104,13 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         annotation = knowledge.annotation(p)
         names = [knowledge.skills[sid]['title'] for sid in annotation['skills']]
         hints, _ = knowledge.hints(p)
-        return (' + '.join(names) or 'Unclassified', hints, annotation.get('solution') if annotation.get('language', 'eng') == p['language'] else None)
+        return (' + '.join(names) or 'Unclassified', hints, knowledge.solution(p)[0])
+
+    def coverage():
+        exercises = [p for p in problems.values() if p.get('kind') != 'diagnostic']
+        sources = [knowledge.tag_source(p) for p in exercises]
+        return {'tagged': sum(bool(s) for s in sources), 'tagged_human': sources.count('human'),
+                'tagged_generated': sources.count('generated'), 'exercises': len(exercises)}
 
     by_id = {}
     for key, p in problems.items():
@@ -291,8 +307,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                         'rating': student_model.ratings(con, student), 'difficulty_enabled': difficulty_enabled,
                         'attempts': con.execute('SELECT count(*) FROM attempts WHERE student=?', (student,)).fetchone()[0],
                         'parameters': knowledge.model, 'tutor': 'local selection' if local_tutor else 'stored guidance',
-                        'coverage': {'tagged': sum(bool(knowledge.annotation(p)['skills']) for p in problems.values() if p.get('kind') != 'diagnostic'),
-                                     'exercises': sum(p.get('kind') != 'diagnostic' for p in problems.values())}}
+                        'coverage': coverage()}
             if path == '/api/recommendation':
                 goal = body.get('goal')
                 learning_path = learning_route(con, student, body)
@@ -345,10 +360,17 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                         'steps_skill': knowledge.skills[steps_skill]['title'] if steps and steps_skill else None,
                         'reflection_required': not steps, 'can_reveal': False,
                         'reflection_prompt': 'What do you notice? Describe a first step, a useful relationship, or what you are unsure about before choosing an answer.',
-                        "has_hints": bool(content(pid)[1]), "has_solution": bool(content(pid)[2])}
+                        "has_hints": bool(content(pid)[1]), "has_solution": bool(content(pid)[2]),
+                        # Where each kind of help comes from: problem (human), generated (large model, verified), skill, template, none.
+                        'content_sources': {'steps': steps_scope, 'hints': knowledge.hints(problems[pid])[1],
+                                            'solution': knowledge.solution(problems[pid])[1],
+                                            'explanations': misconceptions.source(problems[pid])},
+                        'tags_source': knowledge.tag_source(problems[pid]),
+                        'provenance': knowledge.annotation(problems[pid]).get('provenance')}
             if path == "/api/problems":
-                return {'version': 'connected-graph-v2', "sources": catalog.sources, "problems": [{"key": key, "id": p["id"], "skill": content(key)[0],
-                         'skills': knowledge.annotation(p)['skills'], 'kind': p.get('kind', 'exercise'),
+                return {'version': 'connected-graph-v2', "sources": catalog.sources, 'coverage': coverage(),
+                        "problems": [{"key": key, "id": p["id"], "skill": content(key)[0],
+                         'skills': knowledge.annotation(p)['skills'], 'tags_source': knowledge.tag_source(p), 'kind': p.get('kind', 'exercise'),
                          "language": p["language"], "format": catalog.public(key)["format"]} for key, p in problems.items()]}
             if path not in ("/api/answer", "/api/hint", "/api/solution", "/api/reveal", '/api/reflect', '/api/step'):
                 raise ValueError("Unknown action")
@@ -375,6 +397,12 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 con.execute("UPDATE sessions SET revealed=1 WHERE id=?", (session["id"],))
                 return {"answer": label, "message": f"The official correct answer is {label}. Further attempts on this problem count as assisted practice."}
             if path == "/api/hint":
+                # After a wrong answer with a generated Socratic question, that question is the first hint.
+                slip = misconceptions.explain(problems[pid], session['last_answer']) if session['last_answer'] and not session['solved'] else None
+                if slip and slip.get('question') and session['hints'] == 0:
+                    con.execute('UPDATE sessions SET hints=hints+1, question_hints=question_hints+1 WHERE id=?', (session['id'],))
+                    return {'message': slip['question'], 'source': 'generated', 'scope': 'question', 'rung': 0,
+                            'can_reveal': can_reveal(dict(session, hints=session['hints'] + 1), pid)}
                 hints, scope = knowledge.hints(problems[pid])
                 if not hints:
                     return {"message": "Reviewed hints are not yet available for this dataset problem.", 'can_reveal': can_reveal(session, pid)}
@@ -382,7 +410,8 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 # so skip the broad first prompt.
                 missed_plan = session['steps_wrong'] > 0 and con.execute(
                     "SELECT 1 FROM thinking_events WHERE session_id=? AND stage='plan' AND first=1 AND correct=0", (session['id'],)).fetchone()
-                rung = min(session["hints"] + (1 if missed_plan or session['misconception'] else 0), len(hints) - 1)
+                ladder = session['hints'] - session['question_hints']  # the question is not a ladder rung
+                rung = min(ladder + (1 if missed_plan or session['misconception'] else 0), len(hints) - 1)
                 con.execute("UPDATE sessions SET hints=hints+1 WHERE id=?", (session["id"],))
                 context = session['reflection'] or steps_summary(con, session, pid)
                 if session['misconception']:
@@ -391,10 +420,11 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 updated = dict(session, hints=session['hints'] + 1)
                 return dict(result, can_reveal=can_reveal(updated, pid))
             if path == "/api/solution":
-                if not content(pid)[2]:
+                text, scope = knowledge.solution(problems[pid])
+                if not text:
                     return {"message": "A reviewed explanation is not yet available for this problem."}
                 con.execute("UPDATE sessions SET revealed=1 WHERE id=?", (session["id"],))
-                return {"message": content(pid)[2]}
+                return {"message": text, 'scope': scope}
             answer = body.get("answer")
             if not ready(session, pid):
                 if knowledge.thinking_steps(problems[pid])[0]:
@@ -430,6 +460,8 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
             if slip:
                 result['message'] += ' ' + slip['message']
                 result['misconception'] = {'op': slip['op'], 'answer_op': slip['answer_op']}
+                if slip['source'] == 'generated':
+                    result['misconception'].update(question=slip['question'], source='generated')
             return result
     return Handler
 
@@ -455,16 +487,23 @@ if __name__ == "__main__":
     parser.add_argument("--input", type=Path, nargs="+", help="Prepared JSONL files (default: data/train.jsonl, otherwise samples)")
     parser.add_argument("--images", type=Path, default=ROOT / "data/images")
     parser.add_argument('--annotations', type=Path, default=ROOT / 'data/teaching_annotations.json')
+    # Optional large-model content (D-013); absent files keep today's behaviour.
+    parser.add_argument('--generated-steps', type=Path, default=GENERATED['steps'])
+    parser.add_argument('--generated-solutions', type=Path, default=GENERATED['solutions'])
+    parser.add_argument('--generated-annotations', type=Path, default=GENERATED['annotations'])
+    parser.add_argument('--generated-explanations', type=Path, default=GENERATED['explanations'])
     parser.add_argument('--local-tutor', action='store_true', help='Let the local SLM select from authored hints; stored fallback always available')
     args = parser.parse_args()
     try:
         catalog = Catalog(args.input or default_inputs(ROOT), args.images)
-        knowledge = Knowledge(annotations=[args.annotations])
+        knowledge = Knowledge(annotations=[args.annotations], generated_steps=args.generated_steps,
+                              generated_solutions=args.generated_solutions, generated_annotations=args.generated_annotations)
     except (OSError, ValueError) as error:
         parser.error(str(error))
     initialize(args.db)
     try:
-        handler = make_handler(args.db, catalog, knowledge=knowledge, local_tutor=args.local_tutor)
+        handler = make_handler(args.db, catalog, knowledge=knowledge, local_tutor=args.local_tutor,
+                               explanations=args.generated_explanations, log=lambda line: print(line, flush=True))
     except (OSError, ValueError) as error:
         parser.error(str(error))
     try:

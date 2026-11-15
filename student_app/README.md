@@ -100,6 +100,10 @@ view-only. No runtime uploads, raw Parquet or remote images are required.
 python student_app/server.py --input data/train.jsonl --images data/images --annotations data/teaching_annotations.json
 ```
 
+Verified large-model content is picked up from its default paths when present; override with
+`--generated-steps`, `--generated-solutions`, `--generated-annotations` and `--generated-explanations`
+(precedence and checks: [knowledge/README.md](../knowledge/README.md#generated-content)).
+
 Multiple JSONL paths may follow `--input`. Keep validation for official evaluation.
 All generated M3Kang files, extracted images, annotations and clusters stay under
 ignored `data/`. Copy them separately when deploying to the board.

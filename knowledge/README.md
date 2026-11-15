@@ -188,6 +188,41 @@ answers when every step was right versus when one was missed. The notebook's
 "Thinking process" section repeats them and labels them as descriptive, not
 validated learning gains.
 
+## Generated content
+
+Large-model content (decision D-013) is generated and verified on the laptop by
+`laptop/ml/generate_content.py` and served by the board with pure Python. Every
+file is optional, git-ignored, at most 8 MB, and a malformed file (bad JSON, wrong
+`version`, wrong container, a key that is not `"<id>|<language>"`) stops the app.
+
+| File | Shape | Used for |
+| --- | --- | --- |
+| `data/ml/thinking_steps_generated.json` | `{"version":1,"model","problems":{"<id>\|<lang>":[3 steps]}}` | thinking steps |
+| `data/ml/solutions_generated.json` | `{"version":1,"model","problems":{"<id>\|<lang>":{"solution","hints":[3]}}}` | hint ladder, worked solution |
+| `data/ml/slm_explanations.json` | `{"version":1,"model","generated","items":{"<id>\|<lang>":{"<letter>":{"explanation","question","op"}}}}` | wrong-answer feedback, first hint |
+| `data/teaching_annotations.generated.json` | annotations format, keyed by id, with `provenance` | skill tags (and English hints/solution) |
+
+**Precedence**, per problem and language: human-authored bank or annotation, then
+generated, then the skill-level fallback, then none. A generated annotation never
+replaces a human one (human `data/teaching_annotations.json` and the samples load
+first). Scopes returned to the app: `problem` (human), `generated`, `skill`,
+`template` (signature messages), `none`; `/api/start` reports them in
+`content_sources`, plus `tags_source` and the annotation's `provenance`.
+
+**Re-verification on the board** (`copilot/content_checks.py`, the same rules as
+the laptop verifier, run lazily per problem and memoised; the server warms it at
+start and logs served/dropped counts): steps must pass the bank rules above, be in
+the problem's language and never contain the correct value or letter; hint ladders
+need three distinct hints of at most 25 words without the value, letter or
+"option X"; a solution is at most 120 words (it may state the value: it is shown
+only after the reveal gate); an explanation is at most 60 words and, with its
+question (at most 30 words), may not leak the value or letter. Items that fail are
+dropped and the fallback is used; nothing else changes.
+
+**Provenance:** generated content is model-written, verified automatically,
+educator review pending. Annotation entries keep the generator's `provenance`
+string (model, route and date) so the app can show it.
+
 ## Provisional Bayesian Knowledge Tracing
 
 `model.json` holds unfitted prototype parameters: prior 0.20, guess 0.20, slip

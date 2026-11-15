@@ -151,7 +151,7 @@ class PackagingTests(unittest.TestCase):
 
     def test_only_training_images_and_referenced_previews_are_selected(self):
         with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
+            root = Path(folder).resolve()  # macOS temp folders are symlinks
             images = root/'data/images'
             images.mkdir(parents=True)
             rows = [{'id':'train-one','language':'eng','option_images':['A']},
@@ -169,6 +169,28 @@ class PackagingTests(unittest.TestCase):
             self.assertNotIn('data/images/validation-only_eng.png', names)
             self.assertNotIn('data/images/validation-only_eng_option_A.png', names)
             self.assertNotIn('data/escape_eng.png', names)
+
+    def test_data_bundle_carries_ml_content_but_never_credentials_or_models(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()  # macOS temp folders are symlinks
+            for name in ['data/train.jsonl', 'data/teaching_annotations.generated.json', 'data/ml/difficulty.json',
+                         'data/ml/slm_explanations.json', 'data/ml/thinking_steps_generated.json', 'data/ml/embeddings.json',
+                         'data/ml/features.jsonl', 'data/models/model.json', 'data/models/m.gguf', '.env.local']:
+                (root/name).parent.mkdir(parents=True, exist_ok=True)
+                (root/name).write_text('' if name.endswith('.jsonl') else '{}', encoding='utf-8')
+            names = {p.relative_to(root).as_posix() for p in bundle_files(root, with_data=True)}
+            for name in ['data/teaching_annotations.generated.json', 'data/ml/difficulty.json',
+                         'data/ml/slm_explanations.json', 'data/ml/thinking_steps_generated.json']:
+                self.assertIn(name, names)
+            self.assertFalse({'data/ml/embeddings.json', 'data/ml/features.jsonl', '.env.local'} & names)
+            self.assertFalse(any(n.startswith('data/models/') for n in names))
+            self.assertNotIn('data/ml/difficulty.json', {p.relative_to(root).as_posix() for p in bundle_files(root)})
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder)/'bundle.tar.gz'
+            build_bundle(ROOT, output, with_data=(ROOT/'data/train.jsonl').is_file())
+            with tarfile.open(output) as archive:
+                names = archive.getnames()
+            self.assertFalse(any(n.startswith('.env') or n.startswith('data/models/') for n in names))
 
     def test_default_bundle_excludes_private_progress_and_training_data(self):
         with tempfile.TemporaryDirectory() as folder:

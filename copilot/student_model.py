@@ -67,7 +67,7 @@ def initialize(con):
     columns = {r[1] for r in con.execute('PRAGMA table_info(sessions)')}
     for name, definition in [('started_at', 'TEXT'), ('return_to', 'TEXT'), ('last_answer', 'TEXT'), ('reflection', "TEXT NOT NULL DEFAULT ''"),
                              ('steps_done', 'INTEGER NOT NULL DEFAULT 0'), ('steps_wrong', 'INTEGER NOT NULL DEFAULT 0'),
-                             ('misconception', 'TEXT')]:
+                             ('misconception', 'TEXT'), ('question_hints', 'INTEGER NOT NULL DEFAULT 0')]:
         if name not in columns:
             con.execute(f'ALTER TABLE sessions ADD COLUMN {name} {definition}')
     event_columns = {r[1] for r in con.execute('PRAGMA table_info(learning_events)')}

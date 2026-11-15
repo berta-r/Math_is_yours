@@ -4,11 +4,18 @@ laptop/ml/signatures.py writes data/ml/signatures.json: for each canonical probl
 id, which naive operation over the text's numerals gives each distractor. After a
 wrong answer the app names that operation in one or two short sentences, in the
 problem's language, without ever giving away the correct option.
+
+When data/ml/slm_explanations.json (large-model explanations, D-013) has an entry for
+the problem, language and letter that passes re-verification, its explanation and
+Socratic question are used instead of the template ('source': 'generated').
 """
 import json
 import re
 from fractions import Fraction
 from pathlib import Path
+
+from .content_checks import verify_generated_explanation
+from .knowledge import load_generated
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_BYTES = 2 * 1024 * 1024
@@ -105,9 +112,12 @@ def _valid_op(entry, where, allow_null=False):
 
 
 class Misconceptions:
-    def __init__(self, path=ROOT / 'data/ml/signatures.json'):
+    def __init__(self, path=ROOT / 'data/ml/signatures.json', generated=ROOT / 'data/ml/slm_explanations.json'):
         self.path = Path(path)
         self.problems = {}
+        # {"<id>|<language>": {"<letter>": {"explanation", "question", "op"}}}; malformed file -> ValueError.
+        self.generated, self.generated_meta = load_generated(generated, container='items')
+        self._verified = {}
         if not self.path.exists():
             return  # no artifact deployed: today's behaviour
         if self.path.stat().st_size > MAX_BYTES:
@@ -131,11 +141,47 @@ class Misconceptions:
     def __len__(self):
         return len(self.problems)
 
+    def generated_for(self, problem, letter):
+        """The verified generated explanation for this problem, language and wrong letter, else None."""
+        key = (f"{problem.get('id')}|{problem.get('language')}", letter)
+        if key not in self._verified:
+            item = (self.generated.get(key[0]) or {}).get(letter) if isinstance(self.generated.get(key[0]), dict) else None
+            ok = item is not None and verify_generated_explanation(item, problem, letter)[0]
+            self._verified[key] = item if ok else None
+        return self._verified[key]
+
+    def source(self, problem):
+        """'generated' when any wrong letter has a verified explanation, 'template' when signatures exist, else 'none'."""
+        if any(self.generated_for(problem, letter) for letter in LETTERS if letter != problem.get('label')):
+            return 'generated'
+        return 'template' if self.problems.get(problem.get('id')) else 'none'
+
+    def generated_report(self, problems):
+        """Generated explanations that match the loaded problems: served and dropped by re-verification."""
+        loaded = dropped = 0
+        for p in problems:
+            letters = self.generated.get(f"{p.get('id')}|{p.get('language')}")
+            for letter in letters if isinstance(letters, dict) else ():
+                if self.generated_for(p, letter):
+                    loaded += 1
+                else:
+                    dropped += 1
+        return {'loaded': loaded, 'dropped': dropped}
+
     def explain(self, problem, letter):
-        """{'op', 'answer_op', 'message'} for a wrong letter with a signature, else None."""
+        """{'op', 'answer_op', 'message', 'question', 'source'} for an explained wrong letter, else None."""
         entry = self.problems.get(problem.get('id'))
         label = problem.get('label')
-        if not entry or letter == label or letter not in entry['distractors']:
+        if letter == label:
+            return None
+        generated = self.generated_for(problem, letter)
+        if generated:
+            signature = entry['distractors'].get(letter) if entry else None
+            op = signature['op'] if signature else generated.get('op') if generated.get('op') in OPS else None
+            answer = entry.get('answer_op') if entry else None
+            return {'op': op, 'answer_op': answer['op'] if answer else None, 'message': generated['explanation'].strip(),
+                    'question': generated['question'].strip(), 'source': 'generated'}
+        if not entry or letter not in entry['distractors']:
             return None
         item, answer = entry['distractors'][letter], entry.get('answer_op')
         language = 'cat' if problem.get('language') == 'cat' else 'eng'
@@ -156,7 +202,7 @@ class Misconceptions:
             # Operands can include the correct value: fall back to a message without numbers.
             message = SPECIAL[op][index] if op in SPECIAL else TEXT['generic'][index].format(phrase=GENERIC[op][index])
         assert not self.leaks(message, problem), 'misconception message would reveal the answer'
-        return {'op': op, 'answer_op': answer['op'] if answer else None, 'message': message}
+        return {'op': op, 'answer_op': answer['op'] if answer else None, 'message': message, 'question': None, 'source': 'template'}
 
     @staticmethod
     def leaks(message, problem):

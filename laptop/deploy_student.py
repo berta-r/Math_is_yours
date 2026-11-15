@@ -19,6 +19,15 @@ sys.path.insert(0, str(ROOT))
 from laptop.usb_launcher import Adb, find_adb
 
 
+EXCLUDED_ML = {'embeddings.json', 'features.jsonl'}
+
+
+def forbidden(relative):
+    """Paths that must never ship: credentials and model weights."""
+    parts = Path(relative).parts
+    return (Path(relative).name.startswith('.env') or parts[:2] == ('data', 'models'))
+
+
 def bundle_files(root, with_data=False):
     root = Path(root).resolve()
     files = [root/'config.env', root/'data/sample_problems.jsonl']
@@ -30,7 +39,10 @@ def bundle_files(root, with_data=False):
     # Similarity metadata has no raw problem text and is safe to prepare offline.
     files.append(root/'data/skill_graph.json')
     if with_data:
-        files.extend(root/'data'/name for name in ('train.jsonl', 'teaching_annotations.json'))
+        files.extend(root/'data'/name for name in ('train.jsonl', 'teaching_annotations.json', 'teaching_annotations.generated.json'))
+        # Laptop ML artifacts and verified large-model content (D-013), keyed to the training rows.
+        # Embeddings are large and only used on the laptop; features.jsonl is not *.json.
+        files.extend(p for p in (root/'data/ml').glob('*.json') if p.name not in EXCLUDED_ML)
         # The shared image folder also contains validation images. Include only
         # originals and explicitly referenced previews from loaded training rows.
         images = (root/'data/images').resolve()
@@ -53,6 +65,8 @@ def bundle_files(root, with_data=False):
             continue
         if not path.resolve().is_relative_to(root) or path.suffix in ('.db', '.gguf', '.pyc'):
             continue
+        if forbidden(path.relative_to(root)):
+            continue
         if path.is_relative_to(root/'knowledge') and path.suffix not in ('.md', '.json'):
             continue
         if path.is_relative_to(root/'student_app/assets') and path.suffix not in ('.html', '.css', '.js', '.svg', '.woff2'):
@@ -69,6 +83,8 @@ def build_bundle(root, output, with_data=False):
         raise ValueError('--with-data requires prepared data/train.jsonl; prepare data first or omit that flag')
     required = {'student_app/server.py', 'copilot/knowledge.py', 'knowledge/model.json', 'board/install_student_service.py'}
     names = {p.relative_to(root).as_posix() for p in files}
+    if any(forbidden(name) for name in names):
+        raise ValueError('Refusing to package credentials or model weights')
     if not required <= names:
         raise ValueError('Incomplete application source: ' + ', '.join(sorted(required - names)))
     with tarfile.open(output, 'w:gz') as archive:
