@@ -164,6 +164,16 @@ rows (`options_source = ocr-refill`); 755 + 168 stay empty: picture options
 was 981), 630 problems with at least one explained distractor, 153 with an
 `answer_op`. The generated content re-verifies unchanged (0 dropped).
 
+**Second pass, bottom strip (`fill_options.py --strips`, 14 min).** For the rows still
+empty, the bottom 30% of the image (then 45%, then 30% at ×3) is upscaled ×2 and
+OCRed again; the small option digits the full-page pass merged or lost are read there
+(11 of 12 sampled text problems). Filled 254 more training and 62 validation rows
+(`options_source = ocr-strip`). Remaining empty: 501 training rows (30 of them
+`text_only`; the rest have picture options, 90 of them level 0) and 106 validation rows.
+Options with text now: 2431 of 2932 training rows (83%, was 64%). Signatures rebuilt
+again: 1103 all-numeric problems, 1339 explained distractors (30.4%), 714 problems
+with at least one explained distractor. Generated content: still 0 dropped.
+
 ## Difficulty model (T-102, laptop, 2026-11-15)
 
 Target: points (3/4/5) derived from the problem's position within its level-year

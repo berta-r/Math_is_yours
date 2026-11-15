@@ -10,6 +10,12 @@ with --reparse without running the OCR again.
     .venv/bin/python laptop/fill_options.py               # OCR the rows with empty options
     .venv/bin/python laptop/fill_options.py --reparse     # only re-run the parser on cached boxes
     .venv/bin/python laptop/fill_options.py --limit 20    # try a few first
+    .venv/bin/python laptop/fill_options.py --strips      # also OCR the upscaled bottom strip of the image
+
+--strips: when the whole-image OCR gives nothing, crop the bottom 30% (then 45%,
+then 30% at x3) of the image, upscale it x2 and OCR again; small option digits
+that the full-page pass merged or lost are usually read there. Filled rows get
+options_source "ocr-strip". Strip boxes are cached under "<key>#strip:<frac>:<scale>".
 """
 import argparse
 import json
@@ -40,6 +46,20 @@ def empty(row):
     return not any(v for v in (row.get('options') or {}).values())
 
 
+STRIPS = ((0.3, 2), (0.45, 2), (0.3, 3))
+
+
+def strip_image(path, frac, scale):
+    """The bottom `frac` of the image, upscaled by `scale`, as an RGB array for the OCR."""
+    from PIL import Image
+    import numpy as np
+    with Image.open(path) as im:
+        im = im.convert('RGB')
+        w, h = im.size
+        crop = im.crop((0, int(h * (1 - frac)), w, h)).resize((int(w * scale), max(1, int(h * frac * scale))), Image.LANCZOS)
+        return np.array(crop)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--data', default=os.path.join(ROOT, 'data'))
@@ -47,6 +67,7 @@ def main(argv=None):
     parser.add_argument('--reparse', action='store_true', help='use cached boxes only; no OCR')
     parser.add_argument('--limit', type=int, default=0)
     parser.add_argument('--dry-run', action='store_true', help='report, do not write the JSONL files')
+    parser.add_argument('--strips', action='store_true', help='also OCR the upscaled bottom strip when the full image gives nothing')
     args = parser.parse_args(argv)
 
     boxes_path = os.path.join(args.data, '.ocr_boxes.jsonl')
@@ -69,7 +90,7 @@ def main(argv=None):
         if not os.path.exists(path):
             continue
         rows = load_rows(path)
-        stats = {'rows': len(rows), 'empty_before': sum(empty(r) for r in rows), 'filled': 0, 'still_empty': 0, 'no_image': 0}
+        stats = {'rows': len(rows), 'empty_before': sum(empty(r) for r in rows), 'filled': 0, 'filled_strip': 0, 'still_empty': 0, 'no_image': 0}
         for row in rows:
             if not empty(row):
                 continue
@@ -89,10 +110,28 @@ def main(argv=None):
                 cache_file.flush()
             done += 1
             options = parse_options(boxes)
+            source = 'ocr-refill'
+            if not options and args.strips and os.path.exists(image):
+                for frac, scale in STRIPS:
+                    skey = f'{key}#strip:{frac}:{scale}'
+                    sboxes = cache.get(skey)
+                    if sboxes is None:
+                        if ocr is None:
+                            continue
+                        result, _ = ocr(strip_image(image, frac, scale))
+                        sboxes = [[box, text, float(score)] for box, text, score in (result or [])]
+                        cache[skey] = sboxes
+                        cache_file.write(json.dumps({'key': skey, 'boxes': sboxes}, ensure_ascii=False) + '\n')
+                        cache_file.flush()
+                    options = parse_options(sboxes)
+                    if options:
+                        source = 'ocr-strip'
+                        break
             if options:
                 row['options'] = options
-                row['options_source'] = 'ocr-refill'
+                row['options_source'] = source
                 stats['filled'] += 1
+                stats['filled_strip'] += source == 'ocr-strip'
             else:
                 stats['still_empty'] += 1
             if done % 50 == 0:
