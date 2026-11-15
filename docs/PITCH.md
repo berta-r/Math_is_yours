@@ -1,6 +1,6 @@
 # Pitch (3 minutes)
 
-> One story: we found the difficulty hidden in the Kangaroo papers, built a bilingual map of every training problem, and the tutor walks each student along it, makes them think before answering and explains their mistakes. The on-device SLM only does bounded jobs; all content a student reads was generated offline by a large model and verified in Python.
+> One story: every problem a student gets is chosen so they are likely but not certain to solve it (about 70%), and every goal is reached by small steps. We found the difficulty hidden in the Kangaroo papers, rate the student like a chess player, built a bilingual map of every training problem, and the tutor walks each student along it, makes them think before answering and explains their mistakes. The full chain with formulas and numbers is [ML.md](ML.md). The on-device SLM only does bounded jobs; all content a student reads was generated offline by a large model and verified in Python.
 >
 > Every number below is from [EXPERIMENTS.md](EXPERIMENTS.md) or [STATUS.md](STATUS.md), with its conditions in the "Numbers" table. Anything marked **pending** must be said as pending, or measured before the pitch. If the morning regenerates the artifacts with the board's Q8 embeddings (SUBMISSION.md, step c4), replace the three ML numbers with the new EXPERIMENTS rows.
 

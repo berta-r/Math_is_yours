@@ -313,6 +313,7 @@ data/                      sample_problems.jsonl only; M3Kang data stays local
 - [docs/STATUS.md](docs/STATUS.md): what works today
 - [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md): every measurement with its conditions
 - [docs/DECISIONS.md](docs/DECISIONS.md): why things are the way they are
+- [docs/ML.md](docs/ML.md): how the tutor chooses the next problem (difficulty, rating, the 70% rule, map and paths), with the formulas and numbers
 - [docs/ML-OPTIONS.md](docs/ML-OPTIONS.md): the ML options we considered and built
 - [docs/PROJECT-HUB.md](docs/PROJECT-HUB.md): the Arduino Project Hub write-up
 - [student_app/README.md](student_app/README.md), [knowledge/README.md](knowledge/README.md), [board/STUDENT_DEPLOYMENT.md](board/STUDENT_DEPLOYMENT.md), [laptop/ml/README.md](laptop/ml/README.md)
