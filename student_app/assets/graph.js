@@ -8,7 +8,8 @@ window.KnowledgeMap=KnowledgeMap;
 /* Layered, left-to-right skill tree. Prerequisites sit to the left of what they
    unlock; the layout is computed once per data change, with no pan, zoom or physics. */
 const SVG_NS='http://www.w3.org/2000/svg';
-const TREE={nodeW:220,laneH:16,lineH:22,padTop:14,padX:14,stateH:22,padBottom:12,colGap:110,rowGap:28,margin:14,glyphW:28};
+// Boxes are 220×92: the skill name only, 22px (20px when it needs three lines); colour and the corner glyph carry the state.
+const TREE={nodeW:220,nodeH:92,laneH:16,padY:10,padX:14,colGap:110,rowGap:28,margin:14,glyphW:28};
 class SkillTree {
   constructor(svg,onSelect) {
     this.svg=svg;this.onSelect=onSelect;this.skills=[];this.edges=[];this.selected=null;
@@ -31,10 +32,10 @@ class SkillTree {
   }
   state(skill) {return skill.display_state||skill.state||'not_assessed';}
   // Greedy word wrap against the real text width; a single long word keeps its own line.
-  wrap(text) {
+  wrap(text,size=22) {
     const font=getComputedStyle(this.svg).getPropertyValue('--tree-font').trim()||'Archivo, Arial, sans-serif';
-    this.measure.font=`700 18px ${font}`;
-    const fits=document.fonts?.check?.(`700 18px ${font}`)!==false;
+    this.measure.font=`700 ${size}px ${font}`;
+    const fits=document.fonts?.check?.(`700 ${size}px ${font}`)!==false;
     const max=TREE.nodeW-2*TREE.padX-TREE.glyphW,width=s=>this.measure.measureText(s).width*(fits?1:1.12);
     const lines=[];
     for(const word of text.split(/\s+/).filter(Boolean)) {
@@ -78,9 +79,9 @@ class SkillTree {
     const name=id=>label.get(id);
     columns.forEach(col=>col.sort((a,b)=>name(a).localeCompare(name(b))));
     // Node height fits the longest wrapped name: every box in the tree has the same size.
-    this.lines=new Map(this.skills.map(s=>[s.id,this.wrap(s.name)]));
-    const maxLines=Math.max(1,...[...this.lines.values()].map(l=>l.length));
-    this.nodeH=TREE.padTop+maxLines*TREE.lineH+TREE.stateH+TREE.padBottom;
+    this.lines=new Map(this.skills.map(s=>{const big=this.wrap(s.name,22);return [s.id,big.length<=2?{size:22,lines:big}:{size:20,lines:this.wrap(s.name,20)}];}));
+    const tallest=Math.max(1,...[...this.lines.values()].map(l=>l.lines.length*Math.round(l.size*1.2)));
+    this.nodeH=Math.max(TREE.nodeH,tallest+2*TREE.padY);
     const size=id=>id.startsWith('~')?TREE.laneH:this.nodeH;
     const span=col=>col.reduce((sum,id)=>sum+size(id),0)+Math.max(0,col.length-1)*TREE.rowGap;
     this.width=2*TREE.margin+count*TREE.nodeW+(count-1)*TREE.colGap;
@@ -161,10 +162,11 @@ class SkillTree {
       group.append(this.element('rect',{'class':'focus-ring',x:-10,y:-10,width:W+20,height:H+20}));
       group.append(this.element('rect',{'class':'select-ring',x:-6,y:-6,width:W+12,height:H+12}));
       group.append(this.element('rect',{'class':'box',x:0,y:0,width:W,height:H}));
-      const name=this.element('text',{'class':'node-name',x:TREE.padX,y:TREE.padTop});
-      this.lines.get(id).forEach((line,i)=>{const span=this.element('tspan',{x:TREE.padX,dy:i?TREE.lineH:16});span.textContent=line;name.append(span);});
-      const status=this.element('text',{'class':'node-state',x:TREE.padX,y:H-TREE.padBottom-4});status.textContent=KnowledgeMap.stateLabel(state);
-      group.append(name,status);
+      // The name is centred vertically; the state is in the colour, the glyph and the aria-label.
+      const {size,lines}=this.lines.get(id),lineH=Math.round(size*1.2),top=(H-lines.length*lineH)/2;
+      const name=this.element('text',{'class':'node-name',x:TREE.padX,y:top,style:`font-size:${size}px`,'aria-hidden':'true'});
+      lines.forEach((line,i)=>{const span=this.element('tspan',{x:TREE.padX,dy:i?lineH:Math.round(size*.95)});span.textContent=line;name.append(span);});
+      group.append(name);
       if(isGoal) group.append(this.element('rect',{'class':'goal-mark',x:W-26,y:12,width:14,height:14}));
       else {
         const glyph={demonstrated:'✓',developing:'↗',due:'◷'}[state];

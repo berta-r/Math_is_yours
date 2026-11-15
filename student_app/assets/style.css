@@ -1069,14 +1069,6 @@ body:not(.landing) .map-links + .connection-map { margin-top:0; }
 @media (hover:hover) and (pointer:fine) {
   .tree-node:not(.is-goal):hover .box { fill:var(--selected); }
 }
-/* Legend: the same fills and strokes as the boxes. */
-.tree-legend { display:flex; flex-wrap:wrap; gap:8px 24px; margin:12px 0 0; font-size:16px; line-height:1.45; color:var(--ink); }
-.tree-legend>span { display:inline-flex; align-items:center; gap:8px; }
-.tree-legend i { flex:0 0 18px; width:18px; height:18px; border:3px solid var(--ink); background:var(--reading); }
-.tree-legend .key-done { background:var(--ok-fill); border-color:var(--ok); }
-.tree-legend .key-working { border-color:var(--ok); }
-.tree-legend .key-path { background:var(--selected); border-color:var(--accent); }
-.tree-legend .key-goal { background:var(--accent); border-color:var(--accent); }
 /* Goal picker: small secondary buttons; the chosen goal is filled blue. */
 .goal-picker { margin:24px 0 40px; }
 body:not(.landing) .goal-picker #goal-label { margin:0 0 12px; font-size:18px; font-weight:700; color:var(--ink); }
@@ -1126,3 +1118,85 @@ body:not(.landing) .path-problem-meta { margin:0; font-size:16px; color:var(--mu
 body:not(.landing) .path-problem-open { align-self:flex-start; min-height:44px; padding:8px 16px; }
 @media (max-width:1050px) { body:not(.landing) .path-problem-list { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:640px) { body:not(.landing) .path-problem-list { grid-template-columns:1fr; } }
+
+/* Studio 09 (T-120): full-width Solve. Change problem top-left, the step rail above the statement,
+   a 3px rule before the thinking question and before the answers, feedback as large framed bands. */
+.practice-column,body:not(.landing) .practice-column { max-width:none; width:100%; }
+body:not(.landing) .exercise-settings { order:0; }
+body:not(.landing) .exercise-settings summary { margin-left:0; margin-right:auto; }
+body:not(.landing) #question { max-width:none; width:100%; font-size:clamp(28px,2.6vw,40px); text-wrap:pretty; }
+/* Rail above the statement: same look as before, its own spacing. */
+.progress-rail[hidden] { display:none; }
+.progress-rail .step-rail { margin:0; }
+body:not(.landing) .progress-rail { margin-bottom:8px; }
+/* A strong 3px rule separates the statement from the thinking question, and the steps from the answers. */
+body:not(.landing) .reflection-box,body:not(.landing) #answer-stage { margin-top:8px; padding-top:32px; border-top:var(--frame); }
+body:not(.landing) #answer-stage[hidden] { display:none; }
+body:not(.landing) .step-question { margin:0 0 24px; font-size:clamp(22px,2vw,30px); font-weight:700; line-height:1.3; }
+body:not(.landing) .answer-label { font-size:clamp(22px,2vw,30px); font-weight:700; line-height:1.3; margin:0 0 24px; }
+/* Step feedback: a framed band with a 40px glyph, a large headline and the reason underneath. */
+body:not(.landing) .step-feedback:not([hidden]),body:not(.landing) .step-feedback[data-state] { display:flex; align-items:flex-start; gap:20px; }
+body:not(.landing) .step-feedback,body:not(.landing) .step-feedback[data-state="correct"],body:not(.landing) .step-feedback[data-state="retry"] {
+  margin:24px 0 0; padding:20px 24px; border:3px solid var(--ink); border-radius:0; background:var(--reading); color:var(--ink); font-size:19px; line-height:1.45; }
+body:not(.landing) .step-feedback[data-state="correct"] { border-color:var(--ok); background:var(--ok-fill); }
+body:not(.landing) .step-feedback[data-state="retry"] { border-color:var(--bad); background:var(--bad-fill); }
+body:not(.landing) .step-feedback[hidden] { display:none; }
+.band-glyph { flex:0 0 auto; font-size:40px; font-weight:900; line-height:1; }
+.step-feedback[data-state="correct"] .band-glyph { color:var(--ok); }
+.step-feedback[data-state="retry"] .band-glyph { color:var(--bad); }
+.band-text { display:block; min-width:0; }
+body:not(.landing) .step-feedback .band-title { display:block; margin:0 0 6px; font-size:clamp(22px,2vw,28px); font-weight:900; line-height:1.15; letter-spacing:-.02em; word-spacing:.12em; color:var(--ink); }
+.band-body { display:block; font-size:19px; line-height:1.45; color:var(--ink); }
+.band-body:empty { display:none; }
+/* Hint / answer / explanation: the same scale, a 3px ink band with the label as its headline. */
+body:not(.landing) #feedback,body:not(.landing) #feedback[data-kind="answer"] { margin:0; padding:20px 24px; border:var(--frame); border-radius:0; background:var(--reading); color:var(--ink); font-size:19px; line-height:1.45; }
+body:not(.landing) #feedback[data-kind="answer"] { border-color:var(--ok); background:var(--ok-fill); }
+body:not(.landing) #feedback strong { display:block; margin:0 0 6px; font-size:clamp(22px,2vw,28px); font-weight:900; line-height:1.15; letter-spacing:-.02em; word-spacing:.12em; }
+body:not(.landing) #feedback:empty { display:none; }
+body:not(.landing) #hint-source { margin:-8px 0 0; padding-left:0; }
+@media (max-width:760px) {
+  body:not(.landing) .step-feedback,body:not(.landing) .step-feedback[data-state="correct"],body:not(.landing) .step-feedback[data-state="retry"],body:not(.landing) #feedback { padding:16px; }
+  body:not(.landing) .step-feedback:not([hidden]) { gap:14px; }
+  .band-glyph { font-size:34px; }
+}
+
+/* Studio 09, My path (T-120): the tree shows names only, state by colour and glyph; bigger goal buttons;
+   problem cards are whole buttons tinted by difficulty. */
+#skill-tree .node-name { font-size:22px; font-weight:700; letter-spacing:-.01em; }
+.tree-node .box { fill:var(--reading); stroke:var(--ink); stroke-width:3; }
+.tree-node.state-demonstrated .box { fill:var(--ok); stroke:var(--ok); }
+#skill-tree .tree-node.state-demonstrated text { fill:#fff; }
+#skill-tree .tree-node.state-demonstrated .node-glyph { fill:#fff; }
+.tree-node:is(.state-developing,.state-due) .box { fill:var(--ok-fill); stroke:var(--ok); }
+#skill-tree .tree-node:is(.state-developing,.state-due) .node-glyph { fill:var(--ok); }
+.tree-node.on-path .box { fill:var(--selected); stroke:var(--accent); }
+#skill-tree .tree-node.on-path text { fill:var(--ink); }
+#skill-tree .tree-node.on-path .node-glyph { fill:var(--accent); }
+.tree-node.is-goal .box { fill:var(--accent); stroke:var(--accent); }
+#skill-tree .tree-node.is-goal text { fill:#fff; }
+@media (hover:hover) and (pointer:fine) {
+  .tree-node:not(.is-goal):not(.state-demonstrated):hover .box { fill:var(--selected); }
+  .tree-node.state-demonstrated:hover .box { fill:#0e5f3d; }
+}
+/* Goal picker. */
+.goal-buttons { gap:12px; }
+body:not(.landing) .goal-picker #goal-label { margin:0 0 16px; font-size:20px; font-weight:700; }
+body:not(.landing) .goal-buttons .goal-button { min-height:52px; padding:10px 20px; font-size:18px; font-weight:700; }
+/* Problem cards: one button each, number / category / difficulty, tinted by difficulty. */
+body:not(.landing) .path-problem-item { display:flex; min-width:0; }
+body:not(.landing) button.path-problem { position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:8px; width:100%; min-height:150px; margin:0; padding:16px 20px; border:var(--frame); border-radius:0; background:var(--reading); color:var(--ink); text-align:left; box-shadow:none; transition:var(--control-motion); }
+body:not(.landing) button.path-problem[data-level="easy"] { background:rgba(19,117,76,.14); }
+body:not(.landing) button.path-problem[data-level="medium"] { background:rgba(50,84,232,.14); }
+body:not(.landing) button.path-problem[data-level="hard"] { background:rgba(8,13,21,.14); }
+body:not(.landing) button.path-problem.goal { border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+body:not(.landing) button.path-problem.solved { border-color:var(--ink); }
+body:not(.landing) button.path-problem:disabled { opacity:.45; cursor:not-allowed; }
+body:not(.landing) .path-problem .path-problem-order { font-size:28px; font-weight:900; line-height:1; letter-spacing:-.04em; }
+body:not(.landing) .path-problem .path-problem-category { font-size:clamp(20px,1.8vw,24px); font-weight:700; line-height:1.2; letter-spacing:-.02em; overflow-wrap:anywhere; }
+body:not(.landing) .path-problem .path-problem-difficulty { margin-top:auto; padding:0; border:0; background:transparent; color:var(--ink); font-size:18px; font-weight:700; }
+body:not(.landing) .path-problem .path-problem-check { position:absolute; top:12px; right:16px; font-size:32px; font-weight:900; line-height:1; color:var(--ok); }
+body:not(.landing) button.path-problem:active:not(:disabled) { transform:scale(.98); }
+@media (hover:hover) and (pointer:fine) {
+  body:not(.landing) button.path-problem:not(:disabled):hover { transform:translate(-2px,-2px); box-shadow:var(--control-shadow); color:var(--ink); }
+  body:not(.landing) button.path-problem.goal:not(:disabled):hover { box-shadow:inset 0 0 0 1px var(--accent),var(--control-shadow); }
+}
