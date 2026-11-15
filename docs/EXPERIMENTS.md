@@ -206,3 +206,21 @@ the final README; differences are expected to be small.
 `ALIGN_CATALAN=1` maps Catalan query vectors with `data/ml/procrustes.json`
 before the cosine search in `copilot/rag.py` (default 0: `predict.py` unchanged).
 Not yet measured on the board: run `eval.py --languages cat --name align-cat` with ALIGN_CATALAN=1.
+
+## Live SLM probes with the board model on the laptop (2026-11-15)
+
+Same GGUF as the board (`Qwen_Qwen3.5-0.8B-Q8_0`, SHA-256 verified), llama-cpp-python,
+temperature 0, seed 42, four threads on the Mac. Board time is estimated from
+the measured prompt/generation token counts at 11 / 5.5 tok/s.
+
+| Probe | Prompt tokens | Result | Estimated board time |
+| --- | --- | --- | --- |
+| One Socratic follow-up question from problem + student note (JSON, ≤ 60 tokens) | 160–185 | 1/5 useful; 4/5 restated the problem; 1/5 leaked the answer | ≈ 19 s |
+| Same with a teacher "fact" (from the misconception signature) and two few-shot examples | 354–385 | 1/5 useful; 4/5 restated the problem (word overlap ≥ 0.62); 1/5 leaked | ≈ 38 s |
+| Grammar-constrained strategy label for the note (8 labels) | 79–95 | 7/12 correct; "Multiplico 8 per 3" → add, "Resto 6 de 15" → no_plan | ≈ 9 s |
+
+Conclusion recorded in D-013: content-bearing text (explanations, Socratic
+questions, thinking steps) is generated offline by a larger local model and
+verified in Python; the live SLM keeps bounded roles (hint selection, letter
+distribution). Scripts: scratchpad `socratic_probe.py`, `socratic_probe2.py`,
+`classify_probe.py` (not committed; five sample problems only).
