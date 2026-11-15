@@ -6,17 +6,34 @@
 
 ## Summary
 
-**T-130 hardware acceptance in progress (2026-11-15):** the teammate's full-data
-release `20261115-104103-4b2961b823` is active and matches latest main `ad505c6`:
-35 runtime files match Git, all 3,003 packaged hashes match, the SLM is ready,
-and the learned map and generated teaching content are installed. Original
-student records are preserved and SQLite integrity is OK. Board tests, model
-hashes, arithmetic and three actual generated replies were verified. The original
-EXE remains compatible with main's restored identity, and this PC's matching
-watcher was restored. Concurrent deployment was detected, so cleanup and physical
-USB acceptance await coordination. See [the release record](BOARD-RELEASE-20261115.md).
+**T-130 deployment verified (2026-11-15):** the full-data release
+`20261115-104103-4b2961b823` is the only remaining app release on the UNO Q.
+Its 35 runtime source files match main `ad505c6`; latest main `efaa52f` changes
+documentation only. All 3,008 packaged hashes were verified, including the added
+official reasoning entry points and output-directory placeholder. The enabled
+boot service reports a ready SLM, 2,962 problems, the 1,466-node map, difficulty
+tables and generated teaching content. Original student records are preserved.
+Live independent work updated BKT/Elo; assisted work was recorded without raising
+independent mastery. All data stays in `/var/lib/math-student/progress.db`.
 
-**T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) everywhere: app title, docs, pitch, app id kept as `kangaroo-student` so the launcher already installed on the demo PC keeps opening the tutor (fix/launcher-app-id), launcher folder `MathIsYours`, board service description. Reinstall the Windows launcher from a new bundle after deploying, since the app id and folder changed.
+The original compatible Windows launcher reopened the interface after USB
+reconnection and reported the model ready. Old release/setup staging directories
+were backed up to this PC, checked for active references, then removed. The
+complete local distribution is `results/current-complete-offline-release.zip`;
+it includes licensed data and must not be committed or published. Fresh-PC setup,
+actual Windows login, explicit Wi-Fi-off acceptance and educator quality review
+remain separate checks. See [the release record](BOARD-RELEASE-20261115.md).
+
+Reasoning acceptance: five sample rows, all valid A–E and `ok`, 7.44–20.77 s.
+The separate 30-row local validation split scored 3/30 (10%), mean 6.2 s,
+worst 45.8 s, none over 60 s; this figure-heavy split is not the organisers'
+practice benchmark. Deployment does not establish reliable general reasoning.
+
+## Earlier work (conditions at the time)
+
+**Board deployment of main `ad505c6` (2026-11-15, from the Mac over ADB):** our clone at `~/datathon_xusigrupoo` is on main and `~/datathon-UPC-maths-qualcomm-arduino-unoq` is now a symlink to it, so the organisers' path runs the compute-first solver. `math-compute-warm` is installed and enabled; the `math-compute` unit was already identical. Student release `20261115-104103-4b2961b823` installed with `--local-tutor --safe-shutdown`: 2932 training rows, 3494 images, all `data/ml` artifacts; `/api/health` reports app `kangaroo-student`, version `slm-learning-coach-v3`, model ready. Measured with the four services up: 2.6 GB available RAM, 1.7 GB free disk; `predict.py` on the five sample problems 5/5 `ok` (7–17 s each, warm-up 56 s with a warm cache); coach arithmetic answers instantly, a conceptual question answered by the local model in 22 s on an idle board, but fell back to the prepared text (`stored_timeout`, 46 s) while the compute server was reading its examples. The 30-problem eval on main was not re-run before handing the board to the organisers (T-126).
+
+**T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) in the app, docs and pitch. The internal app id remains `kangaroo-student` for compatibility with the original installed launcher. The verified distribution uses EXE `1.0.20261114205347`; do not distribute the intermediate `1.1.202611151040` build, which expected a different identity. No launcher reinstall is needed on this configured PC.
 
 **T-129 implemented offline coach (2026-11-15, laptop):** main through `0b42034`
 is merged into `exp/slm-learning-coach` (`1dc4805`). Its current UI, assessment
@@ -211,11 +228,12 @@ States: ⬜ pending · 🟨 in progress · ✅ done · ❌ blocked (say why).
 
 | What | Value |
 | --- | --- |
-| Board IP | 10.198.34.77 (`xusigrupo`, UNO Q verified over SSH) |
-| Board memory with app and both models | Minimum MemAvailable 2697 MiB, swap used 0; 206 samples at 2 s during contract/eval/repeat |
-| llama.cpp checkout | Pinned `2cbe0ec429b849a88664e0f62388fc92a5abd699`; both model SHA-256 hashes verified |
-| Languages in our dataset | English starter set; final language coverage not decided |
-| Train / val sizes | 170 / 30 on PC and board; student app loads training only |
+| Board connection | USB serial `2727288917`; most recent Wi-Fi address `192.168.0.26` (may change); original SSH identity pinned from `10.198.34.77` |
+| Board memory with app and three models | Final idle snapshot: 2,595 MiB available, 120 MiB swap used; not a peak-load measurement |
+| llama.cpp checkout | Pinned `2cbe0ec429b849a88664e0f62388fc92a5abd699`; tutor, embedding and compute GGUF hashes verified against config |
+| Languages in deployed dataset | English and Catalan; see generated artifacts for per-language coverage |
+| Train / val sizes | Deployed app: 2,932 train + 30 authored diagnostics. This PC's loose `data/`: 170 train / 30 validation; full runtime archive exported separately |
+| Persistent student data | `/var/lib/math-student/progress.db`; originals preserved, integrity `ok`; not included in distribution archives |
 
 ## Key numbers
 
@@ -223,6 +241,7 @@ States: ⬜ pending · 🟨 in progress · ✅ done · ❌ blocked (say why).
 | --- | --- | --- |
 | Development baseline accuracy | 11/30 = 36.7% | UNO Q, English starter validation; always-D 43.3%; not main-branch release validation |
 | Baseline latency (mean / worst) | 10.4 / 25.6 s | 30/30 status ok, no requests over 60 s |
+| Current deployment smoke evaluation | 3/30 = 10.0%; 6.2 / 45.8 s mean / worst; none over 60 s | UNO Q, 30 English starter validation rows, 24 need figures; not the organisers' practice set |
 | RAG k=1 accuracy | — | |
 | Best accuracy so far | 15/30 = 50.0% (compute-first solver, board, practice set) | Organisers' practice set, 15 eng + 15 cat; mean 26.2 s, worst 56.0 s, none over 60 s |
 
@@ -237,6 +256,10 @@ The Math Is Yours redesign on `ui/kangaroo-studio` now uses a blue typographic e
 The follow-up screen review removed the visible nickname label and local-storage note, applied the same blue/black/underline language to all three workspace views, and reserved green/red for answer results. My path now shows its route and skill list before an optional connection map; selecting a skill expands its detail. The recommendation action now opens the exercise and switches to Solve. Desktop and phone Chrome checks found no JavaScript errors or horizontal overflow; physical board and touch validation remains pending.
 
 ## Known issues
+
+The entries below describe earlier starter-release checks. Current deployed
+counts, SLM behaviour and remaining acceptance checks are in the summary and
+[release record](BOARD-RELEASE-20261115.md); old deployment counts are not current.
 
 39 application/graph tests and 12 deployment/launcher tests pass on the UNO Q. Installed-Chrome checks against the actual board at 1440x1100 and 390x844 cover reflection, answer gates, search, goals, zoom, dragging, combined media and image Close/Escape/backdrop dismissal. No JavaScript errors or external page requests were observed. The same browser checks also pass through actual USB forwarding, with no JavaScript errors or external page requests. Physical touch devices and Windows login startup remain unverified.
 

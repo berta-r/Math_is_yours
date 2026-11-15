@@ -19,18 +19,31 @@ the packaging fixes on `infra/current-board-release`; teammate then activated
 the full-data release matching `ad505c6`. Board app suite: 137 tests (four skipped),
 setup/deployment suite: 35 passed. Three actual generated tutor replies took
 22.64/20.59/20.58 s; arithmetic took 0.02–0.03 s. All model hashes match config.
-All 3,003 files in the active release and its 35 runtime code files were verified;
-existing learning records remained intact. See [the release record](BOARD-RELEASE-20261115.md).
+All 3,008 files in the final active release and its 35 runtime code files were
+verified; existing learning records remained intact. Live independent practice
+updated BKT/Elo while assisted practice did not. The Windows watcher reopened
+the full app on USB reconnection; old release directories were then removed after
+verified backup and active-reference checks. See [the release record](BOARD-RELEASE-20261115.md).
 
-`eval.py --limit 50 --name current-release-acceptance` completed on this PC's
-30-row English validation subset: **3/30 correct (10%)**. It contains 24 figure
+`eval.py --limit 50 --name current-release-acceptance` completed on the UNO Q
+using this PC's 30-row English validation subset: **3/30 correct (10%)**. It contains 24 figure
 problems and 17 rows with all options, unlike the organisers' practice set;
-this is a deployment smoke benchmark, not an improvement claim. Detailed rows
-are on the board under staged release `20261115-103029-6859bde2b0/results/`.
-Connection loss prevented copying the final CSV and repeating the sample
-contract check after fixing the missing output directory in deployment archives.
-The active full-data release was installed concurrently by a teammate; final
-cleanup/USB acceptance await coordination and reconnection.
+this is a deployment smoke benchmark, not an improvement claim.
+
+| Name | Code source | Rows | Accuracy | Mean / worst | Over 60 s |
+| --- | --- | --- | --- | --- | --- |
+| current-release-acceptance | Main `f6784df`, staged with packaging fixes; solver unchanged in deployed `ad505c6` | 30 | 10.0% | 6.2 / 45.8 s | 0 |
+
+Detailed output was saved to this PC before staging was removed:
+`results/current-board-evaluation.csv` and `results/current-board-ablations.csv`.
+The extracted release had no `.git`, so its raw CSV commit column is empty; the
+source above was tracked by the release verification. After fixing the missing
+output directory in deployment archives, the five-row prediction contract passed:
+all A–E, all `ok`, 20.77 / 7.44 / 8.27 / 11.43 / 17.76 s. Its warm-up, outside
+the per-problem clock, took 319 s while another boot warm-up was active. Local
+packaging checks: 14 tests, one skipped. Final idle memory: 2,595 MiB available,
+120 MiB swap used, with app and all three models active; not a peak-load measure.
+Fresh-PC setup, explicit Wi-Fi-off acceptance and educator review remain separate.
 
 ### T-129 integrated offline coach validation (2026-11-15)
 

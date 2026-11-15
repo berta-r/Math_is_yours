@@ -1,9 +1,11 @@
 # Offline learning coach: implementation and handover
 
-This feature combines the current `main` interface with a persistent coach on
-`exp/slm-learning-coach`. Main was merged through `0b42034`; earlier dialogue work
-remains preserved at `694d2b6`. The merge keeps main's thinking steps, problem
-display, skill tree, learned difficulty, map paths and independent-evidence rules.
+This feature combines the `main` interface with a persistent coach, originally
+implemented on `exp/slm-learning-coach` and now merged into main and deployed.
+For the current full-data installation, compatible EXE, measured board behaviour
+and remaining acceptance checks, use [the release record](BOARD-RELEASE-20261115.md).
+The integration keeps main's thinking steps, problem display, skill tree, learned
+difficulty, map paths and independent-evidence rules.
 For visual changes, start with [DESIGN.md](DESIGN.md) and
 [COACH-DESIGN.md](COACH-DESIGN.md).
 
