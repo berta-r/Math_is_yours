@@ -1,6 +1,6 @@
 # 01 · The challenge
 
-> Read this to understand what we must build, the rules and how we're judged. The source is the organizers' text in [../README.md](../README.md#the-challenge).
+> Read this to understand what we must build, the rules and how we're judged. The source is the organizers' text in [DATATHON-GUIDE.md](DATATHON-GUIDE.md#the-challenge).
 
 ## The prompt
 
@@ -22,7 +22,7 @@ The most original uses of M3Kang score highest. M3Kang can serve as a retrieval 
 ## Deliverables
 
 1. **A public GitHub repository** with the code and a README covering: what it does (photo or video), architecture, how to replicate it from a board set up with steps 0–12, results against the baseline (from `results/ablations.csv`), **error analysis by topic, language and difficulty**, what didn't work, team members and a license (for example MIT).
-2. **An Arduino Project Hub write-up**: a step-by-step from a fresh board to the demo. See [../README.md#152-a-step-by-step-on-arduino-project-hub](../README.md#152-a-step-by-step-on-arduino-project-hub).
+2. **An Arduino Project Hub write-up**: a step-by-step from a fresh board to the demo. See [DATATHON-GUIDE.md, step 15.2](DATATHON-GUIDE.md#152-a-step-by-step-on-arduino-project-hub).
 3. **A live demo and a 3-minute pitch** on the board. Suggested split: problem 20 s, demo 90 s, numbers 40 s, lessons 30 s.
 
 Send both links to the organizers. **Don't publish any M3Kang data.**

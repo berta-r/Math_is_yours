@@ -53,7 +53,7 @@ descriptions; it does not modify prerequisite edges or student estimates.
 
 ## Prepare the board once
 
-Complete [README steps 0–7](../README.md) for the UNO Q 4 GB, including pinned
+Complete [guide steps 0–7](../docs/DATATHON-GUIDE.md) for the UNO Q 4 GB, including pinned
 models and `math-llm.service`. Use the existing model installation; the tutor does
 not start another inference server or load embeddings into its own process.
 The application service is separate from App Lab and uses standard-library Python.

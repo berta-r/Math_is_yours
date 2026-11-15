@@ -177,7 +177,7 @@ committed per task on branch `exp/ml-tutor`. Nothing is pushed or merged.
 | 6 | SLM nightly cache (see evaluation below), tested with a mocked server | step 2 | `board/nightly_slm.py`, `slm_cache` table |
 | 7 | Docs: EXPERIMENTS rows, STATUS, DECISIONS D-013, README of `laptop/ml` | all | |
 
-**Status at 02:10:** steps 1–5 done and committed (105 student-app tests, 67 laptop tests); step 6 was replaced by offline generation through the organisers' Helmcode API (D-013), running now; the submission plan is in [SUBMISSION.md](SUBMISSION.md), the pitch in [PITCH.md](PITCH.md) and the demo in [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
+**Status at 05:45:** steps 1–5 done and committed (105 student-app tests, 54 laptop tests); step 6 was replaced by offline generation through the organisers' Helmcode API (D-013), finished for the whole prepared set (tags 1746/1747, steps 96%, solutions 94%, explanations 95%; see EXPERIMENTS "Generated teaching content"); the submission plan is in [SUBMISSION.md](SUBMISSION.md), the pitch in [PITCH.md](PITCH.md) and the demo in [DEMO-SCRIPT.md](DEMO-SCRIPT.md).
 
 **Morning checklist (needs the board; the exact commands are in SUBMISSION.md):** `build_index.py` on the board, re-run the
 laptop scripts with `--port 8082` forwarded so the artifacts use the exact Q8

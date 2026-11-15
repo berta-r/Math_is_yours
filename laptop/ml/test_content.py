@@ -365,6 +365,10 @@ class Runs(unittest.TestCase):
         self.args.resume = True
         stats, _ = gen.run_kind(gen.Steps(self.args), self.backend([]), self.rows, self.args)
         self.assertEqual(stats['tasks'], 0)
+        self.args.retry_unparsed = True  # only the parse failure is retried, never the accepted item
+        stats, _ = gen.run_kind(gen.Steps(self.args), self.backend(['garbage', 'garbage']), self.rows, self.args)
+        self.assertEqual((stats['tasks'], stats['unparsed']), (1, 1), stats)
+        self.args.retry_unparsed = False
 
     def test_skills_and_solutions_make_loadable_annotations(self):
         rows = [dict(PROBLEM, id='sample-1', _split='train')]

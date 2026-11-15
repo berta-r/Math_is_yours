@@ -80,7 +80,7 @@ also supports text only and image only. Enlarge an image and return with **Close
 The language filter selects available dataset variants. If a diagnostic has no
 matching translation, the recommendation explicitly says it is in English.
 
-Prepare JSONL and images using [README step 9](../README.md#step-9-prepare-m3kang-on-your-laptop),
+Prepare JSONL and images using [guide step 9](../docs/DATATHON-GUIDE.md#step-9-prepare-m3kang-on-your-laptop),
 including `--save-images`. For a small starter set on a Windows laptop:
 
 ```powershell

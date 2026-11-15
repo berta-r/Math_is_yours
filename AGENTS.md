@@ -8,11 +8,11 @@ Our team's entry to the **Datathon FME 2026, Qualcomm challenge: "Math on the Ed
 
 Our team will deliver both **Teach** (hints, adaptive practice, error analysis, physical interaction) and **Reason** (pick the right letter A–E on a hidden test set). `predict.py` is scored on the hidden test set whatever else we build.
 
-This repository started from the organizers' template. The template's step-by-step guide is [README.md](README.md) (steps 0–15). Our own documentation lives in [docs/](docs/).
+This repository started from the organizers' template. The template's step-by-step guide is [docs/DATATHON-GUIDE.md](docs/DATATHON-GUIDE.md) (steps 0–15; it was the root README until publication). The root [README.md](README.md) is our public project README. Our own documentation lives in [docs/](docs/).
 
 ## Current state (update this line when it changes)
 
-**Teach and Reason are both required main workstreams** (D-003). **Tutor deployed and tested on the UNO Q over Wi-Fi and USB.** The [student app](student_app/README.md) has a connected semantic graph, progressive paths, reflection before answers, provisional BKT and live local hint selection. Its boot service is enabled; 51 application/deployment checks and nine new setup checks pass on the board. Prepared data: 170 train / 30 validation. The standalone Windows launcher is installed on this PC with a login entry and bundled Python/ADB. The board presents a verified read-only MATHTUTOR setup drive using Windows inbox USB drivers. Full shutdown/replug testing passed: the drive returned, the installed watcher opened the tutor, the model became ready and progress survived. A fresh PC and actual Windows login remain to be verified. Educator review and reasoning improvements remain pending. See [docs/STATUS.md](docs/STATUS.md) and [deployment instructions](board/STUDENT_DEPLOYMENT.md).
+**Teach and Reason are both required main workstreams** (D-003). **Tutor deployed and tested on the UNO Q over Wi-Fi and USB.** The [student app](student_app/README.md) has a connected semantic graph, progressive paths, reflection before answers, provisional BKT and live local hint selection. Its boot service is enabled; 51 application/deployment checks and nine new setup checks pass on the board. Prepared data: 170 train / 30 validation. The standalone Windows launcher is installed on this PC with a login entry and bundled Python/ADB. The board presents a verified read-only MATHTUTOR setup drive using Windows inbox USB drivers. Full shutdown/replug testing passed: the drive returned, the installed watcher opened the tutor, the model became ready and progress survived. A fresh PC and actual Windows login remain to be verified. Large-model teaching content (steps, hints, solutions, explanations, tags) is generated and verified for the whole prepared set but not yet deployed to the board. Educator review and reasoning improvements remain pending. See [docs/STATUS.md](docs/STATUS.md) and [deployment instructions](board/STUDENT_DEPLOYMENT.md).
 
 ## Hard rules: never break these
 
@@ -31,7 +31,7 @@ This repository started from the organizers' template. The template's step-by-st
 
 ```
 AGENTS.md / CLAUDE.md     ← agent entry points (this file)
-README.md                 ← organizers' guide, steps 0–15 (source of truth for setup)
+README.md                 ← our public project README (what it does, architecture, replication, results)
 config.env                ← all shared settings (Bash + Python read it)
 predict.py                ← OFFICIAL entry point (jury runs it)
 eval.py                   ← measure accuracy/latency → results/
@@ -50,6 +50,7 @@ data/                     ← sample_problems.jsonl (committed), generated data 
 results/                  ← eval outputs + ablations.csv (ignored by git)
 .skills/                  ← Claude skills: unoq-board, m3kang-copilot, unoq-hardware-ui, publish-project
 docs/                     ← OUR documentation (see below)
+docs/DATATHON-GUIDE.md    ← organizers' guide, steps 0–15 (source of truth for setup)
 ```
 
 ## Where to look

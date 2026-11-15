@@ -1,6 +1,6 @@
 # 03 · Data
 
-> Read this before you touch M3Kang, the JSONL files, OCR, the splits or the index. See also [../data/README.md](../data/README.md) and [../README.md#step-9-prepare-m3kang-on-your-laptop](../README.md#step-9-prepare-m3kang-on-your-laptop).
+> Read this before you touch M3Kang, the JSONL files, OCR, the splits or the index. See also [../data/README.md](../data/README.md) and [DATATHON-GUIDE.md, step 9](DATATHON-GUIDE.md#step-9-prepare-m3kang-on-your-laptop).
 
 ## M3Kang
 
@@ -49,7 +49,7 @@ Then copy the files to the board (`scp` or `adb push`). See [05-commands.md](05-
 
 ## Known OCR problems
 
-See [../README.md#93-what-the-ocr-gets-wrong](../README.md#93-what-the-ocr-gets-wrong). In short: picture options give `{}`, and math symbols and fractions can be misread. `eval.py` reports accuracy **with and without options**, so we can see the cost. Improving the OCR (for example cropping the bottom of the image) is a possible task.
+See [DATATHON-GUIDE.md, step 9.3](DATATHON-GUIDE.md#93-what-the-ocr-gets-wrong). In short: picture options give `{}`, and math symbols and fractions can be misread. `eval.py` reports accuracy **with and without options**, so we can see the cost. Improving the OCR (for example cropping the bottom of the image) is a possible task.
 
 ## Files in `data/`
 

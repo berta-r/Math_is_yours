@@ -227,3 +227,69 @@ questions, thinking steps) is generated offline by a larger local model and
 verified in Python; the live SLM keeps bounded roles (hint selection, letter
 distribution). Scripts: scratchpad `socratic_probe.py`, `socratic_probe2.py`,
 `classify_probe.py` (not committed; five sample problems only).
+
+## Generated teaching content (D-013, laptop, 2026-11-15)
+
+`laptop/ml/generate_content.py --api-base https://api.helmcode.com/v1` with
+`deepseek-v4-flash` (JSON mode, `reasoning_effort` low, temperature 0, 8 workers;
+the `glm5.3-flash` fallback was never used, no 429s). Input: 170 train + 30
+validation rows for skills (one task per problem id, English prompt, Catalan
+pair as context) and one task per (problem, language) row for steps and
+solutions; explanations are one task per numeric distractor with a signature.
+Every item is verified in Python (`laptop/ml/verify_content.py`, same rules as
+`copilot/content_checks.py`): no correct value or letter, right language, word
+limits, bank rules for steps. "Unparsed" means the reply was not a JSON object
+of the expected shape after one strict retry.
+
+**Pass 1** (`max_tokens` 300/300/900/1200 for skills/explanations/solutions/steps, 01:59–04:35):
+
+| Kind | Tasks | Accepted | Rejected (verifier) | Unparsed | Wall | Main rejection reasons |
+| --- | --- | --- | --- | --- | --- | --- |
+| skills (tags, English) | 1747 | 1580 (90%) | 0 | 167 | 24 min | parse 167 |
+| explanations (per distractor) | 1944 | 1810 (93%) | 89 | 45 | 17 min | parse 45, question without `?` 32, value leak 29, letter leak 13, question too long 11 |
+| solutions + 3 hints | 2202 | 1333 (61%) | 65 | 804 | 51 min | parse 804, value in hint 20, Catalan words in English 16, hint too long 9 |
+| thinking steps (3 MCQs) | 2202 | 1331 (60%) | 60 | 811 | 63 min | parse 811, option word-count spread 28, letter leak 13, Catalan in English 13 |
+
+Catalan vs English acceptance: explanations 876/963 vs 934/981; solutions
+603/1124 vs 730/1078; steps 472/1124 vs 859/1078. Usage: 13.4 M tokens
+(5.5 M prompt, 8.0 M completion) over 10 861 requests, 2 h 35 min wall.
+
+**Why so many unparsed:** the rejects log showed 514/811 step failures and
+672/804 solution failures with an empty reply. A probe of one failed task
+reported 899–1046 `reasoning_tokens`: the model's thinking counts against
+`max_tokens`, so the 900/1200 budgets left nothing for the JSON. Catalan
+suffers more (longer reasoning). Fix: `--min-tokens 4000` (floor on
+`max_tokens` for the API) and `--resume --retry-unparsed`.
+
+**Pass 2** (`--resume --retry-unparsed --min-tokens 4000`, only the parse failures, 04:37–05:31):
+
+| Kind | Retried | Accepted | Rejected (verifier) | Still unparsed | Wall |
+| --- | --- | --- | --- | --- | --- |
+| skills | 167 | 166 | 0 | 1 | 4 min |
+| explanations | 45 | 42 | 3 | 0 | 1 min |
+| solutions + hints | 804 | 741 | 37 | 26 | 29 min |
+| thinking steps | 811 | 777 | 34 | 0 | 20 min |
+
+Usage: 4.2 M tokens (1.0 M prompt, 3.1 M completion) over 1 893 requests,
+53 min wall. The floor removed the empty replies: the remaining rejections are
+real verifier catches (option word-count spread 21, solution without the
+correct value 13, Catalan words in English 9, value in a hint 7).
+
+**Final files** (both passes): skill tags 1746/1747 problems (99.9%);
+explanations 1852 (problem, letter) pairs over 1000 (problem, language) keys
+(95% of 1944 tasks); solutions with three hints 2074/2202 keys (94%; cat 1065,
+eng 1009); thinking steps 2108/2202 keys (96%; cat 1072, eng 1036). Total
+17.6 M tokens, 12 754 requests, 3 h 28 min. Rejects with reasons and raw
+replies are in `results/content-rejects.json` (git-ignored).
+
+**Board-side re-verification** (`python3 -m unittest student_app.test_generated_content`,
+run on the laptop against the final files): steps 1786 served / 0 dropped,
+solutions 1761 / 0, hint annotations 857 / 0, tags 1746 / 0, explanations
+1545 / 0 (per catalog key, training split only; validation rows are generated
+but never served; after pass 1 the counts were 1124 / 1132 / 586 / 1580 / 1505).
+105 student-app tests and 54 laptop tests pass. A full session on
+`lvl-0_2019_1 · cat` against `student_app/server.py` with default files:
+three generated Catalan steps with per-option feedback, wrong letter E →
+generated explanation (`op = sum`, `answer_op = difference`) plus its Socratic
+question as hint 0, generated hint ladder rungs 1–2, generated solution,
+Elo 0.25 → 0.1846 and BKT 0.2 → 0.1273 on the first independent attempt.
