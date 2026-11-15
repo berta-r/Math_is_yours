@@ -3,103 +3,140 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Problem map</title>
+<meta name="theme-color" content="#8a9ed4">
+<title>Problem map · Math Is Yours</title>
 <style>
+  /* Same tokens as style.css (Studio 06): blue header, cream reading surface, ink frames, Archivo. */
+  @font-face { font-family:"Archivo"; font-style:normal; font-weight:100 900; font-display:swap; src:url(/fonts/archivo-latin-ext.woff2) format("woff2");
+    unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF; }
+  @font-face { font-family:"Archivo"; font-style:normal; font-weight:100 900; font-display:swap; src:url(/fonts/archivo-latin.woff2) format("woff2");
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
   :root {
-    font-family: "Segoe UI", system-ui, sans-serif;
-    color: #233f36;
-    background: #f5f4ed;
-    font-size: 16px;
-    --green: #285342;
-    --muted: #606f65;
-    --line: #dcded3;
-    --soft: #ebeede;
-    --path: #a85b27;
+    --ink:#080d15; --hero-blue:#8a9ed4; --reading:#f6f4ed; --accent:#3254e8; --muted:#263952; --selected:#dce4fa;
+    --frame:3px solid var(--ink); --divider:1px solid #0b162844; --shadow:4px 4px 0 var(--ink);
+    --ease-out:cubic-bezier(0.23, 1, 0.32, 1); --gutter:40px;
+    font-family:"Archivo", Arial, Helvetica, sans-serif; font-size:16px; color:var(--ink); background:var(--reading);
   }
-  * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-  body { margin: 0; background: #f5f4ed; }
-  button, input, select { font: inherit; }
-  button { min-height: 40px; border: 1px solid transparent; border-radius: 9px; padding: 8px 14px; background: var(--green); color: white; font-weight: 600; cursor: pointer; touch-action: manipulation; }
-  button.quiet { background: #fffef9; color: var(--green); border-color: #cbd3c4; }
-  button:focus-visible, input:focus-visible, a:focus-visible, svg:focus-visible { outline: 3px solid var(--path); outline-offset: 3px; }
-  input { border: 1px solid #cbd3c4; border-radius: 8px; min-height: 40px; padding: 8px 10px; background: #fffef9; color: #283d32; width: 160px; max-width: 100%; }
-  header { max-width: 1264px; margin: auto; padding: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
-  .brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 750; letter-spacing: -.6px; text-decoration: none; color: inherit; }
-  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; background: var(--green); color: #f5f4ed; font-family: Georgia, serif; font-size: 20px; border-radius: 10px; }
-  form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  label { font-size: 12px; font-weight: 650; }
-  main { max-width: 1264px; margin: auto; padding: 16px; }
-  h1 { font-size: clamp(26px, 4vw, 40px); font-weight: 550; letter-spacing: -1.2px; margin: 4px 0 6px; }
-  h1 em { font-family: Georgia, serif; font-weight: 400; color: #577349; }
-  h2 { font-size: 16px; margin: 0 0 8px; }
-  p, small { line-height: 1.6; }
-  small, .muted { color: var(--muted); font-size: 13px; }
-  #status { min-height: 1.6em; margin: 0 0 12px; }
-  .layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-  .panel { background: #fffef9; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-  .canvas { position: relative; padding: 6px; }
-  #map { display: block; width: 100%; height: auto; aspect-ratio: 600 / 520; touch-action: none; cursor: grab; background: #fbfaf4; border-radius: 10px; }
-  #map .dot { stroke: none; }
-  #map .dot.solved { stroke: #1d2f27; stroke-width: 1.4; }
-  #map .dot.exposed { opacity: .5; }
-  #map .dot.unseen { opacity: .85; }
-  #map .dot.goal { stroke: var(--path); stroke-width: 2; }
-  #map .route { fill: none; stroke: var(--path); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
-  #map .route-stop { fill: #fffef9; stroke: var(--path); stroke-width: 2; }
-  .zoom { position: absolute; right: 14px; top: 14px; display: flex; gap: 6px; }
-  .zoom button { min-height: 34px; min-width: 34px; padding: 4px 8px; }
-  #tooltip { position: absolute; pointer-events: none; background: #233f36; color: #f5f4ed; font-size: 12px; padding: 6px 8px; border-radius: 7px; white-space: nowrap; transform: translate(-50%, -120%); }
-  .key { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin: 8px 4px 2px; }
-  .key span { display: inline-flex; align-items: center; gap: 6px; }
-  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .ring { border: 2px solid #1d2f27; width: 12px; height: 12px; }
-  #legend { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 13px; }
-  #legend li { display: flex; gap: 8px; align-items: baseline; }
-  #legend li .swatch { transform: translateY(1px); }
-  #steps { padding-left: 22px; margin: 0; display: grid; gap: 10px; font-size: 14px; }
-  #steps li p { margin: 2px 0; }
-  #steps a { color: var(--green); font-weight: 650; }
-  aside { display: grid; gap: 16px; }
-  @media (max-width: 760px) {
-    .layout { grid-template-columns: minmax(0, 1fr); }
-    header { padding: 12px 16px; }
-    input { width: 130px; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; min-height:100svh; background:var(--reading); }
+  button, input { font:inherit; }
+  button, input, a:focus-visible, svg:focus-visible { border-radius:0; }
+  button:focus-visible, input:focus-visible, a:focus-visible, svg:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+
+  header { background:var(--hero-blue); }
+  .header-inner { max-width:1264px; margin:auto; min-height:74px; padding:12px var(--gutter); display:flex; flex-wrap:wrap; align-items:center; gap:16px 24px; }
+  .brand { text-decoration:none; color:var(--ink); }
+  .brand-wordmark { display:block; font-size:clamp(19px,1.7vw,25px); font-weight:900; letter-spacing:-.075em; line-height:.82; }
+  .brand-wordmark span { color:var(--accent); }
+  .header-actions { margin-left:auto; display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:46px; padding:8px 16px; border:var(--frame); background:transparent; color:var(--ink); font-weight:700; text-decoration:none; cursor:pointer; touch-action:manipulation; transition:transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out), background-color 150ms ease, color 150ms ease; }
+  .button.primary { background:var(--ink); color:var(--reading); }
+  form#who { display:flex; align-items:stretch; border:var(--frame); min-height:46px; transition:transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
+  form#who input { width:170px; max-width:100%; min-height:40px; padding:6px 12px; border:0; background:transparent; color:var(--ink); }
+  form#who input::placeholder { color:var(--muted); }
+  form#who input:focus-visible { outline:0; }
+  form#who:focus-within { box-shadow:var(--shadow); }
+  form#who button { min-height:40px; padding:0 14px; border:0; border-left:var(--frame); background:var(--ink); color:var(--reading); font-weight:700; cursor:pointer; }
+
+  main { max-width:1264px; margin:auto; padding:clamp(28px,4vw,48px) var(--gutter) 48px; }
+  h1 { margin:0 0 16px; font-size:clamp(36px,4vw,58px); font-weight:900; line-height:1.02; letter-spacing:-.055em; text-wrap:balance; }
+  h1 .period { color:var(--accent); }
+  .lead { max-width:65ch; margin:0 0 8px; font-size:18px; line-height:1.5; }
+  #status { min-height:1.5em; margin:0 0 24px; font-size:18px; font-weight:700; line-height:1.5; }
+  h2 { margin:0 0 12px; font-size:clamp(22px,2.2vw,30px); font-weight:700; letter-spacing:-.03em; line-height:1.15; }
+  p { line-height:1.5; }
+  .muted { color:var(--muted); }
+
+  .layout { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:24px; align-items:start; }
+  .panel { border:var(--frame); background:var(--reading); padding:24px; }
+  .canvas { position:relative; padding:0; overflow:hidden; }
+  #map { display:block; width:100%; height:auto; aspect-ratio:600 / 520; touch-action:none; cursor:grab; background:var(--reading); }
+  #map .dot { stroke:none; }
+  #map .dot.solved { stroke:var(--ink); stroke-width:1.6; }
+  #map .dot.exposed { opacity:.45; }
+  #map .dot.unseen { opacity:.9; }
+  #map .dot.goal { stroke:var(--accent); stroke-width:2.5; }
+  #map .route { fill:none; stroke:var(--accent); stroke-width:2.4; stroke-linejoin:round; stroke-linecap:round; }
+  #map .route-stop { fill:var(--reading); stroke:var(--accent); stroke-width:2.4; }
+  .zoom { position:absolute; right:16px; top:16px; display:flex; gap:8px; }
+  .zoom button { display:grid; place-items:center; width:46px; height:46px; padding:0; border:var(--frame); background:var(--reading); color:var(--ink); font-size:22px; font-weight:700; line-height:1; cursor:pointer; touch-action:manipulation; transition:transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
+  #tooltip { position:absolute; pointer-events:none; background:var(--ink); color:var(--reading); font-size:16px; font-weight:700; padding:8px 12px; white-space:nowrap; transform:translate(-50%,-130%); }
+  .key { display:flex; flex-wrap:wrap; gap:8px 20px; padding:16px 20px; border-top:var(--frame); font-size:16px; }
+  .key span { display:inline-flex; align-items:center; gap:8px; }
+  .swatch { display:inline-block; width:14px; height:14px; flex-shrink:0; }
+  .swatch.ring { width:14px; height:14px; border:3px solid var(--ink); background:transparent; border-radius:50%; }
+  .swatch.tried { background:var(--muted); opacity:.45; border-radius:50%; }
+  .swatch.path { background:var(--accent); border-radius:50%; }
+  aside { display:grid; gap:24px; }
+  #legend { list-style:none; padding:0; margin:0; display:grid; gap:12px; font-size:16px; }
+  #legend li { display:flex; gap:12px; align-items:flex-start; line-height:1.4; }
+  #legend li .swatch { margin-top:4px; }
+  #legend li small { display:block; color:var(--muted); font-size:16px; }
+  #steps { list-style:none; counter-reset:step; padding:0; margin:0; display:grid; gap:12px; }
+  #steps li { counter-increment:step; display:grid; grid-template-columns:36px minmax(0,1fr); gap:0 12px; padding:14px 16px; border:var(--frame); }
+  #steps li::before { content:counter(step, decimal-leading-zero); font-weight:900; font-size:18px; letter-spacing:-.04em; grid-row:1 / span 3; }
+  #steps li p { margin:0; }
+  #steps li p + p { margin-top:6px; }
+  #steps li small { display:block; margin-top:4px; color:var(--muted); font-size:16px; }
+  #steps a { color:var(--ink); font-weight:700; text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:2px; }
+  #steps a:hover { color:var(--accent); }
+
+  @media (hover:hover) and (pointer:fine) {
+    .button:hover, .zoom button:hover, form#who:hover { transform:translate(-2px,-2px); box-shadow:var(--shadow); }
+    .button.primary:hover { background:var(--accent); color:#fff; }
   }
+  .button:active, .zoom button:active { transform:scale(.98); box-shadow:none; }
+  @media (max-width:760px) {
+    :root { --gutter:16px; }
+    .header-inner { min-height:0; padding:10px var(--gutter); gap:10px 16px; }
+    .header-actions { width:100%; margin-left:0; }
+    form#who { flex:1; }
+    form#who input { width:auto; flex:1; min-width:0; }
+    .layout { grid-template-columns:minmax(0,1fr); }
+    .panel { padding:16px; }
+    .canvas { padding:0; }
+    .zoom { right:8px; top:8px; }
+  }
+  @media (prefers-reduced-motion:reduce) { .button, .zoom button, form#who { transition:none; } }
 </style>
 </head>
 <body>
 <header>
-  <a class="brand" href="/"><span class="brand-mark">K</span>Problem map</a>
-  <form id="who">
-    <label for="student">Nickname</label>
-    <input id="student" name="student" maxlength="40" autocomplete="off" required>
-    <button type="submit">Show</button>
-  </form>
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="Math Is Yours home"><span class="brand-wordmark" aria-hidden="true">MATH<br>IS YOURS<span>.</span></span></a>
+    <div class="header-actions">
+      <form id="who">
+        <input id="student" name="student" maxlength="40" autocomplete="off" required placeholder="Your nickname" aria-label="Nickname">
+        <button type="submit">Show</button>
+      </form>
+      <a class="button" href="/">Back to practice</a>
+    </div>
+  </div>
 </header>
 <main>
-  <h1>Every problem, <em>one map</em></h1>
-  <p class="muted">Close dots are similar problems. Ringed dots are ones you solved; faded dots are ones you have tried. Click any dot to get a path of small steps from what you know to that problem.</p>
+  <h1>Every problem, one map<span class="period">.</span></h1>
+  <p class="lead">Dots that sit close together are similar problems. A ringed dot is one you solved; a faded dot is one you have tried. Click any dot and you get a path of small steps from what you already know to that problem.</p>
   <p id="status" role="status" aria-live="polite"></p>
   <div class="layout">
     <section class="panel canvas" aria-label="Problem map">
       <svg id="map" tabindex="0" role="img" aria-label="Map of problems; use plus and minus to zoom and arrow keys to move"></svg>
       <div class="zoom">
-        <button type="button" class="quiet" id="zoom-in" aria-label="Zoom in">+</button>
-        <button type="button" class="quiet" id="zoom-out" aria-label="Zoom out">−</button>
-        <button type="button" class="quiet" id="zoom-reset" aria-label="Reset view">⟲</button>
+        <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+        <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" id="zoom-reset" aria-label="Reset view">⟲</button>
       </div>
       <div id="tooltip" hidden></div>
       <div class="key" aria-hidden="true">
         <span><i class="swatch ring"></i>Solved</span>
-        <span><i class="swatch" style="background:#8aa38f;opacity:.5"></i>Tried</span>
-        <span><i class="swatch" style="background:#a85b27"></i>Path</span>
+        <span><i class="swatch tried"></i>Tried</span>
+        <span><i class="swatch path"></i>Your path</span>
       </div>
     </section>
     <aside>
       <section class="panel" id="path-panel">
         <h2>Your path</h2>
-        <p id="path-summary" class="muted">Click a dot on the map to choose a goal.</p>
+        <p id="path-summary">Click a dot on the map to choose a goal.</p>
         <ol id="steps"></ol>
       </section>
       <section class="panel">

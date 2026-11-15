@@ -75,7 +75,11 @@ function legend(clusters, nodes) {
     const swatch = document.createElement('i'); swatch.className = 'swatch'; swatch.style.background = colour(c.id);
     const text = document.createElement('span');
     const words = (c.keywords || []).slice(0, 4).join(', ') || 'mixed';
-    text.textContent = `${words} (${counts.get(c.id) || c.size || 0}${c.mean_level != null ? `, mean level ${Number(c.mean_level).toFixed(1)}` : ''})`;
+    const count = counts.get(c.id) || c.size || 0;
+    text.textContent = words;
+    const meta = document.createElement('small');
+    meta.textContent = `${count} problem${count === 1 ? '' : 's'}${c.mean_level != null ? ` · about level ${Math.round(Number(c.mean_level))}` : ''}`;
+    text.append(meta);
     li.append(swatch, text); list.append(li);
   }
 }
@@ -84,7 +88,7 @@ function tooltip(event, node) {
   const tip = $('tooltip');
   if (!node) { tip.hidden = true; return; }
   const box = svg.parentElement.getBoundingClientRect();
-  tip.textContent = `${node.id} · level ${node.level ?? '?'} · b ${Number(node.b).toFixed(2)}${node.solved ? ' · solved' : ''}`;
+  tip.textContent = `${node.id} · level ${node.level ?? '?'}${node.solved ? ' · solved' : node.exposed ? ' · tried' : ''}`;
   tip.style.left = `${event.clientX - box.left}px`; tip.style.top = `${event.clientY - box.top}px`;
   tip.hidden = false;
 }
@@ -122,7 +126,7 @@ function showPath(result) {
       head.append(link);
     } else head.textContent = step.id;
     const meta = document.createElement('small');
-    meta.textContent = `Level ${step.level ?? '?'} · difficulty ${step.b != null ? Number(step.b).toFixed(2) : '?'}`;
+    meta.textContent = `Level ${step.level ?? '?'}`;
     li.append(head, meta);
     if (step.text_preview) {
       const text = document.createElement('p'); text.textContent = step.text_preview + (step.text_preview.length >= 90 ? '…' : '');
@@ -178,7 +182,7 @@ async function load() {
     if (!data.enabled) { status('The problem map is not installed on this device (data/ml/problem_map.json).'); return; }
     draw(data);
     const solved = data.nodes.filter(n => n.solved).length;
-    status(`${data.nodes.length} problems, ${solved} solved by ${state.student}.`);
+    status(`${data.nodes.length} problems. ${state.student}, you have solved ${solved}.`);
   } catch (error) { status(error.message); }
 }
 
