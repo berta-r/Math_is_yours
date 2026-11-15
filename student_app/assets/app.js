@@ -27,6 +27,9 @@ const STRINGS = {
     choose_next:'Choose your next challenge', start_next:'Start next step →', current_exercise:'Current problem',
     path_empty:'Your next steps will grow as you practise.',
     problem_map:'Problem map',
+    path_problems:'Problems on the way to {goal}', path_problems_loading:'Finding problems on the map…', path_problems_none:'No map problems for this goal yet.',
+    path_problems_unavailable:'The problem map is not installed on this device.', path_problems_done:'You already solved the goal problem.',
+    diff_easy:'Easy', diff_medium:'Medium', diff_hard:'Hard', level:'Level {n}', open_problem:'Open →', solved:'Solved', goal_problem:'Goal problem', category:'Category',
     practice_notes:'Your practice notes', select_skill:'Pick a skill to see how you are doing.', practise_skill:'Practise this skill →',
     skill_none:'You have not tried this skill on your own yet.', skill_some:'You have answered {n} on your own and got {k} right.',
     review_due:'Review today', review_next:'Next review: {date}.', review_later:'A review date appears after you practise on your own.', answers_saved:'{n} answers saved.',
@@ -71,6 +74,9 @@ const STRINGS = {
     choose_next:'Tria el teu proper repte', start_next:'Comença el pas següent →', current_exercise:'Problema actual',
     path_empty:'Els teus passos següents creixeran a mesura que practiquis.',
     problem_map:'Mapa de problemes',
+    path_problems:'Problemes pel camí fins a {goal}', path_problems_loading:'Buscant problemes al mapa…', path_problems_none:'Encara no hi ha problemes del mapa per a aquest objectiu.',
+    path_problems_unavailable:'El mapa de problemes no està instal·lat en aquest dispositiu.', path_problems_done:'Ja has resolt el problema objectiu.',
+    diff_easy:'Fàcil', diff_medium:'Mitjà', diff_hard:'Difícil', level:'Nivell {n}', open_problem:'Obre →', solved:'Resolt', goal_problem:'Problema objectiu', category:'Categoria',
     practice_notes:'Les teves notes de pràctica', select_skill:'Tria una habilitat per veure com vas.', practise_skill:'Practica aquesta habilitat →',
     skill_none:'Encara no has provat aquesta habilitat pel teu compte.', skill_some:'N’has respost {n} pel teu compte i n’has encertat {k}.',
     review_due:'Repassa-la avui', review_next:'Proper repàs: {date}.', review_later:'Quan practiquis pel teu compte, apareixerà una data de repàs.', answers_saved:'{n} respostes desades.',
@@ -405,6 +411,7 @@ async function refreshGraph() {
   $('graph-method').textContent = 'The tree shows authored prerequisite links: each arrow points from a skill to one it helps you learn.';
   renderGoals(profile.skills);
   renderPath(profile.learning_path);
+  renderPathProblems();
   $('total').textContent = t('answers_saved', {n:profile.attempts});
   $('history').replaceChildren();
   for (const event of profile.history) {
@@ -422,6 +429,46 @@ async function refreshGraph() {
   $('history-section').hidden=false;
 }
 function stateLabel(state) { return KnowledgeMap.stateLabel(state); }
+// Problems the problem map picks as stepping stones towards the chosen goal skill (POST /api/path with goal_skill).
+let pathProblemsRequest = 0;
+async function renderPathProblems() {
+  const section = $('path-problems'), list = $('path-problem-list'), note = $('path-problems-note');
+  const goal = learningGoal;
+  if (!goal) { section.hidden = true; list.replaceChildren(); return; }
+  const goalName = profileData?.skills?.find(s => s.id === goal)?.name || goal;
+  section.hidden = false;
+  $('path-problems-title').textContent = t('path_problems', {goal: goalName});
+  note.textContent = t('path_problems_loading'); list.replaceChildren();
+  const ticket = ++pathProblemsRequest;
+  let result;
+  try { result = await api('path', {goal_skill: goal, language: apiLanguage()}); }
+  catch (error) { if (ticket === pathProblemsRequest) note.textContent = error.message; return; }
+  if (ticket !== pathProblemsRequest) return;
+  if (!result.enabled) { note.textContent = t('path_problems_unavailable'); return; }
+  if (!result.reachable) { note.textContent = result.reason || t('path_problems_none'); return; }
+  const steps = result.steps || [];
+  if (!steps.length) { note.textContent = t('path_problems_done'); return; }
+  note.textContent = '';
+  const goalId = result.goal_problem?.id || result.goal;
+  steps.forEach((step, index) => {
+    const li = document.createElement('li'); li.className = 'path-problem' + (step.id === goalId ? ' goal' : '') + (step.solved ? ' solved' : '');
+    const head = document.createElement('div'); head.className = 'path-problem-head';
+    const order = document.createElement('span'); order.className = 'path-problem-order'; order.textContent = String(index + 1).padStart(2, '0');
+    const chip = document.createElement('span'); chip.className = 'path-problem-difficulty'; chip.dataset.level = step.difficulty_label || '';
+    const diff = step.difficulty_label ? t('diff_' + step.difficulty_label) : '';
+    chip.textContent = [diff, step.level != null ? t('level', {n: step.level}) : ''].filter(Boolean).join(' · ');
+    head.append(order, chip);
+    const text = document.createElement('p'); text.className = 'path-problem-text';
+    text.textContent = step.text_preview ? step.text_preview + (step.text_preview.length >= 90 ? '…' : '') : step.id;
+    const meta = document.createElement('p'); meta.className = 'path-problem-meta';
+    const category = step.skill_name || step.category || '';
+    meta.textContent = [category, step.id === goalId ? t('goal_problem') : '', step.solved ? '✓ ' + t('solved') : ''].filter(Boolean).join(' · ');
+    const open = document.createElement('button'); open.type = 'button'; open.className = 'secondary path-problem-open'; open.textContent = t('open_problem');
+    open.disabled = busy || !step.key;
+    open.onclick = () => run(async () => { await openProblem(step.key); setStudioView('practice'); $('question').focus(); });
+    li.append(head, text, meta, open); list.append(li);
+  });
+}
 // One small button per skill; "Guide me" clears the goal and lets progress choose the route.
 function renderGoals(skills) {
   const box = $('goal-buttons'); box.replaceChildren();
