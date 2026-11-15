@@ -10,7 +10,7 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ## Phase A · Board setup (README steps 0–8). Minimum required.
 
-- [x] **T-001** [P0] [laptop] **Update the board and connect over SSH.** Follow [README step 0](../README.md#step-0-connect-to-the-board). Done when `ssh arduino@<ip>` works and the IP is written in STATUS. SSH verified at `10.198.34.77`; App Lab session supplied by the owner. (2026-11-14)
+- [x] **T-001** [P0] [laptop] **Update the board and connect over SSH.** Follow [guide step 0](DATATHON-GUIDE.md#step-0-connect-to-the-board). Done when `ssh arduino@<ip>` works and the IP is written in STATUS. SSH verified at `10.198.34.77`; App Lab session supplied by the owner. (2026-11-14)
 - [ ] **T-002** [P0] [board] **Check the board.** Run `bash board/00_check_board.sh`. Done when it reports no problems: enough RAM and disk, the right clock, internet.
 - [ ] **T-003** [P0] [board] **Install the build tools and build llama.cpp.** README steps 2–3, or scripts `01` and `02`. Done when `~/llama.cpp/build/bin/llama-server --version` shows the pinned commit.
 - [x] **T-004** [P0] [board] **Download and verify the models.** README step 4, or `03_download_models.sh`. Done when the SHA256 of both GGUF files matches. Existing board models verified against both pinned SHA-256 values. (2026-11-14)
@@ -30,7 +30,7 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ## Phase C · Choose the idea (README step 13)
 
-- [ ] **T-020** [P0] [team] **Brainstorm and choose ONE idea** (1 h). Score each candidate against the [step 13.4](../README.md#134-choose-one) questions. Write down in DECISIONS: the idea, the metric we'll measure, and the first experiment. Then prune phase D.
+- [ ] **T-020** [P0] [team] **Brainstorm and choose ONE idea** (1 h). Score each candidate against the [step 13.4](DATATHON-GUIDE.md#134-choose-one) questions. Write down in DECISIONS: the idea, the metric we'll measure, and the first experiment. Then prune phase D.
 - [ ] **T-021** [P0] [team] **Split roles:** board/infra, copilot/experiments, UI (App Lab + LED), docs/pitch.
 - [ ] **T-022** [P1] [laptop] **Link the skills** for Claude Code: `mkdir -p .claude && ln -s ../.skills .claude/skills`.
 
@@ -104,8 +104,8 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 - [ ] **T-071** [P0] [laptop] **Error analysis by topic, language and level**: join `results/eval-*.csv` with `val.jsonl`, plus 10 wrong answers by hand.
 - [ ] **T-072** [P0] [team] **Demo:** Wi-Fi off, services started at boot, problems chosen in advance, a backup video recorded.
 - [ ] **T-073** [P0] [team] **3-minute pitch**, rehearsed twice with a timer.
-- [ ] **T-074** [P0] [laptop] **Rewrite the root README** for our project: what it does, architecture, replication, results, error analysis, what didn't work, team, license. Use the `publish-project` skill.
-- [ ] **T-075** [P0] [laptop] **Arduino Project Hub write-up.**
+- [x] **T-074** [P0] [laptop] **Rewrite the root README** for our project: what it does, architecture, replication, results, error analysis, what didn't work, team, license. Use the `publish-project` skill. Done: new `README.md`; the organisers' guide moved to `docs/DATATHON-GUIDE.md` with links updated. Photo/video and team names/roles still to add. (2026-11-15)
+- [ ] **T-075** [P0] [laptop] **Arduino Project Hub write-up.** Draft written in `docs/PROJECT-HUB.md`; needs photos and posting. (2026-11-15)
 - [ ] **T-076** [P0] [laptop] **Pre-publish check:** no M3Kang data, an MIT LICENSE, a clean clone that follows our README. Make the repo public and send both links.
 
 ---

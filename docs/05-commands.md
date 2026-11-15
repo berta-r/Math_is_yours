@@ -1,6 +1,6 @@
 # 05 · Commands
 
-> A quick reference. Each command says **where** it runs. The full explanation with expected output for each step is in [../README.md](../README.md#the-steps-at-a-glance). Replace `<ip>` with the board's IP address.
+> A quick reference. Each command says **where** it runs. The full explanation with expected output for each step is in [DATATHON-GUIDE.md](DATATHON-GUIDE.md#the-steps-at-a-glance). Replace `<ip>` with the board's IP address.
 
 Board repository path: `~/datathon-UPC-maths-qualcomm-arduino-unoq`. User: `arduino`.
 
@@ -80,12 +80,12 @@ pgrep -a llama-server                    # who is holding a port?
 | `couldn't bind … port 8081` | Another llama-server is running: `pgrep -a llama-server`, then `pkill llama-server` or stop the service |
 | llama-server disappears, `journalctl -k` shows OOM | Keep `--parallel 1 --cache-ram 0` and stop any servers you started by hand |
 | `predict.py` answers D with `timeout` | The prompt is too long: use fewer RAG examples or a shorter prompt |
-| SSH refused on port 22 | Empty host keys, see [README step 0.3](../README.md#03-connect-over-ssh) |
+| SSH refused on port 22 | Empty host keys, see [guide step 0.3](DATATHON-GUIDE.md#03-connect-over-ssh) |
 | `REMOTE HOST IDENTIFICATION HAS CHANGED` | `ssh-keygen -R <ip>` |
 | apt or download certificate errors | The clock is wrong: `timedatectl` |
 | SSH drops with Wi-Fi off | Expected. Use `adb shell` |
 
-The full table is in [../README.md#troubleshooting](../README.md#troubleshooting).
+The full table is in [DATATHON-GUIDE.md, troubleshooting](DATATHON-GUIDE.md#troubleshooting).
 
 ## Student teaching app (PC or board Linux)
 

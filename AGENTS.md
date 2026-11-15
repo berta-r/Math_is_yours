@@ -8,7 +8,7 @@ Our team's entry to the **Datathon FME 2026, Qualcomm challenge: "Math on the Ed
 
 The copilot must either **Teach** (hints, adaptive practice, error analysis, physical interaction) or **Reason** (pick the right letter A–E on a hidden test set). `predict.py` is scored on the hidden test set whatever else we build.
 
-This repository started from the organizers' template. The template's step-by-step guide is [README.md](README.md) (steps 0–15). Our own documentation lives in [docs/](docs/).
+This repository started from the organizers' template. The template's step-by-step guide is [docs/DATATHON-GUIDE.md](docs/DATATHON-GUIDE.md) (steps 0–15; it was the root README until publication). The root [README.md](README.md) is our public project README. Our own documentation lives in [docs/](docs/).
 
 ## Current state (update this line when it changes)
 
@@ -31,7 +31,7 @@ This repository started from the organizers' template. The template's step-by-st
 
 ```
 AGENTS.md / CLAUDE.md     ← agent entry points (this file)
-README.md                 ← organizers' guide, steps 0–15 (source of truth for setup)
+README.md                 ← our public project README (what it does, architecture, replication, results)
 config.env                ← all shared settings (Bash + Python read it)
 predict.py                ← OFFICIAL entry point (jury runs it)
 eval.py                   ← measure accuracy/latency → results/
@@ -50,6 +50,7 @@ data/                     ← sample_problems.jsonl (committed), generated data 
 results/                  ← eval outputs + ablations.csv (ignored by git)
 .skills/                  ← Claude skills: unoq-board, m3kang-copilot, unoq-hardware-ui, publish-project
 docs/                     ← OUR documentation (see below)
+docs/DATATHON-GUIDE.md    ← organizers' guide, steps 0–15 (source of truth for setup)
 ```
 
 ## Where to look

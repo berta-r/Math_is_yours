@@ -11,7 +11,7 @@
 
 ## (a) What the organisers collect, and how
 
-Quoted from the organisers' [README.md](../README.md):
+Quoted from the organisers' guide, [DATATHON-GUIDE.md](DATATHON-GUIDE.md) (the root README at the time):
 
 | What | Source in the README | Status |
 | --- | --- | --- |
