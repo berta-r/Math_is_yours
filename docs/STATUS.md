@@ -6,6 +6,8 @@
 
 ## Summary
 
+**Board deployment of main `ad505c6` (2026-11-15, from the Mac over ADB):** our clone at `~/datathon_xusigrupoo` is on main and `~/datathon-UPC-maths-qualcomm-arduino-unoq` is now a symlink to it, so the organisers' path runs the compute-first solver. `math-compute-warm` is installed and enabled; the `math-compute` unit was already identical. Student release `20261115-104103-4b2961b823` installed with `--local-tutor --safe-shutdown`: 2932 training rows, 3494 images, all `data/ml` artifacts; `/api/health` reports app `kangaroo-student`, version `slm-learning-coach-v3`, model ready. Measured with the four services up: 2.6 GB available RAM, 1.7 GB free disk; `predict.py` on the five sample problems 5/5 `ok` (7–17 s each, warm-up 56 s with a warm cache); coach arithmetic answers instantly, a conceptual question answered by the local model in 22 s on an idle board, but fell back to the prepared text (`stored_timeout`, 46 s) while the compute server was reading its examples. The 30-problem eval on main was not re-run before handing the board to the organisers (T-126).
+
 **T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) everywhere: app title, docs, pitch, app id kept as `kangaroo-student` so the launcher already installed on the demo PC keeps opening the tutor (fix/launcher-app-id), launcher folder `MathIsYours`, board service description. Reinstall the Windows launcher from a new bundle after deploying, since the app id and folder changed.
 
 **T-129 implemented offline coach (2026-11-15, laptop):** main through `0b42034`
