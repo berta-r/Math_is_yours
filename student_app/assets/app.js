@@ -30,6 +30,7 @@ function syncControls() {
   const currentRecommendation = current?.id === recommendation?.id;
   $('start-recommended').disabled = busy || !recommendation?.problem || currentRecommendation;
   $('start-recommended').hidden = currentRecommendation;
+  document.querySelector('.recommendation').hidden = currentRecommendation;
   $('start-recommended').textContent = currentRecommendation ? 'Current exercise' : 'Start next step';
   $('practice-skill').disabled = busy || !selectedSkill;
   $('set-goal').disabled = busy || !selectedSkill;
@@ -78,6 +79,7 @@ async function openProblem(key = null, returnTo = null) {
   renderThinking(data);
   session = data.session; selected = ''; solved = false;
   $('feedback').dataset.state = 'neutral';
+  $('answer-moment').hidden = true;
   $('skill').textContent = data.skill;
   $('practice-title').textContent = data.kind === 'diagnostic' ? 'A quick check' : 'A new problem';
   $('hint-source').textContent = '';
@@ -104,7 +106,7 @@ async function openProblem(key = null, returnTo = null) {
     };
     $('options').append(button);
   }
-  $('feedback').textContent = !current.gradable ? 'View-only problem: no answer key is loaded.' : thinkingSteps.length ? 'Work through three short thinking steps, then explore the choices.' : 'Take a moment to notice the information you have. Write a first step, then explore the choices.';
+  $('feedback').textContent = !current.gradable ? 'View-only problem: no answer key is loaded.' : '';
 }
 function renderThinking(data) {
   const hasSteps = thinkingSteps.length > 0;
@@ -228,7 +230,7 @@ async function refreshGraph() {
     const name = document.createElement('strong'); name.textContent = skill.name;
     const state = document.createElement('span'); state.textContent = stateLabel(skill.state);
     button.append(name, state);
-    button.onclick = () => { knowledgeMap.select(skill.id, true); $('skill-detail').scrollIntoView({block:'center'}); };
+    button.onclick = () => { document.querySelector('.connection-map').open = true; knowledgeMap.select(skill.id, true); $('skill-detail').focus({preventScroll:true}); $('skill-detail').scrollIntoView({block:'center'}); };
     skillList.append(button);
   });
   if (selectedSkill) showSkill(profile.skills.find(s => s.id === selectedSkill));
@@ -256,14 +258,14 @@ function stateLabel(state) { return KnowledgeMap.stateLabel(state); }
 function renderPath(path) {
   $('learning-path').replaceChildren();
   $('path-reason').textContent=path?.reason || 'Your next steps will adapt as you build independent evidence.';
-  $('path-title').textContent=path?.goal_name ? `Towards ${path.goal_name.toLowerCase()}` : 'Your learning path';
+  $('path-title').textContent='Learning path';
   for(const step of path?.steps || []) {
     const li=document.createElement('li');
     const button=document.createElement('button');button.className='path-step';
     const title=document.createElement('strong');title.textContent=step.name;
     const detail=document.createElement('span');detail.textContent=step.reason || stateLabel(step.state);
     button.append(title,detail);
-    button.onclick=()=>{knowledgeMap.select(step.id,true);$('skill-detail').focus({preventScroll:true});};
+    button.onclick=()=>{document.querySelector('.connection-map').open=true;knowledgeMap.select(step.id,true);$('skill-detail').focus({preventScroll:true});$('skill-detail').scrollIntoView({block:'center'});};
     if(step.id===path.next_skill){li.className='next-step';button.setAttribute('aria-label',`${step.name}: suggested next step. ${step.reason || ''}`);}
     li.append(button);$('learning-path').append(li);
   }
@@ -313,7 +315,7 @@ async function refreshRecommendation(skill = null) {
   $('recommendation-reason').textContent = recommendation.reason + (recommendation.language_fallback ? ' This check is available in English.' : '');
   syncControls();
 }
-$('start-recommended').onclick = () => run(async () => { if(recommendation?.problem) { await openProblem(recommendation.problem,recommendation.return_to); $('question').focus(); } });
+$('start-recommended').onclick = () => run(async () => { if(recommendation?.problem) { await openProblem(recommendation.problem,recommendation.return_to); setStudioView('practice'); $('question').focus(); } });
 $('practice-skill').onclick = () => run(async () => { await refreshRecommendation(selectedSkill); if(recommendation?.problem) { await openProblem(recommendation.problem); setStudioView('practice'); $('question').focus(); } });
 $('download-report').onclick = () => run(async () => {
   const result = await api('report'); const url = URL.createObjectURL(new Blob([result.markdown],{type:'text/markdown;charset=utf-8'}));
@@ -334,9 +336,9 @@ $('profile-form').onsubmit = event => {
     $('graph-search').value=''; $('graph-results').hidden=true; $('graph-focus').setAttribute('aria-pressed','false');
     await refreshGraph(); await refreshRecommendation();
     await openProblem(recommendation.problem || $('problem-select').value, recommendation.return_to); $('workspace').hidden=false;
-    $('welcome').hidden = true; $('studio-nav').hidden = false;
+    $('welcome').hidden = true; $('studio-nav').hidden = false; $('profile-switch').hidden = false;
+    document.body.classList.remove('landing');
     $('profile-name').textContent = student;
-    $('profile-switch').querySelector('.profile-avatar').textContent = student.slice(0,1).toUpperCase();
     setStudioView('practice', false);
     $('skill-detail').textContent = 'Select a skill to see the evidence behind its state.';
     $('skill-review').textContent = '';
@@ -344,6 +346,23 @@ $('profile-form').onsubmit = event => {
   });
 };
 $('open-problem').onclick = () => run(async () => { await openProblem(); await refreshRecommendation(); $('question').focus(); });
+function showAnswerMoment(correct) {
+  const panel = $('answer-moment');
+  const symbol = panel.querySelector('.answer-moment-symbol');
+  panel.dataset.state = correct ? 'correct' : 'retry';
+  symbol.textContent = correct ? '✓' : '↻';
+  panel.querySelector('.answer-moment-title').textContent = correct ? 'That’s right!' : 'Try a different answer';
+  panel.hidden = false;
+  panel.getAnimations().forEach(animation => animation.cancel());
+  symbol.getAnimations().forEach(animation => animation.cancel());
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    panel.animate([{opacity:0, transform:'translateY(18px)'},{opacity:1, transform:'translateY(0)'}],
+      {duration:380, easing:'cubic-bezier(0.23, 1, 0.32, 1)'});
+    symbol.animate([{opacity:0, transform:'scale(.55)'},{opacity:1, transform:'scale(1.13)', offset:.6},{opacity:1, transform:'scale(1)'}],
+      {duration:480, easing:'cubic-bezier(0.23, 1, 0.32, 1)'});
+  }
+  panel.scrollIntoView({block:'center', behavior:'instant'});
+}
 $('submit').onclick = () => run(async () => {
   feedbackVersion++; $('hint-source').textContent='';
   if (!selected) throw new Error('Choose A, B, C, D or E first.');
@@ -351,6 +370,7 @@ $('submit').onclick = () => run(async () => {
   canReveal = !!result.can_reveal;
   $('feedback').textContent=result.message;
   $('feedback').dataset.state = result.correct ? 'correct' : 'retry';
+  showAnswerMoment(result.correct);
   solved = result.correct;
   await refreshGraph();
   await refreshRecommendation();
@@ -385,7 +405,7 @@ $('reveal').onclick = () => run(async () => {
 syncControls();
 
 // Workspace navigation only changes presentation; every exercise remains in memory.
-const viewNames = {practice:['THE WORKSHOP / 01', 'Solve it your way.'], map:['YOUR JOURNEY / 02', 'My path.'], notebook:['YOUR RECORD / 03', 'My work.']};
+const viewNames = {practice:'Solve', map:'My path', notebook:'My work'};
 function setStudioView(view, focus = true) {
   if (!viewNames[view] || $('workspace').hidden) return;
   for (const name of Object.keys(viewNames)) $(''+name+'-view').hidden = name !== view;
@@ -394,13 +414,13 @@ function setStudioView(view, focus = true) {
     else button.removeAttribute('aria-current');
   });
   document.body.dataset.view = view;
-  $('view-kicker').textContent = viewNames[view][0];
-  $('view-title').textContent = viewNames[view][1];
+  $('view-title').textContent = viewNames[view];
   if (focus) { $('view-title').focus({preventScroll:true}); window.scrollTo(0,0); }
 }
-document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => setStudioView(button.dataset.view)));
+document.querySelectorAll('#studio-nav [data-view]').forEach(button => button.addEventListener('click', () => setStudioView(button.dataset.view)));
 $('profile-switch').onclick = () => {
-  $('workspace').hidden = true; $('studio-nav').hidden = true; $('welcome').hidden = false;
+  $('workspace').hidden = true; $('studio-nav').hidden = true; $('profile-switch').hidden = true; $('welcome').hidden = false;
+  document.body.classList.add('landing');
   $('student').focus(); window.scrollTo(0,0);
 };
 const originalOpenProblem = openProblem;
