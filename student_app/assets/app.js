@@ -339,7 +339,9 @@ function renderMedia() {
   const mode = $('display-mode').value;
   $('question').textContent = current.text || `${t('problem')} ${current.id}`;
   $('question').hidden = mode === 'image' && !!current.image_url;
-  $('problem-figure').hidden = mode === 'text' || !current.image_url;
+  // Picture-only answers (every option empty) keep the picture visible even in "Text only" mode.
+  const pictureAnswers = !!current.image_url && !Object.values(current.options || {}).some(v => v);
+  $('problem-figure').hidden = !current.image_url || (mode === 'text' && !pictureAnswers);
   const image = $('problem-image');
   if (current.image_url) { if (image.getAttribute('src') !== current.image_url) { mediaError = false; image.src = current.image_url; } }
   else { image.removeAttribute('src'); }
