@@ -6,6 +6,8 @@
 
 ## Summary
 
+**T-120 Solve and My path layout (2026-11-15, laptop only):** Solve is full width with "Change problem" top-left, the Understand / Plan / Check rail above the statement, a 3px rule before the thinking question and the answers, and feedback shown as large framed bands (glyph, 22–28px headline, 19px body); the optional note and the "Pick an answer first." helper are gone. In My path the skill tree has no legend or state labels (colour and corner glyph carry the state, names 22px), goal buttons are larger, and the path problem cards are whole buttons tinted by difficulty without question text. Design rules now live in [DESIGN.md](DESIGN.md). Playwright checks at 1440 / 1024 / 390 and 113 app tests pass.
+
 **T-118 map problems in My path (2026-11-15, laptop only):** choosing a goal skill now lists, under the tree, the problems the problem map computes as the route (T-117 API), each with difficulty label, level, category and an Open action; verified with the full map data at 1440 and 390 px, 113 app tests pass.
 
 **T-116 horizontal skill tree (2026-11-15, laptop only):** My path now opens on a left-to-right skill tree instead of the force-directed map and search box: each skill sits to the right of the skills that help you learn it, skills you have are green, and picking a goal from a row of small buttons paints the route to it in blue (the goal solid blue). Recommendation and numbered steps follow in two columns; clicking a node or a step opens the practice notes with "Practise this skill". No server or API change; 112 unit tests pass; checked in Chrome at 1440, 1024 and 390 px.
