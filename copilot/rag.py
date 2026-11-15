@@ -3,6 +3,8 @@ import json
 import sqlite3
 from array import array
 
+from .alignment import Alignment
+from .config import CONFIG
 from .embed import embed
 from .llm import format_problem
 
@@ -31,7 +33,12 @@ def build(db_path, problems, batch=16):
 class Index:
     """Loads every vector into memory once, so each search is a plain loop."""
 
-    def __init__(self, db_path):
+    def __init__(self, db_path, align_catalan=None, alignment=None):
+        """align_catalan: rotate Catalan queries with Procrustes W (default: ALIGN_CATALAN in config.env)."""
+        if align_catalan is None:
+            align_catalan = CONFIG.get("ALIGN_CATALAN", "0").strip() == "1"
+        self.align_catalan = align_catalan
+        self._alignment = alignment
         db = sqlite3.connect(db_path)
         self.rows = []
         for key, problem, blob in db.execute("SELECT key, problem, vec FROM problems"):
@@ -40,13 +47,23 @@ class Index:
             self.rows.append((key, json.loads(problem), vec))
         db.close()
 
+    def query_vector(self, problem):
+        """Embedded query; Catalan ones are mapped into English space when the flag is on."""
+        query = embed([format_problem(problem)], query=True)[0]
+        if self.align_catalan and problem.get("language") == "cat":
+            if self._alignment is None:
+                self._alignment = Alignment()  # loaded once, on the first Catalan query
+            if self._alignment.enabled:
+                query = self._alignment.apply(query)
+        return query
+
     def search(self, problem, k=1, exclude_id=None):
         """Return up to k (score, problem) pairs, most similar first.
 
         exclude_id skips the same problem in other languages, so validation
         never retrieves its own translation.
         """
-        query = embed([format_problem(problem)], query=True)[0]
+        query = self.query_vector(problem)
         scored = []
         for _key, stored, vec in self.rows:
             if exclude_id and stored["id"] == exclude_id:

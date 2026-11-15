@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Problem map</title>
+<style>
+  :root {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: #233f36;
+    background: #f5f4ed;
+    font-size: 16px;
+    --green: #285342;
+    --muted: #606f65;
+    --line: #dcded3;
+    --soft: #ebeede;
+    --path: #a85b27;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: #f5f4ed; }
+  button, input, select { font: inherit; }
+  button { min-height: 40px; border: 1px solid transparent; border-radius: 9px; padding: 8px 14px; background: var(--green); color: white; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+  button.quiet { background: #fffef9; color: var(--green); border-color: #cbd3c4; }
+  button:focus-visible, input:focus-visible, a:focus-visible, svg:focus-visible { outline: 3px solid var(--path); outline-offset: 3px; }
+  input { border: 1px solid #cbd3c4; border-radius: 8px; min-height: 40px; padding: 8px 10px; background: #fffef9; color: #283d32; width: 160px; max-width: 100%; }
+  header { max-width: 1264px; margin: auto; padding: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 750; letter-spacing: -.6px; text-decoration: none; color: inherit; }
+  .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; background: var(--green); color: #f5f4ed; font-family: Georgia, serif; font-size: 20px; border-radius: 10px; }
+  form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  label { font-size: 12px; font-weight: 650; }
+  main { max-width: 1264px; margin: auto; padding: 16px; }
+  h1 { font-size: clamp(26px, 4vw, 40px); font-weight: 550; letter-spacing: -1.2px; margin: 4px 0 6px; }
+  h1 em { font-family: Georgia, serif; font-weight: 400; color: #577349; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  p, small { line-height: 1.6; }
+  small, .muted { color: var(--muted); font-size: 13px; }
+  #status { min-height: 1.6em; margin: 0 0 12px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .panel { background: #fffef9; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .canvas { position: relative; padding: 6px; }
+  #map { display: block; width: 100%; height: auto; aspect-ratio: 600 / 520; touch-action: none; cursor: grab; background: #fbfaf4; border-radius: 10px; }
+  #map .dot { stroke: none; }
+  #map .dot.solved { stroke: #1d2f27; stroke-width: 1.4; }
+  #map .dot.exposed { opacity: .5; }
+  #map .dot.unseen { opacity: .85; }
+  #map .dot.goal { stroke: var(--path); stroke-width: 2; }
+  #map .route { fill: none; stroke: var(--path); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+  #map .route-stop { fill: #fffef9; stroke: var(--path); stroke-width: 2; }
+  .zoom { position: absolute; right: 14px; top: 14px; display: flex; gap: 6px; }
+  .zoom button { min-height: 34px; min-width: 34px; padding: 4px 8px; }
+  #tooltip { position: absolute; pointer-events: none; background: #233f36; color: #f5f4ed; font-size: 12px; padding: 6px 8px; border-radius: 7px; white-space: nowrap; transform: translate(-50%, -120%); }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); margin: 8px 4px 2px; }
+  .key span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .ring { border: 2px solid #1d2f27; width: 12px; height: 12px; }
+  #legend { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 13px; }
+  #legend li { display: flex; gap: 8px; align-items: baseline; }
+  #legend li .swatch { transform: translateY(1px); }
+  #steps { padding-left: 22px; margin: 0; display: grid; gap: 10px; font-size: 14px; }
+  #steps li p { margin: 2px 0; }
+  #steps a { color: var(--green); font-weight: 650; }
+  aside { display: grid; gap: 16px; }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    header { padding: 12px 16px; }
+    input { width: 130px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/"><span class="brand-mark">K</span>Problem map</a>
+  <form id="who">
+    <label for="student">Nickname</label>
+    <input id="student" name="student" maxlength="40" autocomplete="off" required>
+    <button type="submit">Show</button>
+  </form>
+</header>
+<main>
+  <h1>Every problem, <em>one map</em></h1>
+  <p class="muted">Close dots are similar problems. Ringed dots are ones you solved; faded dots are ones you have tried. Click any dot to get a path of small steps from what you know to that problem.</p>
+  <p id="status" role="status" aria-live="polite"></p>
+  <div class="layout">
+    <section class="panel canvas" aria-label="Problem map">
+      <svg id="map" tabindex="0" role="img" aria-label="Map of problems; use plus and minus to zoom and arrow keys to move"></svg>
+      <div class="zoom">
+        <button type="button" class="quiet" id="zoom-in" aria-label="Zoom in">+</button>
+        <button type="button" class="quiet" id="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" class="quiet" id="zoom-reset" aria-label="Reset view">⟲</button>
+      </div>
+      <div id="tooltip" hidden></div>
+      <div class="key" aria-hidden="true">
+        <span><i class="swatch ring"></i>Solved</span>
+        <span><i class="swatch" style="background:#8aa38f;opacity:.5"></i>Tried</span>
+        <span><i class="swatch" style="background:#a85b27"></i>Path</span>
+      </div>
+    </section>
+    <aside>
+      <section class="panel" id="path-panel">
+        <h2>Your path</h2>
+        <p id="path-summary" class="muted">Click a dot on the map to choose a goal.</p>
+        <ol id="steps"></ol>
+      </section>
+      <section class="panel">
+        <h2>Groups of problems</h2>
+        <ul id="legend"></ul>
+      </section>
+    </aside>
+  </div>
+</main>
+<script src="/map.js"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" data-type="software">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#849fc4"><meta name="description" content="Offline math practice with guided thinking, connected skills and your own learning notebook.">
+<meta name="page-type" content="software"><meta name="site-kind" content="software"><title>Kangaroo Studio · Solve maths your way</title>
+<link rel="stylesheet" href="/style.css"><script src="/graph.js" defer></script><script src="/app.js" defer></script>
+</head>
+<body data-view="practice">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+<a class="brand" href="/" aria-label="Kangaroo Studio home"><span class="brand-mark" aria-hidden="true">k.</span><span>kangaroo<span class="brand-studio">studio</span></span></a>
+<nav aria-label="Workspace" id="studio-nav" hidden>
+<button type="button" data-view="practice" aria-controls="practice-view" aria-current="page">Solve</button>
+<button type="button" data-view="map" aria-controls="map-view">My path</button>
+<button type="button" data-view="notebook" aria-controls="notebook-view">My work</button>
+</nav>
+<span class="connection"><span aria-hidden="true"></span>Works offline</span>
+</header>
+<main id="main">
+<section id="welcome" class="welcome" aria-labelledby="welcome-title">
+<div class="hero-topline"><span>MATHEMATICS / MADE TO EXPLORE</span><span>OFFLINE LEARNING STUDIO</span></div>
+<div class="hero-intro"><p class="hero-kicker">THINK / TRY / UNDERSTAND</p><h1 id="welcome-title">MATH<br>IS YOURS<span class="hero-period">.</span></h1><p>Solve a math problem, one thought at a time. Make a plan, try an answer and see where it takes you.</p></div>
+<div class="hero-study" aria-hidden="true"><article class="study-card study-card-one"><span><b>01</b> / START</span><strong>18 − 7</strong><small>What remains?</small></article><article class="study-card study-card-two"><span><b>02</b> / THINK</span><strong>×</strong><small>Find a pattern</small></article><article class="study-card study-card-three"><span><b>03</b> / CHECK</span><strong>11</strong><small>Explain your idea</small></article></div>
+<div class="hero-bottom"><div class="hero-wordmark" aria-hidden="true">KANGAROO</div><div class="hero-entry"><div class="hero-entry-heading"><span class="entry-index">YOUR SPACE / 001</span><strong>Ready for your first problem?</strong></div><form id="profile-form"><div class="profile-label"><label for="student">Your nickname</label><small>Use the same nickname to return to your progress.</small></div><div class="row"><input id="student" maxlength="40" required value="" placeholder="Write your nickname" autocomplete="off" aria-label="Your nickname" aria-describedby="profile-note"><button type="submit">Start practising <span aria-hidden="true">↗</span></button></div><small id="profile-note">Use a nickname without personal information. Local profiles have no password.</small></form></div></div>
+</section>
+<div id="workspace" hidden>
+<div class="workspace-heading"><div><p class="eyebrow" id="view-kicker">THE WORKSHOP / 01</p><h1 id="view-title" tabindex="-1">Solve it your way.</h1></div><button id="profile-switch" class="profile-button" type="button"><span class="profile-avatar" aria-hidden="true">E</span><span id="profile-name">Explorer</span><span class="profile-change">Switch</span></button></div>
+<section id="practice-view" aria-label="Practice">
+<div class="practice-grid"><div class="practice-column">
+<details id="exercise-settings" class="exercise-settings"><summary>Choose another problem <span>Options</span></summary><p id="dataset-info" class="muted" role="status"></p><div class="display-controls"><div><label for="language-filter">Language</label><select id="language-filter"><option value="">All languages</option></select></div><div><label for="display-mode">Display</label><select id="display-mode"><option value="combined">Text + image</option><option value="text">Text only</option><option value="image">Image only</option></select></div></div>
+<div class="problem-picker"><div><label for="problem-select">Choose a problem</label><select id="problem-select"></select></div><button id="open-problem" class="secondary">Open ↗</button></div>
+</details>
+<section class="card practice" aria-labelledby="practice-title">
+<div class="section-heading"><p class="eyebrow">THE PROBLEM / 01</p><span id="skill" class="skill-label"></span></div>
+<h2 id="practice-title">A new problem</h2>
+<h3 id="question" tabindex="-1"></h3>
+<figure id="problem-figure" hidden><button id="image-link" type="button" aria-label="Enlarge problem image" aria-haspopup="dialog" aria-controls="image-viewer"><img id="problem-image" alt="Original problem with its diagrams and answer choices"></button></figure>
+<p id="media-note" role="status" class="muted"></p>
+<section class="reflection-box" aria-labelledby="reflection-heading"><h4 id="reflection-heading">Start with an idea</h4>
+<div id="thinking" hidden><ol id="step-rail" class="step-rail" aria-label="Thinking steps"><li data-stage="understand"><span class="step-dot" aria-hidden="true"></span>Understand</li><li data-stage="plan"><span class="step-dot" aria-hidden="true"></span>Plan</li><li data-stage="check"><span class="step-dot" aria-hidden="true"></span>Check</li></ol><small id="step-scope"></small><p id="step-question" class="step-question"></p><div id="step-options" class="step-options" role="group" aria-labelledby="step-question"></div><p id="step-feedback" class="step-feedback" role="status" aria-live="polite" hidden></p></div>
+<button id="note-toggle" class="text-button" type="button" aria-expanded="false" aria-controls="note-area" hidden>Add a note (optional)</button>
+<div id="note-area"><label id="reflection-prompt" for="reflection">What do you notice, and what could you try first?</label><textarea id="reflection" rows="3" minlength="5" maxlength="1200" placeholder="I notice… My first step could be…" aria-describedby="reflection-note"></textarea><button id="save-reflection" class="secondary">Explore answer choices →</button><small id="reflection-note" role="status">A rough idea is enough. You can ask for a hint before choosing.</small></div></section>
+<div id="answer-stage" hidden><p class="answer-label">Choose your answer</p><div id="options" role="group" aria-label="Answer choices"></div><button id="submit">Check my answer →</button></div>
+<div class="row tools"><button id="hint" class="secondary">Get a hint</button><button id="reveal" class="text-button" aria-describedby="solution-gate">See answer</button><button id="solution" class="text-button" aria-describedby="solution-gate">See explanation</button></div><small id="solution-gate">Try your idea and a hint before reviewing an answer.</small><p id="feedback" role="status" aria-live="polite">Start with what you notice about this problem.</p><small id="hint-source"></small></section>
+</div></section>
+</section>
+<section id="map-view" aria-labelledby="map-title" hidden>
+<div class="map-intro"><h2 id="map-title">Choose a direction.</h2><p>Follow your next step or explore the skills you can build.</p></div><div class="path-overview"><section class="recommendation" aria-labelledby="recommendation-title">
+<div><p class="eyebrow" id="recommendation-kind">YOUR NEXT STEP</p><h2 id="recommendation-title">Finding a useful place to start</h2><p id="recommendation-reason" role="status"></p></div>
+<button id="start-recommended">Try this next →</button>
+</section>
+<section class="path-panel" aria-labelledby="path-title"><p class="eyebrow">ONE STEP AT A TIME</p><h3 id="path-title">Your learning path</h3><label for="learning-goal">Where would you like to go?</label><select id="learning-goal"><option value="">Guide me from my progress</option></select><p id="path-reason" class="muted"></p><ol id="learning-path"></ol><small id="path-strengths"></small></section>
+</div><h2 class="map-section-title">Explore all skills</h2><div id="skill-list" class="skill-list" aria-label="Skills you can explore"></div>
+<div class="map-card"><div class="graph-search"><label for="graph-search">Find a knowledge area</label><input id="graph-search" type="search" autocomplete="off" placeholder="Try multiplication…" aria-controls="graph-results"><ul id="graph-results" aria-label="Matching knowledge areas" hidden></ul></div>
+<div class="graph-stage"><div class="graph-toolbar" role="group" aria-label="Map controls"><button id="graph-zoom-in" title="Zoom in" aria-label="Zoom in">+</button><button id="graph-zoom-out" title="Zoom out" aria-label="Zoom out">−</button><button id="graph-reset" title="Fit all skills">Fit map</button><button id="graph-focus" aria-pressed="false">Focus connections</button></div><svg id="graph" viewBox="0 0 600 520" role="group" tabindex="0" aria-label="Connected knowledge map. Drag to pan or move a skill. Use plus and minus to zoom." aria-describedby="graph-help"></svg><p id="graph-help">Drag the map or a dot · Use + / − to zoom · Select a skill to explore</p></div>
+<div class="edge-legend"><span><i class="key-prerequisite"></i>Supports learning →</span><span><i class="key-related"></i>Related ideas</span><span><i class="key-path"></i>Your path</span></div>
+<small id="graph-method"></small>
+<div class="legend"><span>○ Not assessed</span><span>↗ Developing</span><span>✓ Demonstrated</span><span>◷ Due for review</span></div>
+<div class="evidence"><p class="eyebrow">YOUR PRACTICE NOTES</p><p id="skill-detail" role="status">Select a skill to see the evidence behind its state.</p><p id="skill-review" class="muted"></p><div class="skill-actions"><button id="practice-skill" class="secondary" disabled>Practise this skill →</button><button id="set-goal" class="text-button" disabled>Build a path here</button></div><p id="total" class="muted"></p></div>
+</div>
+<details class="method-note"><summary>About these learning estimates</summary><p>Estimates use provisional learning parameters. “Not assessed” means unknown. Being due for review does not lower your estimate. Related ideas do not automatically become prerequisites.</p></details>
+</section>
+<section id="notebook-view" aria-label="Your notebook" hidden>
+<p class="view-description">Every idea you tried has a place here.</p><section class="learning-overview" aria-label="Learning progress">
+<div><span id="stat-evidence">0</span><small>independent attempts</small></div>
+<div><span id="stat-demonstrated">0</span><small>skills demonstrated</small></div>
+<div><span id="stat-due">0</span><small>skills to revisit</small></div>
+<button id="download-report" class="secondary">Download my work ↓</button>
+</section>
+<section id="history-section" class="card"><h2>Recent practice</h2><ul id="history"></ul></section>
+</section>
+</div>
+<p id="error" role="alert"></p><p id="activity-status" role="status" aria-live="polite"></p>
+<footer><span class="footer-brand">KANGAROO / MATH STUDIO</span><span>Your work stays on this device.</span></footer>
+</main>
+<dialog id="image-viewer" aria-labelledby="image-viewer-title">
+<div class="viewer-heading"><h2 id="image-viewer-title">Problem image</h2><button id="close-image" type="button" autofocus>Close ×</button></div>
+<p class="viewer-help">Press Escape or click outside the viewer to return to your problem.</p>
+<div class="viewer-content"><img id="enlarged-image" alt="Enlarged original problem with diagrams and answer choices"></div>
+<p id="viewer-error" role="status"></p>
+</dialog>
+</body></html>

@@ -12,7 +12,7 @@ This repository started from the organizers' template. The template's step-by-st
 
 ## Current state (update this line when it changes)
 
-**Teach and Reason are both required main workstreams.** The team reports that the board model responds; setup verification, baseline measurements and the specific implementation scopes are pending. The [Tukey side-project workspace](side-project/README.md) and dashboard brief are created; implementation is pending. See [docs/STATUS.md](docs/STATUS.md).
+**Teach and Reason are both required main workstreams** (D-003). **Tutor deployed and tested on the UNO Q over Wi-Fi and USB.** The [student app](student_app/README.md) has a connected semantic graph, progressive paths, reflection before answers, provisional BKT and live local hint selection. Its boot service is enabled; 51 application/deployment checks and nine new setup checks pass on the board. Prepared data: 170 train / 30 validation. The standalone Windows launcher is installed on this PC with a login entry and bundled Python/ADB. The board presents a verified read-only MATHTUTOR setup drive using Windows inbox USB drivers. Full shutdown/replug testing passed: the drive returned, the installed watcher opened the tutor, the model became ready and progress survived. A fresh PC and actual Windows login remain to be verified. Educator review and reasoning improvements remain pending. See [docs/STATUS.md](docs/STATUS.md) and [deployment instructions](board/STUDENT_DEPLOYMENT.md).
 
 ## Hard rules: never break these
 
@@ -66,6 +66,7 @@ docs/                     ← OUR documentation (see below)
 | Pick the next task | [docs/TODO.md](docs/TODO.md) |
 | Record or compare an experiment | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) |
 | Know why something was decided | [docs/DECISIONS.md](docs/DECISIONS.md) |
+| Choose an ML improvement for the tutor | [docs/ML-OPTIONS.md](docs/ML-OPTIONS.md) |
 | Board-specific operations | [.skills/unoq-board/SKILL.md](.skills/unoq-board/SKILL.md) |
 | Change or measure the copilot | [.skills/m3kang-copilot/SKILL.md](.skills/m3kang-copilot/SKILL.md) |
 | Web page or LED matrix (App Lab) | [.skills/unoq-hardware-ui/SKILL.md](.skills/unoq-hardware-ui/SKILL.md) |

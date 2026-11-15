@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "method": "keyword-tfidf",
+  "source": "Authored English skill descriptions; keyword baseline",
+  "source_digest": "e78a8dcb6fdc0799134d8dae692748359ccc5dfe813d635401a27127dd3b3d85",
+  "skill_ids": [
+    "arithmetic",
+    "division",
+    "geometry_measurement",
+    "logical_constraints",
+    "multiplication",
+    "order_of_operations",
+    "patterns",
+    "proportional_reasoning",
+    "spatial_reasoning",
+    "systematic_counting"
+  ],
+  "neighbors": 2,
+  "threshold": 0.08,
+  "related_edges": [
+    {
+      "source": "arithmetic",
+      "target": "multiplication",
+      "weight": 0.086446,
+      "kind": "semantic"
+    },
+    {
+      "source": "arithmetic",
+      "target": "patterns",
+      "weight": 0.081132,
+      "kind": "semantic"
+    },
+    {
+      "source": "arithmetic",
+      "target": "proportional_reasoning",
+      "weight": 0.117955,
+      "kind": "semantic"
+    },
+    {
+      "source": "division",
+      "target": "multiplication",
+      "weight": 0.533121,
+      "kind": "semantic"
+    },
+    {
+      "source": "multiplication",
+      "target": "order_of_operations",
+      "weight": 0.102238,
+      "kind": "semantic"
+    }
+  ]
+}

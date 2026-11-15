@@ -67,3 +67,50 @@
 - Model servers listen on `127.0.0.1` only.
 - `solve()` must always return within `time_limit`, whatever happens: retrieval and any extra model call count against the same 60 s.
 - Keep the system prompt stable across calls so prompt caching keeps working.
+
+## Implemented teaching path
+
+`student_app/server.py` serves the offline browser UI on `127.0.0.1:7011`, prepared
+M3Kang media and 30 original diagnostics. This flow is separate from `predict.py`.
+
+| Component | Responsibility |
+| --- | --- |
+| `knowledge/skills/*.md`, `copilot/knowledge.py` | Validated shared curriculum and prerequisite DAG, hints and reviewed tags |
+| `copilot/student_model.py` | Provisional BKT, conservative attribution, persistent events, review dates, Markdown report |
+| `copilot/scheduler.py` | Deterministic diagnostics, supporting practice, due review, transfer and stretch recommendations |
+| `copilot/tutor.py` | Optional single local SLM worker selecting permitted hints; immediate stored fallback |
+| `student_app/progress.db` | Per-student history and state; old attempts retained |
+| `laptop/annotate_problems.py` | English-per-ID k-means candidates and explicit reviewed-tag export |
+| `laptop/eval_teaching.py` | Synthetic comparison with random and correct-harder selectors |
+
+The browser submits a letter. Python grades it with the supplied key, records help
+and exposure, and updates only a defensible assessment skill. Multi-skill ambiguity
+triggers a diagnostic. The browser then reloads graph state and the next-step
+reason. Tutor requests immediately return a stored hint and optionally a local
+job token; newer feedback or a different session invalidates late browser updates.
+Model calls never hold the SQLite write transaction open.
+
+The Linux side of the board can host the same server behind USB forwarding. The
+physical microcontroller adapter remains pending. See [app instructions](../student_app/README.md)
+and [curriculum/model details](../knowledge/README.md).
+
+The connected-map version adds `copilot/learning_graph.py` and a compact relation
+artifact built by `laptop/build_skill_graph.py`. Similarity influences exploration;
+authored prerequisites and saved evidence define the progressive path. The browser
+performs the force layout, search, zoom and dragging. `/api/reflect` stores a thought
+before `/api/answer` is accepted; reviewed answers are gated after attempts/help.
+`GET /api/health` identifies the app and reports bounded local-model readiness.
+Deployment tools install a board boot service with a stable database location and
+a PC USB watcher. See [deployment workflow](../board/STUDENT_DEPLOYMENT.md).
+
+### ML tutor modules (T-101 to T-109)
+
+All optional: each loads a laptop-built artifact from `data/ml/` (gitignored, shipped
+by T-110) and falls back to the earlier behaviour when the file is missing.
+
+| Module | Artifact | Used by |
+| --- | --- | --- |
+| `copilot/difficulty.py` | `difficulty.json`, `difficulty_model.json` | Problem difficulty b in [0, 1], `probability`, `elo_update`; `student_model` keeps `student_elo` and `scheduler` targets p ≈ 0.7 |
+| `copilot/learning_map.py` | `problem_map.json` | `POST /api/map`, `POST /api/path` and the `/map` page (`assets/map.html`, `assets/map.js`) |
+| `copilot/alignment.py` | `procrustes.json` | `rag.Index` rotates Catalan query vectors when `ALIGN_CATALAN=1` (default 0) |
+| `copilot/misconceptions.py` | `signatures.json` | Wrong-answer feedback naming a likely slip |

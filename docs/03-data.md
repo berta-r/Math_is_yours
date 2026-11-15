@@ -65,4 +65,6 @@ Reference size from the organizers: English-only validation set of about 281 pro
 
 ## Our dataset choices
 
-Not decided yet. When we prepare the data, record here and in [DECISIONS.md](DECISIONS.md): languages, split method, shards, the train/val counts and how many problems have options.
+Starter UI dataset prepared on 2026-11-14: `high_quality` shard 0, requested `eng,cat`, limited to the first 60 matching rows. Source order yielded **English only**: 52 training and 8 validation records, split by the preparation script's deterministic problem-ID hash (15% target). All 60 original images are saved; 16 records are marked `text_only`. OCR was deliberately skipped, so no parsed options are available: students read A–E from the original images. This is a UI starter subset, not the final evaluation dataset. Cache, JSONL and images are ignored by Git.
+
+Subsequent enrichment with `laptop/read_options.py` adds full OCR text choices for **34/52 training** and **5/8 validation** problems. Full picture-choice previews are available for another **10/52 training** and **1/8 validation** problems. Eight training and two validation problems still require the original image. OCR text/crops are automatic, not fully reviewed. The ordered ID/language/label checksum remained unchanged across enrichment; official answer keys were preserved. No solver accuracy gain is claimed.

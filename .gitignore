@@ -13,4 +13,9 @@ results/*
 
 __pycache__/
 .venv/
+.venv*/
 .DS_Store
+
+# Local secrets (API keys): never commit
+.env
+.env.*
