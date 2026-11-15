@@ -220,25 +220,67 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         return {'enabled': True, 'nodes': nodes, 'clusters': problem_map.clusters(), 'edges': edges,
                 'student_b_mean': round(sum(solved_b) / len(solved_b), 4) if solved_b else None}
 
-    def map_step(pid, language):
+    # Map decoration (T-117): skill tag, cluster category and difficulty tertiles per node.
+    map_skill = {}
+    for n in problem_map.nodes:
+        tags = knowledge.annotation({'id': n['id']})
+        map_skill[n['id']] = tags.get('assessment_skill') or next(iter(tags.get('skills') or []), None)
+    map_category = {c['id']: ', '.join((c.get('keywords') or [])[:3]) for c in problem_map.clusters()}
+    map_b = sorted(n['b'] for n in problem_map.nodes)
+    map_tertiles = (map_b[len(map_b) // 3], map_b[(2 * len(map_b)) // 3]) if map_b else (None, None)
+
+    def skill_title(sid):
+        return knowledge.skills[sid]['title'] if sid in knowledge.skills else None
+
+    def difficulty_label(b):
+        if b is None or map_tertiles[0] is None:
+            return None
+        return 'easy' if b <= map_tertiles[0] else 'medium' if b <= map_tertiles[1] else 'hard'
+
+    def map_step(pid, language, solved=()):
         node = problem_map.node(pid) or {}
         keys = by_id.get(pid, {})
         key = keys.get(language) or keys.get('eng') or (next(iter(sorted(keys.values()))) if keys else None)
         text = problems[key].get('text') if key else None
+        sid = map_skill.get(pid)
         return {'id': pid, 'level': node.get('level'), 'b': node.get('b'), 'cluster': node.get('cluster'),
-                'key': key, 'text_preview': text[:90] if isinstance(text, str) else None}
+                'key': key, 'text_preview': text[:90] if isinstance(text, str) else None,
+                'skill': sid, 'skill_name': skill_title(sid), 'category': map_category.get(node.get('cluster')),
+                'difficulty_label': difficulty_label(node.get('b')), 'solved': pid in solved}
+
+    def goal_for_skill(sid, solved):
+        """Goal problem for a skill: unsolved tagged node closest to the student's mean b + 0.5, else the easiest tagged."""
+        tagged = [n for n in problem_map.nodes if sid in (knowledge.annotation({'id': n['id']}).get('skills') or [])]
+        if not tagged:
+            return None
+        solved_b = [n['b'] for n in problem_map.nodes if n['id'] in solved]
+        target = (sum(solved_b) / len(solved_b) if solved_b else 0.0) + 0.5
+        pool = [n for n in tagged if n['id'] not in solved] or tagged
+        return min(pool, key=lambda n: (abs(n['b'] - target), n['id']))['id']
 
     def map_path(con, student, body):
-        goal, language = body.get('goal'), body.get('language') or 'eng'
-        if not isinstance(goal, str) or not goal:
+        goal, goal_skill, language = body.get('goal'), body.get('goal_skill'), body.get('language') or 'eng'
+        if goal_skill is not None and goal_skill not in knowledge.skills:
+            raise ValueError('Unknown goal skill')
+        if goal_skill is None and (not isinstance(goal, str) or not goal):
             raise ValueError('Choose a goal problem on the map')
         if not problem_map.enabled:
-            return {'enabled': False, 'goal': goal, 'steps': [], 'frontier': [], 'reachable': False}
+            return {'enabled': False, 'goal': goal, 'goal_skill': goal_skill, 'goal_skill_name': skill_title(goal_skill),
+                    'goal_problem': None, 'steps': [], 'frontier': [], 'reachable': False, 'reason': 'The problem map is not installed.'}
         solved, _ = solved_and_exposed(con, student)
         solved = sorted(solved)
+        frontier = [dict(map_step(f['id'], language, solved), gap=f['gap'], via=f['via']) for f in problem_map.frontier(solved)]
+        if goal_skill is not None:
+            goal = goal_for_skill(goal_skill, solved)
+            if goal is None:
+                return {'enabled': True, 'goal': None, 'goal_skill': goal_skill, 'goal_skill_name': skill_title(goal_skill),
+                        'goal_problem': None, 'steps': [], 'cost': None, 'remaining': 0, 'reachable': False,
+                        'frontier': frontier, 'reason': 'No problem on the map is tagged with this skill yet.'}
         route = problem_map.path(solved, goal)  # unknown goal -> ValueError -> 400
-        frontier = [dict(map_step(f['id'], language), gap=f['gap'], via=f['via']) for f in problem_map.frontier(solved)]
-        return dict(route, enabled=True, steps=[map_step(pid, language) for pid in route['steps']], frontier=frontier)
+        goal_problem = map_step(goal, language, solved)
+        return dict(route, enabled=True, steps=[map_step(pid, language, solved) for pid in route['steps']], frontier=frontier,
+                    goal_problem=goal_problem, goal_skill=goal_skill or goal_problem['skill'],
+                    goal_skill_name=skill_title(goal_skill or goal_problem['skill']))
 
     def rating_for(con, student, skill_id=None):
         """Theta for the selected skill, else the global rating, else the initial value."""

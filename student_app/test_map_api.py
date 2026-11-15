@@ -96,7 +96,12 @@ class MapApiTests(unittest.TestCase):
         self.assertTrue(result['reachable'])
         self.assertEqual([s['id'] for s in result['steps']], ['sample-2', 'sample-3', 'sample-4', 'unloaded'])
         first, catalan, last = result['steps'][0], result['steps'][2], result['steps'][3]
-        self.assertEqual(set(first), {'id', 'level', 'b', 'text_preview', 'key', 'cluster'})
+        self.assertEqual(set(first), {'id', 'level', 'b', 'text_preview', 'key', 'cluster',
+                                      'skill', 'skill_name', 'category', 'difficulty_label', 'solved'})
+        self.assertEqual((first['skill'], first['skill_name'], first['category'], first['difficulty_label'], first['solved']),
+                         ('order_of_operations', 'Order of operations', 'apples', 'easy', False))
+        self.assertEqual((last['skill'], last['skill_name'], last['category'], last['difficulty_label']), (None, None, 'square', 'medium'))
+        self.assertEqual((result['goal_problem']['id'], result['goal_skill'], result['goal_skill_name']), ('unloaded', None, None))
         self.assertEqual(first['key'], 'sample-2|eng')
         self.assertEqual(first['text_preview'], 'What is the value of 2 + 3 × 4?')
         self.assertEqual(catalan['key'], 'sample-4|cat')  # only loaded in Catalan: falls back
@@ -109,7 +114,39 @@ class MapApiTests(unittest.TestCase):
         self.assertFalse(island['reachable'])
         self.assertEqual(self.app.post('path', goal='sample-1')['steps'], [])
 
+    def test_goal_skill_resolves_a_reachable_stretch_problem(self):
+        # Solved: sample-1 (b 0.0) -> target b 0.5; arithmetic is tagged on sample-1 (solved) and sample-4 -> sample-4.
+        result = self.app.post('path', goal_skill='arithmetic', language='eng')
+        self.assertTrue(result['reachable'])
+        self.assertEqual((result['goal'], result['goal_skill'], result['goal_skill_name']),
+                         ('sample-4', 'arithmetic', 'Addition and subtraction'))
+        self.assertEqual(result['goal_problem']['id'], 'sample-4')
+        self.assertEqual(result['goal_problem']['key'], 'sample-4|cat')
+        self.assertEqual([s['id'] for s in result['steps']], ['sample-2', 'sample-3', 'sample-4'])
+        middle = result['steps'][1]
+        self.assertEqual((middle['skill'], middle['category'], middle['difficulty_label'], middle['solved']),
+                         ('geometry_measurement', 'square', 'easy', False))
+        self.assertEqual([s['difficulty_label'] for s in result['steps']], ['easy', 'easy', 'medium'])
+        self.assertEqual(self.app.post('path', goal_skill='arithmetic', language='eng'), result)
+        # Every arithmetic node solved: the closest tagged node is still returned (steps empty, reachable).
+        self.assertTrue(self.app.solve('sample-4')['correct'])
+        again = self.app.post('path', goal_skill='arithmetic')
+        self.assertEqual((again['goal'], again['steps'], again['reachable']), ('sample-4', [], True))
+        # A known skill with no tagged node on the map: not reachable, with a reason, frontier still listed.
+        none = self.app.post('path', goal_skill='patterns')
+        self.assertEqual((none['enabled'], none['reachable'], none['goal'], none['goal_problem']), (True, False, None, None))
+        self.assertEqual(none['goal_skill_name'], 'Patterns and sequences')
+        self.assertIn('tagged', none['reason'])
+        self.assertTrue(none['frontier'])
+        # An island goal through its skill is unreachable like by problem id.
+        island = self.app.post('path', goal_skill='systematic_counting')
+        self.assertEqual((island['goal'], island['reachable']), ('sample-5', False))
+
     def test_unknown_or_missing_goal_is_rejected(self):
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.app.post('path', goal_skill='nope')
+        self.assertEqual(caught.exception.code, 400)
+        caught.exception.close()
         for body in ({'goal': 'nope'}, {}, {'goal': 7}):
             with self.subTest(body=body), self.assertRaises(urllib.error.HTTPError) as caught:
                 self.app.post('path', **body)
@@ -137,6 +174,7 @@ class MapDisabledTests(unittest.TestCase):
                 data = fixture.post('map')
                 self.assertEqual(data, {'enabled': False, 'nodes': [], 'clusters': [], 'edges': [], 'student_b_mean': None})
                 self.assertFalse(fixture.post('path', goal='sample-1')['enabled'])
+                self.assertFalse(fixture.post('path', goal_skill='arithmetic')['enabled'])
             finally:
                 fixture.close()
 

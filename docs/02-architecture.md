@@ -111,6 +111,6 @@ by T-110) and falls back to the earlier behaviour when the file is missing.
 | Module | Artifact | Used by |
 | --- | --- | --- |
 | `copilot/difficulty.py` | `difficulty.json`, `difficulty_model.json` | Problem difficulty b in [0, 1], `probability`, `elo_update`; `student_model` keeps `student_elo` and `scheduler` targets p ≈ 0.7 |
-| `copilot/learning_map.py` | `problem_map.json` | `POST /api/map`, `POST /api/path` and the `/map` page (`assets/map.html`, `assets/map.js`) |
+| `copilot/learning_map.py` | `problem_map.json` | `POST /api/map`, `POST /api/path` (goal by problem id or by `goal_skill`; steps carry skill, category and difficulty label) and the `/map` page (`assets/map.html`, `assets/map.js`) |
 | `copilot/alignment.py` | `procrustes.json` | `rag.Index` rotates Catalan query vectors when `ALIGN_CATALAN=1` (default 0) |
 | `copilot/misconceptions.py` | `signatures.json` | Wrong-answer feedback naming a likely slip |
