@@ -21,7 +21,7 @@ removal of installed training IDs/ML files. See [implementation/deployment](SLM-
 and [colleague design guide](COACH-DESIGN.md).
 
 The full application suite ran 135 tests (132 passed, three skipped); two added
-local-HTTP model-transport checks are recorded with the release validation. The
+local-HTTP model-transport checks also passed. The
 deployment/setup/data-guard/options suite ran 40 tests (38 passed, two skipped).
 Both old Windows baseline failures are fixed in their tests (float tolerance and
 closing the fixture connection). Browser acceptance passed arithmetic, wrong
@@ -29,6 +29,9 @@ claims, honest unavailable-model fallback, Catalan, reload/draft/session resume,
 safe finish and existing navigation at 320/390/1024/1440px with no JS errors or
 external requests. The prediction smoke test wrote five contract-valid fallback
 rows because no model server is running locally; this is not an accuracy result.
+The extracted 7.4 MB board archive also passed an isolated `python -S` startup,
+asset/arithmetic check and server-restart persistence check, without site-packages
+or repository imports. Feature commit: `d9513ce`; full validation is in EXPERIMENTS.
 
 No board is visible over USB, so this version has **not** been activated or
 benchmarked on the UNO Q. Its old deployed release is unchanged. This checkout
