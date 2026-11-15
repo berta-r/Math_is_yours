@@ -23,17 +23,20 @@ The repository lives in `~/datathon-UPC-maths-qualcomm-arduino-unoq` on the boar
 | --- | --- | --- | --- |
 | Language model | 8081 | Qwen3.5 0.8B Q8_0 (835 MB) | `math-llm` |
 | Embeddings | 8082 | bge-small-en-v1.5 Q8_0 (37 MB, 384 dimensions) | `math-embed` |
+| Code model (compute solver) | 8084 | Qwen2.5-Coder 1.5B Instruct Q8_0 (1.9 GB) | `math-compute` |
 | Vision (optional, by hand) | 8083 | Qwen3.5 0.8B with `--mmproj` | none |
 
-Both servers listen on `127.0.0.1` only. All the settings are in `config.env`, which the Python code and the scripts in `board/` read.
+All servers listen on `127.0.0.1` only. All the settings are in `config.env`, which the Python code and the scripts in `board/` read.
 
 Check them, on the board:
 
 ```bash
-systemctl status math-llm math-embed --no-pager
+systemctl status math-llm math-embed math-compute math-compute-warm --no-pager
 curl -s http://127.0.0.1:8081/health
 curl -s http://127.0.0.1:8082/health
+curl -s http://127.0.0.1:8084/health
 journalctl -u math-llm -n 50 --no-pager
+journalctl -u math-compute -u math-compute-warm -n 50 --no-pager
 ```
 
 Restart them with `sudo systemctl restart math-llm math-embed`. After changing a service file: `sudo systemctl daemon-reload` first.

@@ -121,7 +121,7 @@ remain pending. Since then, `predict.py` uses a compute-first solver (`SOLVER=co
 a code model on a third service, `math-compute` (:8084), writes one Python expression and
 Python computes the answer; it scored 15/30 (50.0%) on the organisers' practice set on the
 board ([COMPUTE_SOLVER.md](COMPUTE_SOLVER.md)). RAM with all services running is not
-measured yet (T-125). There are ten authored skill nodes, thirty original diagnostics
+measured yet (T-126). There are ten authored skill nodes, thirty original diagnostics
 and 51 provisional M3Kang topic annotations. The Tukey side project is separate
 in [its workspace](../side-project/README.md).
 

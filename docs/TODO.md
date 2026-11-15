@@ -43,7 +43,7 @@ D0 is the Reason workstream. D1–D5 are candidate approaches within the require
 
 ### D0 · Reason: official score (required main workstream)
 
-- [ ] **T-125** [P0] [board] **Verify the compute solver on main with every service running.** git pull, bash board/06_compute_server.sh, free -m with math-llm, math-embed, math-compute and math-student up, predict.py on data/sample_problems.jsonl, eval.py --limit 30 --name compute-main; record RAM and the EXPERIMENTS row. Done when none of the 30 rows is over 60 s and RAM has at least 300 MB free.
+- [ ] **T-126** [P0] [board] **Verify the compute solver on main with every service running.** git pull, bash board/06_compute_server.sh, free -m with math-llm, math-embed, math-compute and math-student up, predict.py on data/sample_problems.jsonl, eval.py --limit 30 --name compute-main; record RAM and the EXPERIMENTS row. Done when none of the 30 rows is over 60 s and RAM has at least 300 MB free.
 - [ ] **T-030** [P0] [board] **Fix the letter bias.** Request `logprobs` (`top_logprobs: 5`) and calibrate against the letter prior from the train set. Measure it with `eval.py --name debias-v1`.
 - [ ] **T-031** [P1] [board] **Retrieval tuning:** a similarity threshold, same-level examples, hybrid keyword + embedding search. Keep it under 60 s.
 - [x] **T-032** [P1] [board] **Problem decomposition:** classify the type, then compute arithmetic and counting in Python, and ask the model only for what it's good at. (compute-first solver, docs/COMPUTE_SOLVER.md, 15/30 on the board, 2026-11-15)

@@ -12,7 +12,7 @@ This repository started from the organizers' template. The template's step-by-st
 
 ## Current state (update this line when it changes)
 
-**Teach and Reason are both required main workstreams** (D-003). **Tutor deployed and tested on the UNO Q over Wi-Fi and USB.** The [student app](student_app/README.md) has a connected semantic graph, progressive paths, reflection before answers, provisional BKT and live local hint selection. Its boot service is enabled; 51 application/deployment checks and nine new setup checks pass on the board. Prepared data: 170 train / 30 validation. The standalone Windows launcher is installed on this PC with a login entry and bundled Python/ADB. The board presents a verified read-only MATHTUTOR setup drive using Windows inbox USB drivers. Full shutdown/replug testing passed: the drive returned, the installed watcher opened the tutor, the model became ready and progress survived. A fresh PC and actual Windows login remain to be verified. Large-model teaching content (steps, hints, solutions, explanations, tags) is generated and verified for the whole prepared set but not yet deployed to the board. Educator review and reasoning improvements remain pending. See [docs/STATUS.md](docs/STATUS.md) and [deployment instructions](board/STUDENT_DEPLOYMENT.md).
+**Teach and Reason are both required main workstreams** (D-003). **Tutor deployed and tested on the UNO Q over Wi-Fi and USB.** The [student app](student_app/README.md) has a connected semantic graph, progressive paths, reflection before answers, provisional BKT and live local hint selection. Its boot service is enabled; 51 application/deployment checks and nine new setup checks pass on the board. Prepared data: 170 train / 30 validation. The standalone Windows launcher is installed on this PC with a login entry and bundled Python/ADB. The board presents a verified read-only MATHTUTOR setup drive using Windows inbox USB drivers. Full shutdown/replug testing passed: the drive returned, the installed watcher opened the tutor, the model became ready and progress survived. A fresh PC and actual Windows login remain to be verified. Large-model teaching content (steps, hints, solutions, explanations, tags) is generated and verified for the whole prepared set but not yet deployed to the board. Educator review and reasoning improvements remain pending. Reason: `predict.py` now uses the compute-first solver (SOLVER=compute, third service `math-compute` on 8084, 15/30 on the practice set on the board); see docs/COMPUTE_SOLVER.md. See [docs/STATUS.md](docs/STATUS.md) and [deployment instructions](board/STUDENT_DEPLOYMENT.md).
 
 ## Hard rules: never break these
 
@@ -43,9 +43,13 @@ copilot/                  ← the copilot library (stdlib only)
   embed.py                ←   call to the embedding server, normalised vectors
   rag.py                  ←   SQLite vector index + brute-force cosine search
   pipeline.py             ←   solve(problem) → letter; THE FILE TO CHANGE FIRST
+  compute.py              ←   compute-first solver (SOLVER=compute): code model → one expression
+  safe_eval.py            ←   whitelist evaluator for that expression
+  values.py               ←   option values ("12 cm", "1,5") and matching to A–E
 explorer/                 ← browser app on the board to inspect problems
 laptop/prepare_m3kang.py  ← laptop: download M3Kang, OCR the options, split train/val
 board/00–05_*.sh          ← board setup scripts; board/systemd/ service templates
+board/06_compute_server.sh ← math-compute (:8084) + math-compute-warm, for SOLVER=compute
 data/                     ← sample_problems.jsonl (committed), generated data (ignored)
 results/                  ← eval outputs + ablations.csv (ignored by git)
 .skills/                  ← Claude skills: unoq-board, m3kang-copilot, unoq-hardware-ui, publish-project
@@ -72,6 +76,7 @@ docs/DATATHON-GUIDE.md    ← organizers' guide, steps 0–15 (source of truth f
 | Change the look of the student app | [docs/DESIGN.md](docs/DESIGN.md) |
 | Board-specific operations | [.skills/unoq-board/SKILL.md](.skills/unoq-board/SKILL.md) |
 | Change or measure the copilot | [.skills/m3kang-copilot/SKILL.md](.skills/m3kang-copilot/SKILL.md) |
+| Change or measure the Reason solver | [docs/COMPUTE_SOLVER.md](docs/COMPUTE_SOLVER.md) |
 | Web page or LED matrix (App Lab) | [.skills/unoq-hardware-ui/SKILL.md](.skills/unoq-hardware-ui/SKILL.md) |
 | Final README or Project Hub write-up | [.skills/publish-project/SKILL.md](.skills/publish-project/SKILL.md) |
 

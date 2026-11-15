@@ -23,6 +23,7 @@ bash board/02_build_llama_cpp.sh    # build llama.cpp at the pinned commit (~30 
 bash board/03_download_models.sh    # download the GGUF files and check SHA256 (resumable)
 bash board/04_install_services.sh   # systemd math-llm (:8081) + math-embed (:8082)
 bash board/05_smoke_test.sh         # end to end: both servers, an embedding, 5 sample problems
+bash board/06_compute_server.sh     # systemd math-compute (:8084), the code model for SOLVER=compute
 ```
 
 The README does steps 2–7 **by hand** so you learn what each one does. The scripts do the same thing.
@@ -65,10 +66,11 @@ python3 explorer/server.py --host 0.0.0.0
 ## Services and health (board)
 
 ```bash
-systemctl status math-llm math-embed
-sudo systemctl restart math-llm math-embed
+systemctl status math-llm math-embed math-compute math-compute-warm
+sudo systemctl restart math-llm math-embed math-compute
 journalctl -u math-llm -n 50
-curl -s 127.0.0.1:8081/health ; curl -s 127.0.0.1:8082/health
+journalctl -u math-compute-warm          # the one-off warm-up after boot (compute solver)
+curl -s 127.0.0.1:8081/health ; curl -s 127.0.0.1:8082/health ; curl -s 127.0.0.1:8084/health
 free -m                                  # RAM: App Lab + servers share about 3.6 GB
 pgrep -a llama-server                    # who is holding a port?
 ```
@@ -78,6 +80,8 @@ pgrep -a llama-server                    # who is holding a port?
 | Symptom | Fix |
 | --- | --- |
 | `Connection refused` on 8081/8082 | The service is down: `systemctl status math-llm`, `journalctl -u math-llm` |
+| `Connection refused` on 8084, or `[compute] not available` | `math-compute` is down; `predict.py` falls back to the letter call. `systemctl status math-compute`, or run `bash board/06_compute_server.sh` |
+| First `predict.py` after a reboot is very slow (minutes) | The warm-up service is still reading the compute solver's examples (about 6 min): `journalctl -u math-compute-warm` |
 | `couldn't bind … port 8081` | Another llama-server is running: `pgrep -a llama-server`, then `pkill llama-server` or stop the service |
 | llama-server disappears, `journalctl -k` shows OOM | Keep `--parallel 1 --cache-ram 0` and stop any servers you started by hand |
 | `predict.py` answers D with `timeout` | The prompt is too long: use fewer RAG examples or a shorter prompt |
