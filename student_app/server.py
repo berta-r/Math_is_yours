@@ -393,7 +393,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         def do_GET(self):
             path = urlsplit(self.path).path
             if path == '/api/health':
-                return self.send_json({'app': 'math-is-yours', 'version': 'slm-learning-coach-v3',
+                return self.send_json({'app': 'kangaroo-student', 'version': 'slm-learning-coach-v3',
                                        'status': 'ready', 'tutor': 'local' if local_tutor else 'stored',
                                        'model': tutor.health(), 'storage': storage, 'safe_shutdown': bool(poweroff_file),
                                        'capabilities': {'arithmetic': True, 'conceptual_generation': bool(local_tutor),

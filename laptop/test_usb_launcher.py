@@ -47,7 +47,7 @@ class WatcherTests(unittest.TestCase):
     def make(self, available=lambda port: True, ready=True):
         adb = FakeAdb()
         self.opened = []
-        self.info = {'app':'math-is-yours', 'status':'ready', 'model':{'state':'unavailable'}} if ready else None
+        self.info = {'app':'kangaroo-student', 'status':'ready', 'model':{'state':'unavailable'}} if ready else None
         watcher = Watcher(adb, 'board', probe=lambda port:self.info,
                           open_browser=lambda url:self.opened.append(url), available=available)
         return adb, watcher
@@ -115,7 +115,7 @@ class WatcherTests(unittest.TestCase):
 
 class ReadinessTests(unittest.TestCase):
     def test_only_expected_application_identity_is_accepted(self):
-        payload = {'app':'math-is-yours','status':'ready','model':{'state':'unavailable'}}
+        payload = {'app':'kangaroo-student','status':'ready','model':{'state':'unavailable'}}
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
@@ -133,7 +133,7 @@ class ReadinessTests(unittest.TestCase):
             self.assertEqual(health(server.server_port), payload)
             payload['app'] = 'unrelated-app'
             self.assertIsNone(health(server.server_port))
-            payload['app'], payload['status'] = 'math-is-yours','starting'
+            payload['app'], payload['status'] = 'kangaroo-student','starting'
             self.assertIsNone(health(server.server_port))
         finally:
             server.shutdown()

@@ -171,7 +171,7 @@ curl -s http://127.0.0.1:7011/api/health; echo
 free -m
 ```
 
-You should see three services `active (running)` and JSON with `"app": "math-is-yours"` and `"status": "ready"`. `free -m` should leave well over 2 GB available (we measured a minimum of 2697 MiB with both models and the tutor, see Results).
+You should see three services `active (running)` and JSON with `"app": "kangaroo-student"` and `"status": "ready"`. `free -m` should leave well over 2 GB available (we measured a minimum of 2697 MiB with both models and the tutor, see Results).
 
 ### 7. Open the tutor (PC)
 
