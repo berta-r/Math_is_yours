@@ -1,167 +1,191 @@
-/* Offline, bounded force layout. Work happens in the student's browser once;
-   there is no idle animation loop and no graph library to load on the board. */
+/* Child-facing state labels, shared by the tree and app.js. The server sends
+   localised ones in profile.state_labels; these are the English fallbacks. */
 class KnowledgeMap {
-  constructor(svg, onSelect) {
-    this.svg = svg; this.onSelect = onSelect; this.positions = new Map();
-    this.transform = {x:0,y:0,k:1}; this.selected = null; this.query = ''; this.focused = false;
-    this.skills = []; this.edges = []; this.pathIds = new Set(); this.signature = '';
-    this.svg.setAttribute('viewBox','0 0 600 520');
-    this.svg.addEventListener('pointerdown', event => this.begin(event));
-    this.svg.addEventListener('pointermove', event => this.move(event));
-    this.svg.addEventListener('pointerup', event => this.end(event));
-    this.svg.addEventListener('pointercancel', event => this.end(event));
-    this.svg.addEventListener('wheel', event => {
-      if (!event.ctrlKey && !event.metaKey) return; // Ordinary scrolling still moves the page.
-      event.preventDefault(); this.zoom(event.deltaY < 0 ? 1.12 : 1/1.12, this.point(event));
-    }, {passive:false});
-    this.svg.addEventListener('keydown', event => {
-      if (event.target !== this.svg) return;
-      if (event.key === '+' || event.key === '=') this.zoom(1.2);
-      else if (event.key === '-') this.zoom(1/1.2);
-      else if (event.key === '0') this.reset();
-      else if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
-        const shifts={ArrowLeft:[35,0],ArrowRight:[-35,0],ArrowUp:[0,35],ArrowDown:[0,-35]};
-        this.transform.x+=shifts[event.key][0]; this.transform.y+=shifts[event.key][1]; this.paintTransform();
-      } else return;
-      event.preventDefault();
-    });
-  }
-  element(tag, attrs={}) {
-    const node=document.createElementNS('http://www.w3.org/2000/svg',tag);
-    Object.entries(attrs).forEach(([key,value])=>node.setAttribute(key,value)); return node;
-  }
-  point(event) {
-    const point=this.svg.createSVGPoint(); point.x=event.clientX; point.y=event.clientY;
-    return point.matrixTransform(this.svg.getScreenCTM().inverse());
-  }
-  setData(profile, selected) {
-    this.skills=[...profile.skills].sort((a,b)=>a.id.localeCompare(b.id));
-    const ids=new Set(this.skills.map(skill=>skill.id));
-    this.edges=[...(profile.related_edges || []),...(profile.edges || [])].filter(e=>ids.has(e.source)&&ids.has(e.target));
-    this.selected=selected; this.pathIds=new Set((profile.learning_path?.steps || []).map(step=>step.id));
-    const signature=JSON.stringify([this.skills.map(s=>s.id),this.edges.map(e=>[e.source,e.target,e.kind,e.weight])]);
-    if (this.signature!==signature) {this.signature=signature; this.layout();}
-    this.draw();
-  }
-  layout() {
-    const n=this.skills.length;
-    this.skills.forEach((skill,i)=>this.positions.set(skill.id,{x:300+180*Math.cos(i*2*Math.PI/n-.5),y:260+180*Math.sin(i*2*Math.PI/n-.5)}));
-    // Stable initial ordering and a fixed iteration budget make layout repeatable.
-    for(let iteration=0;iteration<240;iteration++) {
-      const forces=new Map(this.skills.map(skill=>[skill.id,{x:0,y:0}]));
-      for(let i=0;i<n;i++) for(let j=i+1;j<n;j++) {
-        const a=this.positions.get(this.skills[i].id), b=this.positions.get(this.skills[j].id);
-        const dx=a.x-b.x,dy=a.y-b.y,d=Math.max(1,Math.hypot(dx,dy));
-        const force=4300/(d*d)+(d<125 ? (125-d)*.05 : 0);
-        const f=forces.get(this.skills[i].id),g=forces.get(this.skills[j].id);
-        f.x+=dx/d*force; f.y+=dy/d*force; g.x-=dx/d*force; g.y-=dy/d*force;
-      }
-      for(const edge of this.edges) {
-        const a=this.positions.get(edge.source),b=this.positions.get(edge.target);
-        const dx=b.x-a.x,dy=b.y-a.y,d=Math.max(1,Math.hypot(dx,dy));
-        const semantic=edge.kind==='semantic',weight=Math.max(0,Math.min(1,edge.weight ?? .5));
-        const desired=semantic ? 185-weight*55 : 180;
-        const force=(d-desired)*(semantic ? .012+weight*.012 : .015);
-        const f=forces.get(edge.source),g=forces.get(edge.target);
-        f.x+=dx/d*force;f.y+=dy/d*force;g.x-=dx/d*force;g.y-=dy/d*force;
-      }
-      const cooling=1-iteration/300;
-      for(const skill of this.skills) {
-        const p=this.positions.get(skill.id),f=forces.get(skill.id);
-        p.x+=Math.max(-8,Math.min(8,f.x+(300-p.x)*.004))*cooling;
-        p.y+=Math.max(-8,Math.min(8,f.y+(245-p.y)*.004))*cooling;
-      }
-    }
-    const points=[...this.positions.values()];
-    const minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x));
-    const minY=Math.min(...points.map(p=>p.y)),maxY=Math.max(...points.map(p=>p.y));
-    points.forEach(p=>{p.x=85+(p.x-minX)/Math.max(1,maxX-minX)*430;p.y=55+(p.y-minY)/Math.max(1,maxY-minY)*365;});
-  }
-  draw() {
-    this.svg.replaceChildren();
-    const defs=this.element('defs'), marker=this.element('marker',{id:'map-arrow',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:5,markerHeight:5,orient:'auto'});
-    marker.append(this.element('path',{d:'M0 0L10 5L0 10Z',fill:'#7c8a83'}));defs.append(marker);this.svg.append(defs);
-    this.world=this.element('g',{'class':'graph-world'});this.svg.append(this.world);
-    this.edgeNodes=[];this.nodeElements=new Map();
-    for(const edge of this.edges) {
-      const semantic=edge.kind==='semantic';
-      const path=this.element('path',{'class':`map-edge ${semantic?'related-edge':'prerequisite-edge'}${!semantic&&this.pathIds.has(edge.source)&&this.pathIds.has(edge.target)?' path-edge':''}`});
-      if(!semantic)path.setAttribute('marker-end','url(#map-arrow)');
-      const title=this.element('title');title.textContent=semantic?'Related subject matter; not a prerequisite':'Supports learning';path.append(title);
-      this.world.append(path);this.edgeNodes.push({edge,path});
-    }
-    for(const skill of this.skills) {
-      const group=this.element('g',{tabindex:0,role:'button','class':'map-node','data-state':skill.display_state,'data-skill':skill.id,'aria-label':`${skill.name}: ${KnowledgeMap.stateLabel(skill.display_state)}`});
-      const halo=this.element('circle',{r:28,class:'node-halo'});
-      const circle=this.element('circle',{r:19,class:`node-dot ${skill.display_state}`});
-      const symbol=this.element('text',{y:6,'text-anchor':'middle',class:'node-symbol','aria-hidden':'true'});
-      symbol.textContent={not_assessed:'○',developing:'↗',demonstrated:'✓',due:'◷'}[skill.display_state]||'○';
-      const label=this.element('text',{y:41,'text-anchor':'middle',class:'node-name'});
-      let lines=[''];
-      for(const word of skill.name.split(' ')){const last=lines.length-1;if((lines[last]+' '+word).trim().length>18)lines.push(word);else lines[last]=(lines[last]+' '+word).trim();}
-      lines.forEach((line,i)=>{const span=this.element('tspan',{x:0,dy:i?16:0});span.textContent=line;label.append(span);});
-      group.append(halo,circle,symbol,label);
-      group.onclick=()=>{if(!this.suppressClick)this.select(skill.id);};
-      group.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();this.select(skill.id);}};
-      this.world.append(group);this.nodeElements.set(skill.id,group);
-    }
-    this.paintPositions();this.paintTransform();this.highlight();
-  }
-  paintPositions() {
-    for(const {edge,path} of this.edgeNodes) {
-      const a=this.positions.get(edge.source),b=this.positions.get(edge.target),dx=b.x-a.x,dy=b.y-a.y,d=Math.max(1,Math.hypot(dx,dy));
-      path.setAttribute('d',`M${a.x+dx/d*23} ${a.y+dy/d*23} L${b.x-dx/d*26} ${b.y-dy/d*26}`);
-    }
-    this.nodeElements.forEach((group,id)=>{const p=this.positions.get(id);group.setAttribute('transform',`translate(${p.x} ${p.y})`);});
-  }
-  paintTransform() {if(this.world)this.world.setAttribute('transform',`translate(${this.transform.x} ${this.transform.y}) scale(${this.transform.k})`);}
-  select(id,center=false) {
-    this.selected=id;this.highlight();
-    if(center){const p=this.positions.get(id);this.transform={x:300-p.x*1.5,y:240-p.y*1.5,k:1.5};this.paintTransform();}
-    this.onSelect(this.skills.find(s=>s.id===id));
-  }
-  highlight() {
-    const neighbors=new Set([this.selected]);
-    this.edges.forEach(e=>{if(e.source===this.selected)neighbors.add(e.target);if(e.target===this.selected)neighbors.add(e.source);});
-    const matching=new Set(this.skills.filter(s=>s.name.toLowerCase().includes(this.query.toLowerCase())).map(s=>s.id));
-    const visible=id=>(!this.focused||!this.selected||neighbors.has(id))&&(!this.query||matching.has(id));
-    this.nodeElements?.forEach((group,id)=>{
-      group.setAttribute('aria-pressed',String(id===this.selected));
-      group.classList.toggle('dimmed',!visible(id));
-      group.classList.toggle('on-path',this.pathIds.has(id));
-    });
-    this.edgeNodes?.forEach(({edge,path})=>path.classList.toggle('dimmed',!visible(edge.source)||!visible(edge.target)));
-  }
-  zoom(factor,point={x:300,y:260}) {
-    const next=Math.min(3,Math.max(.6,this.transform.k*factor)),ratio=next/this.transform.k;
-    this.transform.x=point.x-(point.x-this.transform.x)*ratio;this.transform.y=point.y-(point.y-this.transform.y)*ratio;this.transform.k=next;this.paintTransform();
-  }
-  reset() {this.transform={x:0,y:0,k:1};this.paintTransform();}
-  begin(event) {
-    if(this.drag||event.button!==0)return;
-    const point=this.point(event),node=event.target.closest('[data-skill]');
-    this.drag={pointer:event.pointerId,id:node?.dataset.skill,point,start:point,moved:false};this.suppressClick=false;
-    this.svg.setPointerCapture(event.pointerId);
-  }
-  move(event) {
-    if(!this.drag||event.pointerId!==this.drag.pointer)return;
-    const point=this.point(event),dx=point.x-this.drag.point.x,dy=point.y-this.drag.point.y;
-    if(Math.hypot(point.x-this.drag.start.x,point.y-this.drag.start.y)>5)this.drag.moved=true;
-    if(this.drag.moved){
-      if(this.drag.id){const p=this.positions.get(this.drag.id);p.x+=dx/this.transform.k;p.y+=dy/this.transform.k;this.paintPositions();}
-      else{this.transform.x+=dx;this.transform.y+=dy;this.paintTransform();}
-    }
-    this.drag.point=point;
-  }
-  end(event) {
-    if(!this.drag||event.pointerId!==this.drag.pointer)return;
-    const {id,moved}=this.drag;this.suppressClick=moved;this.drag=null;
-    if(this.svg.hasPointerCapture(event.pointerId))this.svg.releasePointerCapture(event.pointerId);
-    // Pointer capture retargets clicks to the SVG, so select on release as well.
-    if(id&&!moved)this.select(id);
-    setTimeout(()=>{this.suppressClick=false;},0);
-  }
-  // Child-facing labels; the server sends localised ones in profile.state_labels.
   static stateLabel(value) {return (KnowledgeMap.labels||{})[value]||{not_assessed:'Not tried yet',developing:'Getting there',demonstrated:'Got it',due:'Time to review'}[value]||value;}
 }
 window.KnowledgeMap=KnowledgeMap;
+
+/* Layered, left-to-right skill tree. Prerequisites sit to the left of what they
+   unlock; the layout is computed once per data change, with no pan, zoom or physics. */
+const SVG_NS='http://www.w3.org/2000/svg';
+const TREE={nodeW:220,laneH:16,lineH:22,padTop:14,padX:14,stateH:22,padBottom:12,colGap:110,rowGap:28,margin:14,glyphW:28};
+class SkillTree {
+  constructor(svg,onSelect) {
+    this.svg=svg;this.onSelect=onSelect;this.skills=[];this.edges=[];this.selected=null;
+    this.path=null;this.goal=null;this.nextSkill=null;this.measure=document.createElement('canvas').getContext('2d');
+    // Labels are measured with the bundled font; redraw once it has loaded.
+    document.fonts?.ready?.then(()=>{if(this.skills.length)this.draw();});
+  }
+  element(tag,attrs={}) {
+    const node=document.createElementNS(SVG_NS,tag);
+    Object.entries(attrs).forEach(([key,value])=>node.setAttribute(key,value));return node;
+  }
+  // goal: the goal the student chose (null = "Guide me"); the server always proposes a route.
+  setData(profile,selected=null,goal=null) {
+    this.skills=profile.skills||[];
+    const ids=new Set(this.skills.map(s=>s.id));
+    this.edges=(profile.edges||[]).filter(e=>ids.has(e.source)&&ids.has(e.target)&&e.source!==e.target);
+    this.selected=selected;this.goal=goal&&ids.has(goal)?goal:null;
+    this.path=profile.learning_path||null;this.nextSkill=this.path?.next_skill||null;
+    this.draw();
+  }
+  state(skill) {return skill.display_state||skill.state||'not_assessed';}
+  // Greedy word wrap against the real text width; a single long word keeps its own line.
+  wrap(text) {
+    const font=getComputedStyle(this.svg).getPropertyValue('--tree-font').trim()||'Archivo, Arial, sans-serif';
+    this.measure.font=`700 18px ${font}`;
+    const fits=document.fonts?.check?.(`700 18px ${font}`)!==false;
+    const max=TREE.nodeW-2*TREE.padX-TREE.glyphW,width=s=>this.measure.measureText(s).width*(fits?1:1.12);
+    const lines=[];
+    for(const word of text.split(/\s+/).filter(Boolean)) {
+      const last=lines.length-1;
+      if(last>=0&&width(lines[last]+' '+word)<=max)lines[last]+=' '+word;else lines.push(word);
+    }
+    return lines.length?lines:[''];
+  }
+  layout() {
+    const byId=new Map(this.skills.map(s=>[s.id,s])),prereqs=new Map(),children=new Map();
+    this.skills.forEach(s=>{prereqs.set(s.id,[]);children.set(s.id,[]);});
+    this.edges.forEach(e=>{prereqs.get(e.target).push(e.source);children.get(e.source).push(e.target);});
+    // Layer = longest path from a root (memoised; a cycle, if any, is cut where found).
+    const layer=new Map(),visiting=new Set();
+    const depth=id=>{
+      if(layer.has(id))return layer.get(id);
+      if(visiting.has(id))return 0;
+      visiting.add(id);const value=Math.max(-1,...prereqs.get(id).map(depth))+1;visiting.delete(id);
+      layer.set(id,value);return value;
+    };
+    this.skills.forEach(s=>depth(s.id));
+    const count=Math.max(0,...layer.values())+1;
+    const columns=Array.from({length:count},()=>[]);
+    this.skills.forEach(s=>columns[layer.get(s.id)].push(s.id));
+    // An edge that skips a column gets a waypoint in each column it crosses, so it runs
+    // through a gap between boxes instead of disappearing behind one.
+    const up=new Map(prereqs),down=new Map(children),label=new Map(this.skills.map(s=>[s.id,s.name]));
+    this.routes=new Map();
+    this.edges.forEach((e,i)=>{
+      const from=layer.get(e.source),to=layer.get(e.target);
+      if(to<=from+1){this.routes.set(e,[]);return;}
+      const points=[];let previous=e.source;
+      for(let c=from+1;c<to;c++){
+        const id=`~${i}~${c}`;points.push(id);columns[c].push(id);label.set(id,label.get(e.target)+label.get(e.source));
+        up.set(id,[previous]);down.set(id,[]);down.get(previous)?.push(id);previous=id;
+      }
+      down.set(previous,[e.target]);up.set(e.target,up.get(e.target).map(x=>x===e.source?previous:x));
+      down.set(e.source,down.get(e.source).filter(x=>x!==e.target));
+      this.routes.set(e,points);
+    });
+    const name=id=>label.get(id);
+    columns.forEach(col=>col.sort((a,b)=>name(a).localeCompare(name(b))));
+    // Node height fits the longest wrapped name: every box in the tree has the same size.
+    this.lines=new Map(this.skills.map(s=>[s.id,this.wrap(s.name)]));
+    const maxLines=Math.max(1,...[...this.lines.values()].map(l=>l.length));
+    this.nodeH=TREE.padTop+maxLines*TREE.lineH+TREE.stateH+TREE.padBottom;
+    const size=id=>id.startsWith('~')?TREE.laneH:this.nodeH;
+    const span=col=>col.reduce((sum,id)=>sum+size(id),0)+Math.max(0,col.length-1)*TREE.rowGap;
+    this.width=2*TREE.margin+count*TREE.nodeW+(count-1)*TREE.colGap;
+    this.height=2*TREE.margin+Math.max(...columns.map(span));
+    const place=()=>{
+      this.pos=new Map();
+      columns.forEach((col,c)=>{
+        let y=(this.height-span(col))/2;
+        col.forEach(id=>{this.pos.set(id,{x:TREE.margin+c*(TREE.nodeW+TREE.colGap),y,h:size(id)});y+=size(id)+TREE.rowGap;});
+      });
+    };
+    // Barycentre sweeps reduce crossings: forward on prerequisites, backward on what they unlock.
+    const centre=id=>{const p=this.pos.get(id);return p.y+p.h/2;};
+    const sortBy=(col,neighbours)=>{
+      const value=new Map(col.map(id=>{const n=neighbours.get(id)||[];return [id,n.length?n.reduce((s,x)=>s+centre(x),0)/n.length:centre(id)];}));
+      col.sort((a,b)=>value.get(a)-value.get(b)||name(a).localeCompare(name(b)));
+    };
+    place();
+    for(let sweep=0;sweep<3;sweep++) {
+      for(let c=1;c<count;c++){sortBy(columns[c],up);place();}
+      for(let c=count-2;c>=0;c--){sortBy(columns[c],down);place();}
+    }
+    for(let c=1;c<count;c++){sortBy(columns[c],up);place();}
+    this.order=columns.flat().filter(id=>!id.startsWith('~'));
+  }
+  draw() {
+    if(!this.skills.length){this.svg.replaceChildren();return;}
+    this.layout();
+    const W=TREE.nodeW,H=this.nodeH;
+    this.svg.replaceChildren();
+    this.svg.setAttribute('viewBox',`0 0 ${this.width} ${this.height}`);
+    this.svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+    this.svg.style.setProperty('--tree-width',`${this.width}px`);
+    const defs=this.element('defs');
+    for(const [id,cls] of [['tree-arrow','arrow'],['tree-arrow-path','arrow arrow-path']]) {
+      const marker=this.element('marker',{id,viewBox:'0 0 10 10',refX:10,refY:5,markerWidth:11,markerHeight:11,markerUnits:'userSpaceOnUse',orient:'auto'});
+      marker.append(this.element('path',{d:'M0 0L10 5L0 10Z','class':cls}));defs.append(marker);
+    }
+    this.svg.append(defs);
+    // Path membership: a chosen goal colours its whole route; "Guide me" marks only the next skill.
+    const steps=this.goal?(this.path?.steps||[]).map(s=>s.id):[];
+    const pathSet=new Set(this.goal?[...steps,this.goal]:[]);
+    const rank=new Map(steps.map((id,i)=>[id,i]));
+    const onPath=e=>pathSet.has(e.source)&&pathSet.has(e.target)&&(e.target===this.goal||(rank.has(e.source)&&rank.has(e.target)&&rank.get(e.source)<rank.get(e.target)));
+    // Spread the ports so arrows into one box do not land on top of each other.
+    const outgoing=new Map(),incoming=new Map();
+    for(const e of this.edges){(outgoing.get(e.source)||outgoing.set(e.source,[]).get(e.source)).push(e);(incoming.get(e.target)||incoming.set(e.target,[]).get(e.target)).push(e);}
+    const hop=(edge,key)=>{const w=this.routes.get(edge)||[];return key==='target'?(w[0]||edge.target):(w[w.length-1]||edge.source);};
+    const port=(list,e,key)=>{
+      const sorted=[...list].sort((a,b)=>this.pos.get(hop(a,key)).y-this.pos.get(hop(b,key)).y);
+      const step=Math.min(14,(H-24)/Math.max(1,sorted.length-1));
+      return (sorted.indexOf(e)-(sorted.length-1)/2)*step;
+    };
+    const edgeLayer=this.element('g',{'class':'tree-edges','aria-hidden':'true'}),pathLayer=this.element('g',{'class':'tree-path-edges','aria-hidden':'true'});
+    for(const e of this.edges) {
+      const a=this.pos.get(e.source),b=this.pos.get(e.target),waypoints=this.routes.get(e)||[];
+      // Ports are ordered by where the edge goes next, so neighbouring arrows do not cross.
+      let x=a.x+W,y=a.y+H/2+port(outgoing.get(e.source),e,'target');
+      const x2=b.x-2,y2=b.y+H/2+port(incoming.get(e.target),e,'source');
+      const curve=(tx,ty)=>{const bend=Math.max(40,(tx-x)*.5);const d=`C${x+bend} ${y} ${tx-bend} ${ty} ${tx} ${ty}`;x=tx;y=ty;return d;};
+      let d=`M${x} ${y}`;
+      for(const id of waypoints){const p=this.pos.get(id),cy=p.y+p.h/2;d+=curve(p.x,cy)+`L${p.x+W} ${cy}`;x=p.x+W;}
+      d+=curve(x2,y2);
+      const highlighted=onPath(e);
+      const edge=this.element('path',{d,'class':`tree-edge${highlighted?' path-edge':''}`,'marker-end':`url(#${highlighted?'tree-arrow-path':'tree-arrow'})`,'data-source':e.source,'data-target':e.target});
+      (highlighted?pathLayer:edgeLayer).append(edge);
+    }
+    this.svg.append(edgeLayer,pathLayer);
+    this.nodes=new Map();
+    for(const id of this.order) {
+      const skill=this.skills.find(s=>s.id===id),state=this.state(skill),p=this.pos.get(id);
+      const isGoal=id===this.goal,isNext=!this.goal&&id===this.nextSkill,inPath=pathSet.has(id);
+      const classes=['tree-node',`state-${state}`];
+      if(isGoal)classes.push('is-goal');else if(inPath&&skill.state!=='demonstrated')classes.push('on-path');
+      if(isNext&&skill.state!=='demonstrated')classes.push('on-path','is-next');
+      const label=`${skill.name}: ${KnowledgeMap.stateLabel(state)}`;
+      const group=this.element('g',{'class':classes.join(' '),role:'button',tabindex:0,'data-id':id,'data-state':state,'aria-pressed':String(id===this.selected),'aria-label':label,transform:`translate(${p.x} ${p.y})`});
+      group.append(this.element('rect',{'class':'focus-ring',x:-10,y:-10,width:W+20,height:H+20}));
+      group.append(this.element('rect',{'class':'select-ring',x:-6,y:-6,width:W+12,height:H+12}));
+      group.append(this.element('rect',{'class':'box',x:0,y:0,width:W,height:H}));
+      const name=this.element('text',{'class':'node-name',x:TREE.padX,y:TREE.padTop});
+      this.lines.get(id).forEach((line,i)=>{const span=this.element('tspan',{x:TREE.padX,dy:i?TREE.lineH:16});span.textContent=line;name.append(span);});
+      const status=this.element('text',{'class':'node-state',x:TREE.padX,y:H-TREE.padBottom-4});status.textContent=KnowledgeMap.stateLabel(state);
+      group.append(name,status);
+      if(isGoal) group.append(this.element('rect',{'class':'goal-mark',x:W-26,y:12,width:14,height:14}));
+      else {
+        const glyph={demonstrated:'✓',developing:'↗',due:'◷'}[state];
+        if(glyph){const g=this.element('text',{'class':'node-glyph',x:W-12,y:30,'text-anchor':'end','aria-hidden':'true'});g.textContent=glyph;group.append(g);}
+      }
+      const title=this.element('title');title.textContent=label;group.append(title);
+      group.addEventListener('click',()=>this.select(id));
+      group.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();this.select(id);}});
+      this.svg.append(group);this.nodes.set(id,group);
+    }
+  }
+  // When the tree scrolls sideways (phones), bring a skill to the left edge of the window.
+  reveal(id) {
+    const group=this.nodes?.get(id),box=this.svg.parentElement;
+    if(!group||!box||box.scrollWidth<=box.clientWidth)return;
+    box.scrollLeft+=group.getBoundingClientRect().left-box.getBoundingClientRect().left-24;
+  }
+  select(id) {
+    this.selected=id;
+    this.nodes?.forEach((group,key)=>group.setAttribute('aria-pressed',String(key===id)));
+    this.onSelect(this.skills.find(s=>s.id===id));
+  }
+}
+window.SkillTree=SkillTree;

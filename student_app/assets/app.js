@@ -20,17 +20,14 @@ const STRINGS = {
     view_only:'This problem has no answer key, so you can read it but not check an answer.',
     correct_title:'That’s right!', wrong_title:'Try a different answer',
     yes:'Yes.', not_yet:'Not yet.',
-    your_path:'Your path', learning_path:'Learning path', where_go:'Where would you like to go?', guide_me:'Guide me from my progress',
+    your_path:'Your path', your_steps:'Your steps', where_go:'Where do you want to get to?', guide_me:'Guide me',
+    tree_aria:'Skill tree: each skill helps you learn the ones to its right', legend_path:'Path to your goal', legend_goal:'Your goal',
     kind_diagnostic:'Quick check', kind_prerequisite:'Let’s practise', kind_repair:'Let’s practise', kind_practice:'Let’s practise', kind_review:'Review time',
     kind_transfer:'Try something new', kind_stretch:'A challenge', kind_path:'Towards your goal', kind_chosen:'Your choice', kind_complete:'All done', kind_default:'Your next step',
     choose_next:'Choose your next challenge', start_next:'Start next step →', current_exercise:'Current problem',
     path_empty:'Your next steps will grow as you practise.',
-    explore_skills:'Explore all skills', skills_aria:'Skills you can explore', explore_connections:'Explore skill connections', problem_map:'Problem map',
-    find_area:'Find a skill', search_placeholder:'Try multiplication…', matching_skills:'Matching skills', no_match:'No skill found. Try another word.',
-    map_controls:'Map controls', zoom_in:'Zoom in', zoom_out:'Zoom out', fit_map:'Fit map', focus:'Focus connections',
-    graph_aria:'Connected skill map. Drag to move it. Use plus and minus to zoom.', graph_help:'Drag the map or a dot · Use + / − to zoom · Pick a skill to explore',
-    key_supports:'Helps you learn →', key_related:'Related ideas', key_path:'Your path',
-    practice_notes:'Your practice notes', select_skill:'Pick a skill to see how you are doing.', practise_skill:'Practise this skill →', build_path:'Build a path here',
+    problem_map:'Problem map',
+    practice_notes:'Your practice notes', select_skill:'Pick a skill to see how you are doing.', practise_skill:'Practise this skill →',
     skill_none:'You have not tried this skill on your own yet.', skill_some:'You have answered {n} on your own and got {k} right.',
     review_due:'Review today', review_next:'Next review: {date}.', review_later:'A review date appears after you practise on your own.', answers_saved:'{n} answers saved.',
     about_estimates:'About these learning estimates',
@@ -67,17 +64,14 @@ const STRINGS = {
     view_only:'Aquest problema no té clau de respostes: el pots llegir, però no comprovar.',
     correct_title:'Ben fet!', wrong_title:'Prova una altra resposta',
     yes:'Sí.', not_yet:'Encara no.',
-    your_path:'El teu camí', learning_path:'Camí d’aprenentatge', where_go:'On vols arribar?', guide_me:'Guia’m segons el que he fet',
+    your_path:'El teu camí', your_steps:'Els teus passos', where_go:'On vols arribar?', guide_me:'Guia’m',
+    tree_aria:'Arbre d’habilitats: cada habilitat t’ajuda a aprendre les que té a la dreta', legend_path:'Camí fins al teu objectiu', legend_goal:'El teu objectiu',
     kind_diagnostic:'Prova ràpida', kind_prerequisite:'Practiquem', kind_repair:'Practiquem', kind_practice:'Practiquem', kind_review:'Hora de repassar',
     kind_transfer:'Prova una cosa nova', kind_stretch:'Un repte', kind_path:'Cap al teu objectiu', kind_chosen:'La teva tria', kind_complete:'Tot fet', kind_default:'El teu pas següent',
     choose_next:'Tria el teu proper repte', start_next:'Comença el pas següent →', current_exercise:'Problema actual',
     path_empty:'Els teus passos següents creixeran a mesura que practiquis.',
-    explore_skills:'Explora totes les habilitats', skills_aria:'Habilitats que pots explorar', explore_connections:'Explora com es connecten les habilitats', problem_map:'Mapa de problemes',
-    find_area:'Busca una habilitat', search_placeholder:'Prova «multiplication»…', matching_skills:'Habilitats trobades', no_match:'No l’he trobada. Prova una altra paraula.',
-    map_controls:'Controls del mapa', zoom_in:'Amplia', zoom_out:'Redueix', fit_map:'Ajusta el mapa', focus:'Mostra les connexions',
-    graph_aria:'Mapa d’habilitats connectades. Arrossega’l per moure’l. Fes servir més i menys per ampliar.', graph_help:'Arrossega el mapa o un punt · Fes servir + / − per ampliar · Tria una habilitat',
-    key_supports:'T’ajuda a aprendre →', key_related:'Idees relacionades', key_path:'El teu camí',
-    practice_notes:'Les teves notes de pràctica', select_skill:'Tria una habilitat per veure com vas.', practise_skill:'Practica aquesta habilitat →', build_path:'Fes un camí fins aquí',
+    problem_map:'Mapa de problemes',
+    practice_notes:'Les teves notes de pràctica', select_skill:'Tria una habilitat per veure com vas.', practise_skill:'Practica aquesta habilitat →',
     skill_none:'Encara no has provat aquesta habilitat pel teu compte.', skill_some:'N’has respost {n} pel teu compte i n’has encertat {k}.',
     review_due:'Repassa-la avui', review_next:'Proper repàs: {date}.', review_later:'Quan practiquis pel teu compte, apareixerà una data de repàs.', answers_saved:'{n} respostes desades.',
     about_estimates:'Sobre aquestes estimacions',
@@ -138,9 +132,10 @@ function storeNickname(name) { try { localStorage.setItem(NICKNAME_KEY, name); }
 // Thinking steps: answers stay on the server; the page only knows questions and options.
 let thinkingSteps = [], stepIndex = 0;
 const stepsComplete = () => thinkingSteps.length > 0 && stepIndex >= thinkingSteps.length;
-const knowledgeMap = new KnowledgeMap($('graph'), skill => {
+const skillTree = new SkillTree($('skill-tree'), skill => {
   if (!skill) return;
   selectedSkill = skill.id; showSkill(skill); syncControls();
+  $('skill-evidence').hidden = false; $('skill-detail').focus({preventScroll:true}); $('skill-evidence').scrollIntoView({block:'nearest'});
 });
 function syncControls() {
   document.querySelectorAll('button:not(#close-image)').forEach(b => b.disabled = busy);
@@ -171,9 +166,6 @@ function syncControls() {
   $('start-recommended').textContent = currentRecommendation ? t('current_exercise') : t('start_next');
   $('practice-skill').textContent = t('practise_skill');
   $('practice-skill').disabled = busy || !selectedSkill;
-  $('set-goal').disabled = busy || !selectedSkill;
-  $('graph-focus').disabled = busy || !selectedSkill;
-  $('learning-goal').disabled = busy;
   $('workspace').setAttribute('aria-busy', String(busy));
   $('activity-status').textContent = busy ? t('working') : '';
 }
@@ -406,23 +398,12 @@ async function refreshGraph() {
   $('stat-evidence').textContent = profile.skills.reduce((sum,s) => sum + (s.successes || 0), 0);
   $('stat-demonstrated').textContent = profile.skills.filter(s => s.state === 'demonstrated').length;
   $('stat-due').textContent = profile.skills.filter(s => s.due).length;
-  knowledgeMap.setData(profile, selectedSkill);
-  const skillList = $('skill-list'); skillList.replaceChildren();
-  profile.skills.forEach(skill => {
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'skill-tile';
-    const name = document.createElement('strong'); name.textContent = skill.name;
-    const state = document.createElement('span'); state.textContent = stateLabel(skill.state);
-    button.append(name, state);
-    button.onclick = () => { document.querySelector('.connection-map').open = true; knowledgeMap.select(skill.id, true); $('skill-detail').focus({preventScroll:true}); $('skill-detail').scrollIntoView({block:'center'}); };
-    skillList.append(button);
-  });
+  skillTree.setData(profile, selectedSkill, learningGoal);
   if (selectedSkill) showSkill(profile.skills.find(s => s.id === selectedSkill));
   else $('skill-detail').textContent = t('select_skill');
-  $('graph-method').textContent = profile.graph_method === 'embeddings' ? 'Related links use prepared skill embeddings. Nearer dots tend to share connections.' : profile.graph_method === 'keyword-tfidf' ? 'Related links currently use shared topic vocabulary. Semantic embeddings can replace this initial map.' : 'This map currently shows authored learning connections.';
-  const goalSelect=$('learning-goal');
-  goalSelect.replaceChildren(new Option(t('guide_me'),''));
-  profile.skills.forEach(skill=>goalSelect.append(new Option(skill.name,skill.id)));
-  goalSelect.value=learningGoal || '';
+  $('skill-evidence').hidden = !selectedSkill;
+  $('graph-method').textContent = 'The tree shows authored prerequisite links: each arrow points from a skill to one it helps you learn.';
+  renderGoals(profile.skills);
   renderPath(profile.learning_path);
   $('total').textContent = t('answers_saved', {n:profile.attempts});
   $('history').replaceChildren();
@@ -441,40 +422,35 @@ async function refreshGraph() {
   $('history-section').hidden=false;
 }
 function stateLabel(state) { return KnowledgeMap.stateLabel(state); }
+// One small button per skill; "Guide me" clears the goal and lets progress choose the route.
+function renderGoals(skills) {
+  const box = $('goal-buttons'); box.replaceChildren();
+  for (const [id, name] of [[null, t('guide_me')], ...skills.map(s => [s.id, s.name])]) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'goal-button' + (id ? '' : ' guide-me');
+    button.textContent = name; button.dataset.goal = id || '';
+    button.setAttribute('aria-pressed', String((id || null) === (learningGoal || null)));
+    button.disabled = busy;
+    button.onclick = () => run(async () => { learningGoal = id || null; await refreshGraph(); await refreshRecommendation(); skillTree.reveal(profileData?.learning_path?.next_skill); });
+    box.append(button);
+  }
+}
+function revealSkill(id) { skillTree.select(id); }
 function renderPath(path) {
   $('learning-path').replaceChildren();
   $('path-reason').textContent=path?.reason || t('path_empty');
-  $('path-title').textContent=t('learning_path');
+  $('path-title').textContent=t('your_steps');
   for(const step of path?.steps || []) {
     const li=document.createElement('li');
     const button=document.createElement('button');button.type='button';button.className='path-step';
     const title=document.createElement('strong');title.textContent=step.name;
     const detail=document.createElement('span');detail.textContent=step.child_reason || stateLabel(step.state);
     button.append(title,detail);
-    button.onclick=()=>{document.querySelector('.connection-map').open=true;knowledgeMap.select(step.id,true);$('skill-detail').focus({preventScroll:true});$('skill-detail').scrollIntoView({block:'center'});};
+    button.onclick=()=>revealSkill(step.id);
     if(step.id===path.next_skill){li.className='next-step';button.setAttribute('aria-label',`${step.name}: ${step.child_reason || ''}`);}
     li.append(button);$('learning-path').append(li);
   }
   $('path-strengths').textContent=path?.strengths?.length ? t('strengths', {list:path.strengths.map(s=>s.name).join(', ')}) : t('strengths_none');
 }
-$('graph-zoom-in').onclick=()=>knowledgeMap.zoom(1.25);
-$('graph-zoom-out').onclick=()=>knowledgeMap.zoom(1/1.25);
-$('graph-reset').onclick=()=>knowledgeMap.reset();
-$('graph-focus').onclick=()=>{knowledgeMap.focused=!knowledgeMap.focused;knowledgeMap.highlight();$('graph-focus').setAttribute('aria-pressed',String(knowledgeMap.focused));};
-$('graph-search').oninput=()=>{
-  const query=$('graph-search').value.trim();knowledgeMap.query=query;knowledgeMap.highlight();
-  const results=$('graph-results');results.replaceChildren();results.hidden=!query;
-  if(!query)return;
-  const matches=(profileData?.skills || []).filter(skill=>skill.name.toLowerCase().includes(query.toLowerCase()));
-  for(const skill of matches){
-    const item=document.createElement('li'),button=document.createElement('button');button.className='text-button';button.textContent=skill.name;
-    button.onclick=()=>{knowledgeMap.select(skill.id,true);};item.append(button);results.append(item);
-  }
-  if(!matches.length){const li=document.createElement('li');li.textContent=t('no_match');results.append(li);}
-};
-$('graph-search').onkeydown=event=>{if(event.key==='Escape'){$('graph-search').value='';$('graph-search').oninput();}if(event.key==='Enter'){document.querySelector('#graph-results button')?.click();}};
-$('learning-goal').onchange=()=>run(async()=>{learningGoal=$('learning-goal').value||null;await refreshGraph();await refreshRecommendation();});
-$('set-goal').onclick=()=>run(async()=>{learningGoal=selectedSkill;await refreshGraph();await refreshRecommendation();});
 $('reflection').oninput=()=>{if(!thinkingSteps.length)reflected=$('reflection').value.trim()===savedReflection && !!savedReflection;syncControls();};
 $('save-reflection').onclick=()=>run(async()=>{
   feedbackVersion++; clearFeedback();
@@ -530,8 +506,6 @@ $('profile-form').onsubmit = event => {
     listing = data.problems;
     populateProblems();
     selectedSkill=null; session=''; current=null; learningGoal=null; feedbackVersion++;
-    knowledgeMap.selected=null; knowledgeMap.query=''; knowledgeMap.focused=false; knowledgeMap.reset();
-    $('graph-search').value=''; $('graph-results').hidden=true; $('graph-focus').setAttribute('aria-pressed','false');
     await refreshGraph(); await refreshRecommendation();
     const requested = pendingProblem && listing.some(p => p.key === pendingProblem) ? pendingProblem : null;
     pendingProblem = null;

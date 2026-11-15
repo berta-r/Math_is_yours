@@ -1039,3 +1039,68 @@ body:not(.landing) .step-options button,body:not(.landing) #options button { mar
 body:not(.landing) a.link-button { display:inline-flex; align-items:center; min-height:48px; padding:10px 18px; border:var(--frame); color:var(--ink); background:transparent; font-size:16px; font-weight:700; text-decoration:none; transition:var(--control-motion); }
 @media (hover:hover) and (pointer:fine) { body:not(.landing) a.link-button:hover { transform:translate(-2px,-2px); box-shadow:var(--control-shadow); } }
 body:not(.landing) .map-links + .connection-map { margin-top:0; }
+
+/* Studio 07 (T-116): "My path" as a horizontal skill tree. Green = done, blue = the way to your goal. */
+.skill-tree { margin:0 0 16px; }
+.tree-scroll { overflow-x:auto; overflow-y:hidden; border:var(--frame); background:var(--reading); padding:8px; -webkit-overflow-scrolling:touch; }
+.tree-scroll:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+/* The tree never draws its labels below 1x: when the column is narrower than the tree, it scrolls sideways. */
+#skill-tree { --tree-font:"Archivo",Arial,Helvetica,sans-serif; display:block; width:100%; min-width:var(--tree-width,1200px); height:auto; max-width:calc(var(--tree-width,1200px) * 1.25); margin:0 auto; overflow:visible; }
+#skill-tree text { font-family:var(--tree-font); fill:var(--ink); stroke:none; pointer-events:none; }
+#skill-tree .node-name { font-size:18px; font-weight:700; letter-spacing:-.01em; }
+#skill-tree .node-state { font-size:16px; font-weight:400; fill:var(--muted); }
+#skill-tree .node-glyph { font-size:20px; font-weight:900; fill:var(--ok); }
+#skill-tree .state-not_assessed .node-glyph { fill:var(--ink); }
+.tree-edge { fill:none; stroke:#0b162855; stroke-width:2; }
+.tree-edge.path-edge { stroke:var(--accent); stroke-width:3.5; }
+#skill-tree .arrow { fill:#0b162888; }
+#skill-tree .arrow.arrow-path { fill:var(--accent); }
+.tree-node { cursor:pointer; outline:none; }
+.tree-node .box { fill:var(--reading); stroke:var(--ink); stroke-width:3; }
+.tree-node .focus-ring,.tree-node .select-ring { fill:none; stroke:none; }
+.tree-node[aria-pressed="true"] .select-ring { stroke:var(--ink); stroke-width:2; stroke-dasharray:6 4; }
+.tree-node:focus-visible .focus-ring { stroke:var(--accent); stroke-width:3; }
+.tree-node.state-demonstrated .box { fill:var(--ok-fill); stroke:var(--ok); }
+.tree-node:is(.state-developing,.state-due) .box { fill:var(--reading); stroke:var(--ok); }
+.tree-node.on-path .box { fill:var(--selected); stroke:var(--accent); }
+.tree-node.is-goal .box { fill:var(--accent); stroke:var(--accent); }
+#skill-tree .tree-node.is-goal text { fill:#fff; }
+.tree-node .goal-mark { fill:var(--reading); }
+@media (hover:hover) and (pointer:fine) {
+  .tree-node:not(.is-goal):hover .box { fill:var(--selected); }
+}
+/* Legend: the same fills and strokes as the boxes. */
+.tree-legend { display:flex; flex-wrap:wrap; gap:8px 24px; margin:12px 0 0; font-size:16px; line-height:1.45; color:var(--ink); }
+.tree-legend>span { display:inline-flex; align-items:center; gap:8px; }
+.tree-legend i { flex:0 0 18px; width:18px; height:18px; border:3px solid var(--ink); background:var(--reading); }
+.tree-legend .key-done { background:var(--ok-fill); border-color:var(--ok); }
+.tree-legend .key-working { border-color:var(--ok); }
+.tree-legend .key-path { background:var(--selected); border-color:var(--accent); }
+.tree-legend .key-goal { background:var(--accent); border-color:var(--accent); }
+/* Goal picker: small secondary buttons; the chosen goal is filled blue. */
+.goal-picker { margin:24px 0 40px; }
+body:not(.landing) .goal-picker #goal-label { margin:0 0 12px; font-size:18px; font-weight:700; color:var(--ink); }
+.goal-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+body:not(.landing) .goal-buttons .goal-button { min-height:40px; padding:6px 12px; border:var(--frame); background:transparent; color:var(--ink); font-size:16px; font-weight:700; line-height:1.2; text-align:left; box-shadow:none; }
+body:not(.landing) .goal-buttons .goal-button[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
+@media (hover:hover) and (pointer:fine) {
+  body:not(.landing) .goal-buttons .goal-button:not(:disabled):not([aria-pressed="true"]):hover { background:var(--selected); border-color:var(--accent); color:var(--ink); transform:none; box-shadow:none; }
+  body:not(.landing) .goal-buttons .goal-button[aria-pressed="true"]:not(:disabled):hover { background:var(--accent); color:#fff; transform:none; box-shadow:none; }
+}
+/* Detail panel and footer. */
+#skill-evidence[hidden] { display:none; }
+body:not(.landing) #skill-evidence { margin:0 0 24px; padding:20px; border:var(--frame); background:var(--reading); }
+body:not(.landing) #skill-evidence .skill-actions { margin:16px 0 0; }
+body:not(.landing) #skill-evidence #total { margin:12px 0 0; }
+body:not(.landing) #skill-evidence #skill-detail { margin:8px 0; }
+.map-footer { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px 24px; margin:16px 0; }
+.map-footer .method-note { flex:1 1 320px; margin:0; }
+.map-footer .map-links { margin:0; }
+body:not(.landing) .path-panel #path-reason:empty { display:none; }
+.path-overview { align-items:start; }
+.path-overview .recommendation { justify-content:flex-start; }
+@media (max-width:760px) {
+  .goal-picker { margin:20px 0 32px; }
+  .tree-scroll { padding:4px; }
+}
+@media (prefers-reduced-motion:reduce) { .tree-node *,.goal-button { transition:none !important; } }
