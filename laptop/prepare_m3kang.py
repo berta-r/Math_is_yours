@@ -110,29 +110,70 @@ def is_marker(text, letter, strict):
     return None
 
 
-def parse_options(boxes):
-    """Return {"A": "12", ..., "E": "24"}, or {} when the options are not text."""
+def clean_value(text):
+    """OCR noise in option values: "cm²2" -> "cm²", stray leading ")" or "0"-prefixed units kept as read."""
+    text = text.lstrip(")）] ").strip()
+    text = re.sub(r"²\s*2\b", "²", text)
+    return text
+
+
+def parse_options(boxes, max_value_chars=40):
+    """Return {"A": "12", ..., "E": "24"}, or {} when the options are not text.
+
+    The options are the last A..E sequence in reading order. OCR often drops one
+    marker ("30 cm²" instead of "C) 30 cm²") or splits it from its value ("C" then
+    "10"): a value box that follows a letter which already has its value belongs
+    to the next letter, so one or two missing markers are recovered from the
+    order. A sequence without an "A" marker may start one box before the first
+    "B" marker. At least three explicit markers and five non-empty short values
+    are required; otherwise the options are pictures or unreadable and {} is
+    returned.
+    """
     items = reading_order(boxes)
-    starts = [i for i, it in enumerate(items) if is_marker(it["text"], "A", strict=True) is not None]
-    for start in reversed(starts):  # the options are the last A..E sequence
-        options, current, i = {}, None, start
-        expected = iter(LETTERS)
-        letter = next(expected)
-        while i < len(items):
-            text = items[i]["text"]
-            rest = is_marker(text, letter, strict=(letter == "A")) if letter else None
+
+    def marker(text, strict_a):
+        for letter in LETTERS:
+            rest = is_marker(text, letter, strict=(strict_a and letter == "A"))
             if rest is not None:
-                current = letter
-                options[current] = rest
-                letter = next(expected, None)
-            elif current:
-                options[current] = (options[current] + " " + text).strip()
-            i += 1
-        if len(options) == 5:
-            cleaned = {k: v.lstrip(")）] ").strip() for k, v in options.items()}
-            if all(cleaned.values()):
-                return cleaned
-            return {}  # five markers, but the options are pictures
+                return letter, rest
+        return None
+
+    starts = [i for i, it in enumerate(items) if is_marker(it["text"], "A", strict=True) is not None]
+    strict_first = bool(starts)
+    if not starts:
+        starts = [i for i, it in enumerate(items) if is_marker(it["text"], "A", strict=False) is not None]
+    if not starts:
+        b = [i for i, it in enumerate(items) if is_marker(it["text"], "B", strict=True) is not None]
+        if b and b[-1] > 0 and marker(items[b[-1] - 1]["text"], True) is None:
+            starts = [b[-1] - 1]
+    for start in reversed(starts):  # the options are the last A..E sequence
+        options, explicit, current, ok = {}, 0, None, True
+        for it in items[start:]:
+            found = marker(it["text"], strict_a=(current is None and strict_first))
+            if found and (current is None or LETTERS.index(found[0]) > LETTERS.index(current)):
+                current = found[0]
+                options[current] = found[1]
+                explicit += 1
+                continue
+            if current is None:  # the box before "B)" when "A)" was lost
+                current = "A"
+                options[current] = it["text"]
+                continue
+            if options[current]:
+                nxt = LETTERS.index(current) + 1
+                if nxt >= len(LETTERS):
+                    ok = False  # text after E's value: the sequence is not the last one
+                    break
+                current = LETTERS[nxt]
+                options[current] = it["text"]
+            else:
+                options[current] = it["text"]
+        if not ok or explicit < 3:
+            continue
+        cleaned = {k: clean_value(v) for k, v in options.items()}
+        if len(cleaned) == 5 and all(cleaned.values()) and all(len(v) <= max_value_chars for v in cleaned.values()):
+            return cleaned
+        return {}  # five markers, but the options are pictures or a value is missing
     return {}
 
 
