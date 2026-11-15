@@ -117,6 +117,12 @@ Template:
 **Alternatives:** keep the force layout with a highlighted path (rejected: positions carry no meaning and need pan/zoom dexterity); a vertical top-down tree (rejected: on a wide screen it wastes width and reads less like a journey); a plain ordered list only (rejected: hides that several skills feed one goal).
 **Consequences:** the layout is deterministic and computed in the browser with no library; semantic related-skill links remain in the API and on the problem map but not in My path; with many more skills the tree would need collapsing or grouping by layer.
 
+## D-018 · Investigate a grounded coach on top of current ML selection (2026-11-15)
+**Status:** proposed; runtime D-013 remains in force
+**Context:** the user requested a branch/commit audit and an implementation proposal grounded in current main before further development. The deployed dialogue branch predates 39 main commits, while main now has thinking steps, generated content, BKT/Elo, learned difficulty and problem paths.
+**Proposal:** implement exact arithmetic and disclosure policy first; then evaluate SLM interpretation of student questions with bounded retrieval of permitted content. Preserve current selection, step gates, language support and independent-evidence updates. Consider limited live phrasing only after a comparison against main and deterministic retrieval meets explicit quality/latency gates. See [SLM-IMPLEMENTATION.md](SLM-IMPLEMENTATION.md).
+**Consequences:** no wholesale merge of the old server/UI or competing decision IDs. Artifact availability and the two observed baseline test issues precede full integration. This commit records a proposal, not proof of better learning or authorisation to call unreviewed generated content mathematically verified.
+
 ## D-017 · Feedback for children is a large framed band, never small text (2026-11-15)
 **Status:** accepted
 **Context:** after a thinking-step choice the app showed one 17px line with a thin left border ("✓ Yes. Now explore the answer choices. …"); hints, answers and explanations used the same style. In review, the product owner saw children skip it: the feedback looked like a footnote, although it is the moment the app teaches.

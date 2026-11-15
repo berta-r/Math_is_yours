@@ -14,6 +14,18 @@ The reference points are random guessing at 20%, always-D at about 25%, and the 
 
 ## Results
 
+T-121 repository baseline audit (2026-11-15), main `8274efa`, Windows Python 3.11:
+`python -m unittest discover -s student_app -p 'test*.py' -q` ran 113 tests in
+44.879 s: 108 passed, three skipped, one failure and one error. Individually
+reproduced the exact floating-point comparison in
+`test_difficulty.test_tree_and_ensemble_evaluation` and the open SQLite file
+cleanup error in `test_elo.EloAppTests.test_catalan_reason_and_skill_rating`.
+Actual loader smoke check: 170 train rows/IDs; zero difficulty entries, map nodes
+and generated-content entries; temporary-DB handler starts with fallbacks.
+This is an environment/baseline check, not a new model experiment. No solver or
+runtime changes, board inference, or new accuracy claim. Integration plan and
+limits: [SLM-IMPLEMENTATION.md](SLM-IMPLEMENTATION.md).
+
 | Date | Name | Commit | Input / langs / n | RAG k | Accuracy | Mean s | Worst s | Over 60 s | Change, and conclusion |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | — | (organizers) baseline | template | 40 eng, text-only | 0 | 22.5% | 8.7 | 12.7 | 0 | Reference. Letter bias: D×21, A×14 |

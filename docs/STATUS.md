@@ -6,6 +6,20 @@
 
 ## Summary
 
+**T-121 branch audit and SLM planning (2026-11-15):** fetched origin and advanced
+local main to `8274efa`; saved earlier deployed conversation work as `694d2b6` on
+`fix/adaptive-tutor-dialogue`. New `exp/slm-learning-coach` starts from main, with
+the proposal in [SLM-IMPLEMENTATION.md](SLM-IMPLEMENTATION.md). No feature code was
+ported or deployed. Most remote feature tips are already merged; OCR and Reason
+experiments remain distinct unmerged work. Branch/task/decision ID collisions
+are documented. This checkout's real loaders find 170 training rows, no difficulty
+entries, no map and no generated-content entries; fallback startup succeeds.
+The unchanged-main Windows baseline ran 113 tests: 108 passed, three skipped,
+one float-equality assertion failed and one SQLite teardown errored. Both reproduce
+individually. Resolve those baseline issues and obtain matching prepared artifacts
+before claiming full ML integration. Earlier all-pass reports below describe their
+original environment, not this audit. See proposed D-018; implementation is next.
+
 **T-120 Solve and My path layout (2026-11-15, laptop only):** Solve is full width with "Change problem" top-left, the Understand / Plan / Check rail above the statement, a 3px rule before the thinking question and the answers, and feedback shown as large framed bands (glyph, 22–28px headline, 19px body); the optional note and the "Pick an answer first." helper are gone. In My path the skill tree has no legend or state labels (colour and corner glyph carry the state, names 22px), goal buttons are larger, and the path problem cards are whole buttons tinted by difficulty without question text. Design rules now live in [DESIGN.md](DESIGN.md). Playwright checks at 1440 / 1024 / 390 and 113 app tests pass.
 
 **T-118 map problems in My path (2026-11-15, laptop only):** choosing a goal skill now lists, under the tree, the problems the problem map computes as the route (T-117 API), each with difficulty label, level, category and an Open action; verified with the full map data at 1440 and 390 px, 113 app tests pass.

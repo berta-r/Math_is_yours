@@ -10,6 +10,9 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ## Phase A · Board setup (README steps 0–8). Minimum required.
 
+- [x] **T-121** [P1] [laptop] **Audit branches and plan SLM integration on current main.** Saved deployed dialogue in `694d2b6`, fast-forwarded main to `8274efa`, created `exp/slm-learning-coach`, inspected current loaders/ML/path/content code and all branch ancestry, and recorded the student journey, implementation stages and acceptance gates in [SLM-IMPLEMENTATION.md](SLM-IMPLEMENTATION.md). No runtime changes. (2026-11-15)
+- [ ] **T-122** [P1] [laptop/board] **Implement the first reviewed coach slice.** Follow T-121's plan: baseline/artifact readiness, exact arithmetic and disclosure policy, additive durable help turns beside main's thinking steps; then measure SLM intent/retrieval before considering live phrasing. Preserve BKT/Elo independent-evidence rules. Broader live generation remains proposed under D-018.
+
 - [x] **T-001** [P0] [laptop] **Update the board and connect over SSH.** Follow [guide step 0](DATATHON-GUIDE.md#step-0-connect-to-the-board). Done when `ssh arduino@<ip>` works and the IP is written in STATUS. SSH verified at `10.198.34.77`; App Lab session supplied by the owner. (2026-11-14)
 - [ ] **T-002** [P0] [board] **Check the board.** Run `bash board/00_check_board.sh`. Done when it reports no problems: enough RAM and disk, the right clock, internet.
 - [ ] **T-003** [P0] [board] **Install the build tools and build llama.cpp.** README steps 2–3, or scripts `01` and `02`. Done when `~/llama.cpp/build/bin/llama-server --version` shows the pinned commit.
