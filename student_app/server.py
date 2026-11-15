@@ -21,7 +21,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from copilot.knowledge import Knowledge, leaked
 from copilot.misconceptions import Misconceptions
-from copilot import student_model, scheduler
+from copilot import student_model, scheduler, coach as coaching
 from copilot.config import CONFIG
 from copilot.tutor import Tutor
 from copilot.learning_graph import LearningGraph, build_path
@@ -137,6 +137,7 @@ def initialize(db):
           created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
         """)
         student_model.initialize(con)
+        coaching.initialize(con)
 
 
 GENERATED = {'steps': ROOT / 'data/ml/thinking_steps_generated.json', 'solutions': ROOT / 'data/ml/solutions_generated.json',
@@ -144,11 +145,14 @@ GENERATED = {'steps': ROOT / 'data/ml/thinking_steps_generated.json', 'solutions
 
 
 def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, local_tutor=False, signatures=None,
-                 difficulty=None, map_path=None, explanations=GENERATED['explanations'], log=None):
+                 difficulty=None, map_path=None, explanations=GENERATED['explanations'], log=None, poweroff_file=None):
     catalog = catalog or Catalog([ROOT / "data/sample_problems.jsonl"], ROOT / "data/images")
     knowledge = knowledge or Knowledge(annotations=[ROOT / 'data/teaching_annotations.json'])
     graph = LearningGraph(knowledge, artifact=ROOT / 'data/skill_graph.json')
     tutor = Tutor(enabled=local_tutor, port=int(CONFIG['LLM_PORT']))
+    coach = coaching.Coach(db, tutor, knowledge)
+    storage = 'Arduino' if str(Path(db)).replace('\\', '/') == '/var/lib/math-student/progress.db' else 'this computer'
+    shutting_down = False
     # Optional laptop artifact (T-108); missing file means no misconception feedback.
     misconceptions = Misconceptions(signatures or ROOT / 'data/ml/signatures.json', generated=explanations)
     # Optional laptop artifacts (T-102, T-106); missing files keep today's behaviour.
@@ -352,6 +356,28 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         return {'correct': correct, 'why': step['why'], 'stage': step['stage'], 'next_index': done,
                 'completed': completed, 'message': message}
 
+    def session_view(session):
+        """The same public exercise contract for new and resumed sessions."""
+        pid = session['problem']
+        steps, steps_scope = knowledge.thinking_steps(problems[pid])
+        steps_skill = knowledge.steps_skill(problems[pid])
+        return {'session': session['id'], 'problem': catalog.public(pid), 'skill': content(pid)[0],
+                'skills': knowledge.annotation(problems[pid])['skills'],
+                'assessment_skill': knowledge.annotation(problems[pid]).get('assessment_skill'),
+                'kind': problems[pid].get('kind', 'exercise'),
+                'thinking_steps': [{'stage': s['stage'], 'question': s['question'], 'options': s['options']} for s in steps],
+                'steps_scope': steps_scope, 'steps_language': steps[0]['language'] if steps else None,
+                'steps_skill': knowledge.skills[steps_skill]['title'] if steps and steps_skill else None,
+                'steps_done': session['steps_done'], 'reflection': session['reflection'],
+                'reflection_required': not steps and not session['reflection'], 'can_reveal': can_reveal(session, pid),
+                'solved': bool(session['solved']), 'selected': session['last_answer'],
+                'last_wrong': session['last_answer'] if session['tries'] and not session['solved'] else '', 'hints': session['hints'],
+                'reflection_prompt': 'What do you notice? Describe a first step, a useful relationship, or what you are unsure about before choosing an answer.',
+                'has_hints': bool(content(pid)[1]), 'has_solution': bool(content(pid)[2]),
+                'content_sources': {'steps': steps_scope, 'hints': knowledge.hints(problems[pid])[1],
+                                    'solution': knowledge.solution(problems[pid])[1], 'explanations': misconceptions.source(problems[pid])},
+                'tags_source': knowledge.tag_source(problems[pid]), 'provenance': knowledge.annotation(problems[pid]).get('provenance')}
+
     class Handler(BaseHTTPRequestHandler):
         teaching_tutor = tutor
 
@@ -367,9 +393,13 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         def do_GET(self):
             path = urlsplit(self.path).path
             if path == '/api/health':
-                return self.send_json({'app': 'kangaroo-student', 'version': 'connected-graph-v2',
+                return self.send_json({'app': 'kangaroo-student', 'version': 'slm-learning-coach-v3',
                                        'status': 'ready', 'tutor': 'local' if local_tutor else 'stored',
-                                       'model': tutor.health()})
+                                       'model': tutor.health(), 'storage': storage, 'safe_shutdown': bool(poweroff_file),
+                                       'capabilities': {'arithmetic': True, 'conceptual_generation': bool(local_tutor),
+                                                        'problem_count': len(problems), 'difficulty': difficulty_enabled,
+                                                        'map': problem_map.enabled, 'map_nodes': len(problem_map.nodes),
+                                                        'generated_content': report}})
             if path == "/api/image":
                 query = parse_qs(urlsplit(self.path).query)
                 key = query.get("key", [""])[0]
@@ -397,7 +427,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 self.wfile.write(raw)
                 return
             files = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/graph.js": ("graph.js", "text/javascript"), "/style.css": ("style.css", "text/css"),
-                     '/map': ('map.html', 'text/html'), '/map.js': ('map.js', 'text/javascript')}
+                     '/map': ('map.html', 'text/html'), '/map.js': ('map.js', 'text/javascript'), '/coach.js': ('coach.js', 'text/javascript')}
             if path not in files:
                 return self.send_json({"error": "Not found"}, 404)
             filename, mime = files[path]
@@ -410,6 +440,8 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
             self.wfile.write(raw)
 
         def do_POST(self):
+            nonlocal shutting_down
+            shutdown_requested = False
             # Only the same-origin browser app may mutate local records.
             origin = self.headers.get("Origin")
             if origin and origin != "http://" + self.headers.get("Host", ""):
@@ -430,12 +462,72 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                     # Serialize exposure checks with writes: double submissions and
                     # simultaneous translated variants cannot earn duplicate evidence.
                     con.execute('BEGIN IMMEDIATE')
+                    if shutting_down:
+                        raise ValueError('The Arduino is shutting down. Wait before reconnecting it.')
                     result = self.action(con, urlsplit(self.path).path, student, body)
+                    if result.get('_poweroff'):
+                        shutting_down = True
+                        shutdown_requested = True
+                work = result.pop('_dispatch', None)
+                if work:
+                    coach.dispatch(work)
+                if result.pop('_poweroff', False):
+                    try:
+                        Path(poweroff_file).write_text('Student requested a safe shutdown.\n')
+                    except OSError:
+                        shutting_down = False
+                        raise ValueError('Your work is saved, but shutdown could not start. Keep power connected.')
+                if urlsplit(self.path).path in ('/api/coach', '/api/coach-history', '/api/coach-draft', '/api/finish', '/api/poweroff', '/api/resume'):
+                    result.setdefault('saved', True)
+                    result.setdefault('storage', storage)
                 self.send_json(result)
             except (ValueError, KeyError, TypeError) as error:
                 self.send_json({"error": str(error)}, 400)
+            except sqlite3.Error:
+                if shutdown_requested:
+                    shutting_down = False
+                self.send_json({'error': 'Your change could not be saved. Keep the board connected and retry.'}, 503)
 
         def action(self, con, path, student, body):
+            if path == '/api/resume':
+                row = con.execute('SELECT * FROM sessions WHERE student=? AND id=?', (student, body['session'])).fetchone() if body.get('session') else con.execute(
+                    'SELECT * FROM sessions WHERE student=? ORDER BY rowid DESC LIMIT 1', (student,)).fetchone()
+                if row is None or row['problem'] not in problems:
+                    return {'session': None}
+                return session_view(row)
+            if path in ('/api/coach', '/api/coach-history', '/api/coach-draft'):
+                ctx = coach.identity(con, student, body, problems)
+                work = None
+                if path == '/api/coach':
+                    problem = problems[ctx['session']['problem']] if ctx['mode'] == 'exercise' else {}
+                    work = coach.request(con, student, ctx, problem, body)
+                result = coach.draft(con, student, ctx, body) if path == '/api/coach-draft' else coach.snapshot(con, student, ctx)
+                if ctx['session']:
+                    fresh = con.execute('SELECT * FROM sessions WHERE id=?', (ctx['session']['id'],)).fetchone()
+                    result['assistance'] = {'session': fresh['id'], 'hints': fresh['hints'],
+                                            'assisted': bool(fresh['hints'] or fresh['revealed']),
+                                            'can_reveal': can_reveal(fresh, fresh['problem'])}
+                if work:
+                    result['_dispatch'] = work
+                return result
+            if path == '/api/finish':
+                if con.execute("SELECT 1 FROM tutor_messages WHERE student=? AND status='pending'", (student,)).fetchone():
+                    raise ValueError('Your question is saved. Wait for the tutor reply before finishing.')
+                token = secrets.token_urlsafe(24)
+                con.execute('INSERT OR REPLACE INTO tutor_finish VALUES(?,?,?)', (student, token, student_model.utc_now()))
+                return {'finish_token': token, 'safe_shutdown': bool(poweroff_file),
+                        'message': f'Your conversations, drafts and progress are saved on {storage}.'}
+            if path == '/api/poweroff':
+                if not poweroff_file:
+                    raise ValueError('Safe shutdown is not enabled on this installation.')
+                receipt = con.execute('SELECT token FROM tutor_finish WHERE student=?', (student,)).fetchone()
+                if receipt is None or body.get('finish_token') != receipt['token'] or body.get('confirm') != 'poweroff':
+                    raise ValueError('Finish and save your work before confirming shutdown.')
+                if con.execute("SELECT 1 FROM tutor_messages WHERE status='pending'").fetchone():
+                    raise ValueError('A tutor reply is still pending. Wait before shutting down.')
+                return {'_poweroff': True, 'message': 'Shutdown requested. Wait for the Arduino to finish shutting down before unplugging.'}
+            if path not in ('/api/profile', '/api/problems', '/api/map', '/api/path', '/api/report', '/api/recommendation', '/api/hint-job'):
+                con.execute('DELETE FROM tutor_finish WHERE student=?', (student,))
             if path == "/api/profile":
                 skills = list(student_model.states(con, student, knowledge).values())
                 history = [dict(r) for r in con.execute('SELECT problem_id,language,kind,skill_id,correct,eligible,reason,created FROM learning_events WHERE student=? ORDER BY id DESC LIMIT 12', (student,))]
@@ -493,25 +585,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                     return_to = catalog.resolve(return_to)
                 sid = secrets.token_urlsafe(24)
                 con.execute("INSERT INTO sessions(id,student,problem,started_at,return_to) VALUES(?,?,?,?,?)", (sid, student, pid, student_model.utc_now(), return_to))
-                steps, steps_scope = knowledge.thinking_steps(problems[pid])
-                steps_skill = knowledge.steps_skill(problems[pid])
-                return {"session": sid, "problem": catalog.public(pid), "skill": content(pid)[0],
-                        'skills': knowledge.annotation(problems[pid])['skills'],
-                        'assessment_skill': knowledge.annotation(problems[pid]).get('assessment_skill'),
-                        'kind': problems[pid].get('kind', 'exercise'),
-                        # Answers and explanations stay on the server until a choice is made.
-                        'thinking_steps': [{'stage': s['stage'], 'question': s['question'], 'options': s['options']} for s in steps],
-                        'steps_scope': steps_scope, 'steps_language': steps[0]['language'] if steps else None,
-                        'steps_skill': knowledge.skills[steps_skill]['title'] if steps and steps_skill else None,
-                        'reflection_required': not steps, 'can_reveal': False,
-                        'reflection_prompt': 'What do you notice? Describe a first step, a useful relationship, or what you are unsure about before choosing an answer.',
-                        "has_hints": bool(content(pid)[1]), "has_solution": bool(content(pid)[2]),
-                        # Where each kind of help comes from: problem (human), generated (large model, verified), skill, template, none.
-                        'content_sources': {'steps': steps_scope, 'hints': knowledge.hints(problems[pid])[1],
-                                            'solution': knowledge.solution(problems[pid])[1],
-                                            'explanations': misconceptions.source(problems[pid])},
-                        'tags_source': knowledge.tag_source(problems[pid]),
-                        'provenance': knowledge.annotation(problems[pid]).get('provenance')}
+                return session_view(con.execute('SELECT * FROM sessions WHERE id=?', (sid,)).fetchone())
             if path == "/api/problems":
                 return {'version': 'connected-graph-v2', "sources": catalog.sources, 'coverage': coverage(),
                         "problems": [{"key": key, "id": p["id"], "skill": content(key)[0],
@@ -640,7 +714,8 @@ if __name__ == "__main__":
     parser.add_argument('--generated-solutions', type=Path, default=GENERATED['solutions'])
     parser.add_argument('--generated-annotations', type=Path, default=GENERATED['annotations'])
     parser.add_argument('--generated-explanations', type=Path, default=GENERATED['explanations'])
-    parser.add_argument('--local-tutor', action='store_true', help='Let the local SLM select from authored hints; stored fallback always available')
+    parser.add_argument('--local-tutor', action='store_true', help='Enable local conceptual dialogue and authored hint selection; Python verifies arithmetic')
+    parser.add_argument('--safe-shutdown', action='store_true', help='Enable the separately installed board shutdown path service')
     args = parser.parse_args()
     try:
         catalog = Catalog(args.input or default_inputs(ROOT), args.images)
@@ -650,8 +725,11 @@ if __name__ == "__main__":
         parser.error(str(error))
     initialize(args.db)
     try:
+        if args.safe_shutdown and (str(args.db) != '/var/lib/math-student/progress.db' or not Path('/etc/systemd/system/math-student-poweroff.path').is_file()):
+            raise ValueError('Install the board shutdown helper before enabling this option.')
         handler = make_handler(args.db, catalog, knowledge=knowledge, local_tutor=args.local_tutor,
-                               explanations=args.generated_explanations, log=lambda line: print(line, flush=True))
+                               explanations=args.generated_explanations, log=lambda line: print(line, flush=True),
+                               poweroff_file='/var/lib/math-student/poweroff.request' if args.safe_shutdown else None)
     except (OSError, ValueError) as error:
         parser.error(str(error))
     try:

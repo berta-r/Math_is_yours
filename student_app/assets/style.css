@@ -1227,3 +1227,94 @@ body:not(.landing) #workspace #skill-evidence #skill-detail { margin:0; font-siz
 body:not(.landing) #options button.letter-only { min-height:64px; }
 body:not(.landing) #options button.letter-only .option-letter { flex-basis:auto; font-size:26px; font-weight:900; }
 body:not(.landing) #options button.letter-only .option-text { display:none; }
+
+/* Studio 11: the local learning coach. Keep the Solve statement and rail full width.
+   Conversation updates are functional data: no entrance animation or typing effect. */
+.solve-utilities { display:flex; align-items:flex-start; justify-content:space-between; gap:16px 24px; min-height:44px; }
+body:not(.landing) .solve-utilities .text-button { flex-shrink:0; font-size:18px; }
+body:not(.landing) .solve-utilities .exercise-settings { flex:1; min-width:0; }
+body.landing #start-number-practice { display:block; margin:12px 0 0; padding:8px 0; color:var(--ink); font-size:18px; }
+body:not(.landing) .coach-panel { margin-top:40px; border:var(--frame); background:var(--reading); }
+body:not(.landing) .coach-panel > summary { display:flex; align-items:center; gap:16px; min-height:80px; padding:20px 24px; color:var(--ink); font-size:clamp(22px,2vw,28px); font-weight:700; list-style:none; cursor:pointer; }
+.coach-panel > summary::-webkit-details-marker { display:none; }
+.coach-panel > summary:focus-visible { outline:3px solid var(--accent); outline-offset:5px; }
+.coach-summary-mark { display:grid; place-items:center; flex:0 0 38px; width:38px; height:38px; border:var(--frame); font-size:25px; font-weight:900; }
+.coach-summary-plus { margin-left:auto; font-size:32px; font-weight:400; line-height:1; }
+.coach-panel[open] .coach-summary-plus { font-size:0; }
+.coach-panel[open] .coach-summary-plus::after { content:'−'; font-size:32px; }
+.coach-panel[open] > summary { border-bottom:var(--divider); }
+.coach-content { padding:24px; min-width:0; }
+body:not(.landing) .coach-content p { margin:0; font-size:19px; line-height:1.5; overflow-wrap:anywhere; }
+body:not(.landing) .coach-content .coach-intro { font-size:22px; font-weight:700; }
+body:not(.landing) .coach-content .coach-notice { margin:8px 0 24px; font-size:18px; }
+.coach-history { margin:0; padding:0; list-style:none; max-height:640px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.coach-history:empty { display:none; }
+.coach-turn { margin:0 0 28px; }
+.coach-student { padding:4px 0 16px 58px; }
+body:not(.landing) .coach-content .coach-student .coach-message { white-space:pre-wrap; }
+.coach-speaker { display:block; margin:0 0 8px; color:var(--ink); font-size:22px; font-weight:700; line-height:1.2; letter-spacing:-.02em; }
+.coach-reply { display:flex; align-items:flex-start; gap:20px; padding:20px; border:var(--frame); background:var(--reading); }
+.coach-reply-glyph { flex:0 0 28px; font-size:36px; line-height:1; font-weight:900; color:var(--ink); }
+.coach-reply-body { min-width:0; flex:1; }
+body:not(.landing) .coach-content .coach-reply h3 { margin:0 0 8px; font-size:24px; font-weight:700; }
+.coach-reply .coach-message { white-space:pre-wrap; }
+.coach-source { display:block; margin-top:16px; font-size:16px; line-height:1.4; color:var(--muted); }
+.coach-reason { margin-top:8px; }
+.coach-reason summary { font-size:16px; font-weight:700; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+body:not(.landing) .coach-content .coach-reason p { margin:10px 0; font-size:16px; }
+.coach-reason code { font-family:inherit; font-size:16px; overflow-wrap:anywhere; }
+.coach-empty { padding:0 0 24px; }
+.coach-examples { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0 0; }
+body:not(.landing) .coach-example { padding:10px 14px; min-height:48px; border:var(--frame); border-radius:0; background:transparent; color:var(--ink); font-size:18px; font-weight:400; text-align:left; box-shadow:none; }
+.coach-pending { display:flex; align-items:flex-start; gap:18px; padding:20px; margin:0 0 24px; border:var(--frame); }
+.coach-pending-mark { font-size:34px; font-weight:900; line-height:1; }
+.coach-pending strong { display:block; margin:0 0 6px; font-size:22px; line-height:1.2; }
+body:not(.landing) #coach-form { margin:0; padding-top:24px; border-top:var(--divider); }
+body:not(.landing) #coach-form label { font-size:22px; font-weight:700; margin:0 0 12px; }
+body:not(.landing) #coach-input { display:block; width:100%; min-height:112px; max-height:420px; margin:0; padding:16px; border:var(--frame); border-radius:0; background:var(--reading); color:var(--ink); font-size:19px; line-height:1.5; resize:vertical; }
+#coach-input::placeholder { color:var(--muted); opacity:1; }
+.coach-compose-footer { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; margin-top:16px; }
+#coach-save-status { flex:1 1 220px; font-size:16px; line-height:1.4; color:var(--muted); }
+#coach-save-status[data-state="failed"] { color:var(--ink); font-weight:700; }
+body:not(.landing) #coach-send { width:auto; min-width:200px; margin-left:auto; font-size:18px; }
+.coach-error { margin-top:20px; padding:20px; border:var(--frame); }
+.coach-error .text-button { margin-top:12px; }
+.numbers-heading { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:12px 24px; }
+body:not(.landing) #numbers-view .view-title { margin:0 0 20px; }
+body:not(.landing) .numbers-intro { font-size:22px; margin:0 0 20px; max-width:65ch; }
+.numbers-language { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+body:not(.landing) .numbers-language label { margin:0; font-size:18px; }
+body:not(.landing) .numbers-language select { width:auto; min-width:160px; font-size:18px; }
+#practice-coach-slot { border:var(--frame); background:var(--reading); }
+.workspace-finish { display:flex; justify-content:flex-end; margin-top:40px; padding-top:20px; border-top:var(--divider); }
+body:not(.landing) .workspace-finish .text-button { font-size:18px; }
+.finish-dialog { width:min(620px,calc(100% - 32px)); max-height:calc(100dvh - 32px); margin:auto; padding:28px; border:var(--frame); border-radius:0; background:var(--reading); color:var(--ink); }
+.finish-dialog::backdrop { background:rgb(8 13 21 / .65); }
+.finish-dialog h2 { font-size:28px; font-weight:700; margin:0 0 20px; }
+.finish-dialog p { font-size:19px; line-height:1.5; margin:0 0 24px; }
+.finish-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:12px; }
+.finish-actions button { border-radius:0; font-size:18px; }
+body:not(.landing) .finish-actions .primary { width:auto; }
+@media (hover:hover) and (pointer:fine) {
+  .coach-panel > summary:hover { background:rgba(8,13,21,.04); }
+  body:not(.landing) .coach-example:not(:disabled):hover { background:var(--selected); color:var(--ink); border-color:var(--ink); transform:none; box-shadow:none; }
+}
+@media (max-width:760px) {
+  .solve-utilities { flex-wrap:wrap; }
+  body:not(.landing) .solve-utilities .exercise-settings { flex-basis:100%; }
+  body:not(.landing) .coach-panel { margin-top:28px; }
+  body:not(.landing) .coach-panel > summary { padding:16px; gap:12px; font-size:22px; }
+  .coach-summary-mark { flex-basis:32px; width:32px; height:32px; font-size:22px; }
+  .coach-content { padding:16px; }
+  .coach-history { max-height:none; }
+  .coach-student { padding-left:0; }
+  .coach-reply { padding:16px; gap:12px; }
+  .coach-reply-glyph { flex-basis:20px; font-size:28px; }
+  .coach-examples { flex-direction:column; }
+  body:not(.landing) #coach-send { width:100%; margin:0; }
+  .coach-compose-footer { flex-direction:column-reverse; align-items:stretch; }
+  #coach-save-status { flex:auto; }
+  .workspace-finish { justify-content:flex-start; }
+  .finish-dialog { padding:20px; }
+  .finish-actions button,body:not(.landing) .finish-actions .primary { width:100%; }
+}

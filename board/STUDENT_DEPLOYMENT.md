@@ -268,6 +268,25 @@ sudo systemctl disable --now math-student
 Before disconnecting board power, shut it down on the **board** with
 `sudo poweroff` and wait. The launcher can be left installed for the next session.
 
+## Integrated learning coach release
+
+The `exp/slm-learning-coach` release retains the existing port, health identity and
+standalone Windows launcher. Build/install with `--local-tutor --safe-shutdown` to
+enable local conceptual explanations and the explicit saved-session power-off
+control. Arithmetic uses Python; it works without an available model.
+
+The installer now snapshots the existing SQLite notebook and service unit into
+the new release's protected `install-backups/` directory before activation. It
+also checks the previous release's training IDs and optional ML artifacts. A code
+update that would remove them is rejected; obtain matching data and rebuild, or
+use `--allow-data-change` only for an intentional dataset reduction. Existing
+student progress is never included in a deployment archive.
+
+See [SLM-COACH.md](../docs/SLM-COACH.md) for the complete student flow, teammate
+handover, artifact limitations and hardware acceptance checks. The existing EXE
+needs no rebuild for this UI update. First-use setup on a fresh Windows PC is
+still required; automatic opening follows that one-time setup.
+
 ## Verification before the datathon demo
 
 On the **PC**:

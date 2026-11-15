@@ -123,7 +123,7 @@ class EloAppTests(unittest.TestCase):
         self.assertIn('about a 70% chance: your rating is 0.25 and this problem\'s difficulty is 0.11.', rec['reason'])
 
     def test_catalan_reason_and_skill_rating(self):
-        with sqlite3.connect(self.app.db) as con:
+        with app.connection(self.app.db) as con:
             con.execute("INSERT INTO student_elo VALUES('Ada','arithmetic',0.4,3)")
         rec = self.app.post('recommendation', skill='arithmetic')
         self.assertEqual(rec['problem'], 'sample-4|cat')

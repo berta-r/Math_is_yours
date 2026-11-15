@@ -2,7 +2,11 @@
 
 Review date: 2026-11-15. Baseline: fetched `origin/main` at **8274efa**.
 Implementation branch: **exp/slm-learning-coach**, created from that baseline.
-Status: **proposal only**. Runtime behaviour has not been changed on this branch.
+Status: **historical proposal and branch audit**. Implementation was subsequently
+requested and main through `0b42034` merged in `1dc4805`. The implemented feature,
+current limitations and deployment instructions are in [SLM-COACH.md](SLM-COACH.md);
+design integration points are in [COACH-DESIGN.md](COACH-DESIGN.md). The original
+proposal below records the reasoning before implementation, not current status.
 
 ## Recommendation
 

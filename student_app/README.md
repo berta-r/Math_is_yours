@@ -4,6 +4,12 @@ M3Kang practice with a shared skill graph, separate student estimates, diagnosti
 explainable recommendations and scheduled reviews. Python's standard library is
 the only runtime dependency. The page, problems, images and progress work offline.
 
+The integrated **Help me think it through** coach adds checked Python arithmetic,
+guided steps and bounded local SLM explanations. **Number practice** also works
+outside an exercise. Conversations/drafts stay in the server's SQLite notebook.
+See [the coach runbook](../docs/SLM-COACH.md) for offline board deployment and
+[the design handover](../docs/COACH-DESIGN.md) before changing the panel.
+
 ## Run on your PC
 
 In a terminal at the repository root:

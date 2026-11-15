@@ -7,6 +7,7 @@ Each upload creates a new release directory; persistent student records stay put
 import argparse
 from datetime import datetime, timezone
 import hashlib
+import io
 import json
 from pathlib import Path
 import shlex
@@ -36,6 +37,7 @@ def bundle_files(root, with_data=False):
     files.extend((root/'student_app/assets').rglob('*'))
     files.extend((root/'knowledge').rglob('*'))
     files.extend((root/'board').glob('*.py'))
+    files.extend(root / name for name in ('docs/SLM-COACH.md', 'docs/COACH-DESIGN.md', 'board/STUDENT_DEPLOYMENT.md'))
     # Similarity metadata has no raw problem text and is safe to prepare offline.
     files.append(root/'data/skill_graph.json')
     if with_data:
@@ -87,11 +89,31 @@ def build_bundle(root, output, with_data=False):
         raise ValueError('Refusing to package credentials or model weights')
     if not required <= names:
         raise ValueError('Incomplete application source: ' + ', '.join(sorted(required - names)))
+    manifest = {
+        'format': 1,
+        'runtime': 'Python standard library; existing local math-llm service for conceptual dialogue',
+        'includes_progress': False,
+        'ml_artifacts': sorted(name for name in names if name.startswith('data/ml/')),
+        'missing_optional_artifacts': [name for name in (
+            'data/ml/problem_map.json', 'data/ml/difficulty.json',
+            'data/ml/thinking_steps_generated.json', 'data/ml/solutions_generated.json',
+            'data/ml/slm_explanations.json') if name not in names],
+        'files': {p.relative_to(root).as_posix(): {'bytes': p.stat().st_size,
+                  'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in files},
+    }
     with tarfile.open(output, 'w:gz') as archive:
         for path in files:
             archive.add(path, arcname=path.relative_to(root).as_posix(), recursive=False)
+        content = json.dumps(manifest, indent=2).encode('utf-8')
+        entry = tarfile.TarInfo('release-manifest.json')
+        entry.size, entry.mode = len(content), 0o644
+        archive.addfile(entry, io.BytesIO(content))
     metadata = {'file':str(output.resolve()), 'files':len(files), 'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),
-                'includes_training_data':with_data, 'includes_progress':False}
+                'includes_training_data':with_data, 'includes_progress':False,
+                'archive_bytes': output.stat().st_size,
+                'payload_bytes': sum(item['bytes'] for item in manifest['files'].values()),
+                'ml_artifacts': manifest['ml_artifacts'],
+                'missing_optional_artifacts': manifest['missing_optional_artifacts']}
     if with_data:
         rows = [json.loads(line) for line in (root/'data/train.jsonl').read_text(encoding='utf-8-sig').splitlines() if line.strip()]
         missing = [p for p in rows if f"data/images/{p['id']}_{p.get('language') or 'und'}.png" not in names]
@@ -110,7 +132,7 @@ def deploy(args, metadata):
     if adb.devices().get(args.serial) != 'device':
         raise ValueError('The specified USB board is not connected and ready')
     model = adb.run('-s', args.serial, 'shell', 'cat /sys/firmware/devicetree/base/model').replace('\x00', '')
-    if 'uno q' not in model.lower():
+    if 'unoq' not in ''.join(model.lower().split()):
         raise ValueError(f'Refusing deployment: device model is not identified as UNO Q ({model.strip()})')
     home = adb.run('-s', args.serial, 'shell', 'printenv HOME').strip()
     if not home.startswith('/home/') or any(c in home for c in ('\n', '\r')):
@@ -129,6 +151,10 @@ def deploy(args, metadata):
     command = ['python3', release+'/board/install_student_service.py']
     if args.local_tutor:
         command.append('--local-tutor')
+    if getattr(args, 'safe_shutdown', False):
+        command.append('--safe-shutdown')
+    if getattr(args, 'allow_data_change', False):
+        command.append('--allow-data-change')
     print(f'Application staged at {release}. Existing board progress was not modified.')
     print('Board installation command: ' + shlex.join(command))
     if args.install:
@@ -145,6 +171,8 @@ def main():
     parser.add_argument('--adb')
     parser.add_argument('--install', action='store_true', help='After upload, install the boot service with an interactive sudo prompt')
     parser.add_argument('--local-tutor', action='store_true', help='Use the existing math-llm service; requires board model setup first')
+    parser.add_argument('--safe-shutdown', action='store_true', help='Enable the saved-session shutdown control and fixed board shutdown helper')
+    parser.add_argument('--allow-data-change', action='store_true', help='Explicitly allow removing currently installed training IDs or ML artifacts during activation')
     args = parser.parse_args()
     try:
         if args.install and not args.serial:
