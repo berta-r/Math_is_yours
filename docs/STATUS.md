@@ -2,9 +2,13 @@
 
 > What's done and working **right now**. Update it whenever a task in [TODO.md](TODO.md) is finished. Keep it short: facts, numbers with their conditions, and dates.
 
-**Last updated:** 2026-11-14
+**Last updated:** 2026-11-15
 
 ## Summary
+
+**T-097 flat interface correction (2026-11-15, laptop only):** the decorative arithmetic preview and white/pale-blue cards are removed. The nickname field sits directly on the blue landing area with a black underline; Solve, My path and My work use spacing and separators. A final answer now produces a large green or red inline signal with reduced-motion support. Chrome at 390/1440px showed no page errors or overflow, both answer states were exercised, and all 75 current student-app tests pass. Physical touch and board visual review are pending.
+
+**ML tutor bundle, night of 2026-11-15 (laptop only, board unreachable from this Mac):** difficulty model from Kangaroo paper position (ensemble 0.516 vs 0.395 majority on 2023–24), Procrustes Catalan→English alignment (held-out recall@1 0.50 → 0.72), 1747-problem map with 15 clusters and stepping-stone paths, and error signatures with misconception feedback (30.5% of numeric distractors explained; an automated spot check found only 11/30 explanations plausible, so the wording is tentative and a human check is pending). Board code for these is pure Python with tests; server integration, deployment and board timing are in progress. See [ML-OPTIONS.md](ML-OPTIONS.md) and the EXPERIMENTS rows.
 
 **T-108/T-109 error signatures (2026-11-15, laptop only, branch `exp/ml-tutor`):** a laptop script explains 981 of 3220 numeric distractors with a naive operation on the problem's numbers (`data/ml/signatures.json`), and after a matching wrong answer the student app says which operation gives that number, without revealing the answer, and starts hints at the method rung; BKT is unchanged and nothing is deployed yet (T-110).
 
@@ -140,7 +144,7 @@ States: ⬜ pending · 🟨 in progress · ✅ done · ❌ blocked (say why).
 
 The team wants reasoning plus adaptive teaching. The teaching path now uses authored Markdown skills, reviewed problem tags, conservative Bayesian Knowledge Tracing, diagnostics and 1/3/7-day reviews. A wrong multi-skill answer never lowers all its connected skills. An optional bounded SLM worker selects permitted stored hints; deterministic Python owns grading, state and recommendations. Laptop k-means exports candidates for explicit review. See [curriculum documentation](../knowledge/README.md) and [student app instructions](../student_app/README.md).
 
-The Kangaroo Studio redesign on `ui/kangaroo-studio` now uses a blue typographic entrance based on the supplied reference, child-facing Solve / My path / My work views, an exercise-first layout and readable skill tiles. The start action is visible at 320–1440px with no horizontal overflow. Chrome checks at desktop and mobile widths report no JavaScript errors; the full three-step answer-to-next-exercise flow and 48 application tests pass locally. Physical touch and board visual validation remain pending.
+The Kangaroo Studio redesign on `ui/kangaroo-studio` now uses a blue typographic entrance based on the supplied reference, child-facing Solve / My path / My work views, an exercise-first layout and readable skill tiles. The start action is visible at 320–1440px with no horizontal overflow. Chrome checks at desktop and mobile widths report no JavaScript errors; the full three-step answer-to-next-exercise flow and 48 application tests pass locally. A 20-point visual review then removed black surface borders, decorative grid lines, the duplicate wordmark, excess display labels and the repeated current-exercise recommendation; the blue keyboard focus ring remains. Physical touch and board visual validation remain pending.
 
 ## Known issues
 

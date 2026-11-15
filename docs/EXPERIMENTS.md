@@ -151,3 +151,52 @@ Conclusion: real Kangaroo problems rarely fail by one naive operation, so arithm
 signatures are worded as "could come from" and kept to one sentence; the copied
 number and the method-rung hint are the reliable parts. A teammate should repeat the
 30-item check before the pitch quotes a precision figure (T-112).
+
+## Difficulty model (T-102, laptop, 2026-11-15)
+
+Target: points (3/4/5) derived from the problem's position within its level-year
+paper (thirds). Features: PCA(32) of the English bge-small embedding (laptop fp32
+vectors, see the note below) plus level, text length, words, numerals, image,
+option count, numeric options and option spread. Hold-out: years 2023–2024
+(215 rows); CV: 5-fold grouped by year. Majority class is 5 points.
+
+| Model | Hold-out accuracy | Majority | MAE (expected points) | Spearman vs position (pooled / within paper) | CV accuracy |
+| --- | --- | --- | --- | --- | --- |
+| Decision tree, depth 6 | 0.465 | 0.395 | 0.708 | 0.322 / 0.343 | 0.403 ± 0.036 |
+| Gradient boosting, 150×depth 3 | **0.516** | 0.395 | **0.644** | **0.435 / 0.475** | 0.474 ± 0.015 |
+
+The exported models are refitted on all 1747 labelled rows. `b = (level + (points − 3)/2) / 8`
+uses observed points for every current row; the model only fills in problems
+without a paper position. Pure-Python evaluation matches scikit-learn within 5e-7.
+Artifacts: `data/ml/difficulty_model.json` (372 KiB), `data/ml/difficulty.json`,
+`results/difficulty-metrics.json`.
+
+## Cross-lingual alignment (T-104, laptop, 2026-11-15)
+
+Orthogonal Procrustes on 1398 training (eng, cat) pairs, 349 held out (seed 42),
+retrieval against all 1747 English vectors.
+
+| Metric (held-out, cat → eng) | Before | After |
+| --- | --- | --- |
+| recall@1 | 0.501 | **0.725** |
+| recall@5 | 0.696 | **0.894** |
+| Mean cosine of true pairs | 0.723 | 0.831 |
+
+Training-split recall@1 reaches 0.97, so the 384×384 fit overfits; quote the
+held-out numbers. Matrix: `data/ml/procrustes.json`, 1.18 MB.
+
+## Problem map (T-106, laptop, 2026-11-15)
+
+1747 nodes (English vectors), kNN k=5 cosine, 6971 undirected edges, Louvain
+(seed 42) → 15 clusters, modularity 0.699; UMAP layout (seed 42). File 286 KB.
+Cross-lingual check on the 349 held-out ids: the Catalan vector's nearest English
+neighbour lies in the English twin's cluster 0.722 (unaligned) → 0.888 (aligned);
+an English vector's nearest English neighbour does so 0.907 of the time.
+Stepping-stone paths use cost 10·Δb² + 0.1 per edge; from the five easiest problems
+to the hardest the path climbs 0.375 → 0.5 → 0.625 → 0.69 → 0.75 → 0.875 → 1.0.
+Artifacts: `data/ml/problem_map.json`, `results/map-metrics.json`.
+
+**Embedding note:** all three artifacts use laptop fp32 `BAAI/bge-small-en-v1.5`
+vectors (`laptop/ml/embed_problems.py --local`) because the board was unreachable
+overnight. Regenerate with `--port 8082` (board GGUF Q8) before quoting numbers in
+the final README; differences are expected to be small.
