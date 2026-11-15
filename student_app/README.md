@@ -42,7 +42,7 @@ recommendation also aims for about a 70% chance of success and says so.
 ## Try the teaching flow
 
 1. Open a new notebook. A short diagnostic is suggested, with a reason.
-2. Choose **Quick check: Division · 1 · eng** from the problem list and open it.
+2. Choose **Quick check: Division · 1 · English** from the problem list and open it.
    Answer three short thinking steps (Understand · Plan · Check). Each choice gets
    immediate feedback with a one-sentence reason; a wrong choice can be retried.
    The answer choices appear after the last step. **Add a note (optional)** still
@@ -61,7 +61,8 @@ recommendation also aims for about a 70% chance of success and says so.
    outcomes, language variants and subsequent review dates remain in SQLite.
 
 The map distinguishes **not assessed**, **developing**, **demonstrated
-independently** and **due for review**. The provisional model needs at least three
+independently** and **due for review** (shown to the child as *Not tried yet*,
+*Getting there*, *Got it* and *Time to review*). The provisional model needs at least three
 distinct independent observations, two successes and estimated probability >= 0.8
 before showing demonstrated. A wrong unaided first answer is evidence too.
 
@@ -71,6 +72,15 @@ assessment skill is logged, then diagnosed separately. Estimates never cascade
 along graph edges. Review dates use provisional 1/3/7-day intervals; becoming
 overdue does not lower the mastery estimate. See [the model and curriculum
 documentation](../knowledge/README.md) for exact rules and authoring instructions.
+
+## Language and font
+
+The interface follows the language of the open problem: a Catalan problem shows the
+navigation, thinking steps, buttons, feedback and recommendations in Catalan; any
+other language uses English. Child-facing server messages live in `MESSAGES` in
+`server.py`, interface copy in `STRINGS` in `assets/app.js`. The page uses the bundled
+OFL font Archivo (`assets/fonts/`, licence in `OFL.txt`), so it renders the same
+offline on the board, Windows and macOS.
 
 ## M3Kang text and images
 

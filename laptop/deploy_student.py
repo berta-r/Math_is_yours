@@ -69,7 +69,7 @@ def bundle_files(root, with_data=False):
             continue
         if path.is_relative_to(root/'knowledge') and path.suffix not in ('.md', '.json'):
             continue
-        if path.is_relative_to(root/'student_app/assets') and path.suffix not in ('.html', '.css', '.js', '.svg', '.woff2'):
+        if path.is_relative_to(root/'student_app/assets') and path.suffix not in ('.html', '.css', '.js', '.svg', '.woff2', '.txt'):
             continue
         result.append(path)
     return result

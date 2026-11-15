@@ -111,7 +111,8 @@ class MisconceptionAppTests(unittest.TestCase):
         other = self.app.open('sample-4')
         plain = self.app.post('answer', session=other['session'], answer='D')  # 11: no signature
         self.assertNotIn('misconception', plain)
-        self.assertEqual(plain['message'], 'Not quite. Try a hint or a short skill check to find the next step.')
+        # sample-4 is Catalan, so the child reads the Catalan message (T-101).
+        self.assertEqual(plain['message'], app.MESSAGES['cat']['wrong'])
 
     def test_slip_starts_hints_at_the_method_rung(self):
         opened = self.app.open('sample-1')
