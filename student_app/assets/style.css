@@ -733,12 +733,14 @@ button#submit:hover,button#save-reflection:hover,button#start-recommended:hover,
 :root { --reading:#f6f4ed; --control-border:3px solid var(--ink); --control-shadow:4px 4px 0 var(--ink); --control-motion:transform 150ms var(--ease-out),box-shadow 150ms var(--ease-out); }
 body:not(.landing),body:not(.landing) main,body:not(.landing) #workspace,
 body:not(.landing) #practice-view,body:not(.landing) #map-view,body:not(.landing) #notebook-view { background:var(--reading); }
+body:not(.landing) { min-height:100svh; }
+body:not(.landing) main { min-height:calc(100svh - 74px); }
 body:not(.landing) .site-header { background:var(--hero-blue); border-bottom:0; }
 .brand { flex:0 0 auto; gap:0; text-decoration:none; }
 .brand-wordmark { display:block; font-size:clamp(19px,1.7vw,25px); font-weight:900; letter-spacing:-.075em; line-height:.82; color:var(--ink); }
 .brand-wordmark span { color:var(--accent); }
 body.landing .brand-wordmark { font-size:clamp(22px,2vw,30px); }
-body.landing #profile-form { display:flex; width:100%; min-height:70px; border:var(--control-border); padding:0; align-items:stretch; background:transparent; transition:var(--control-motion); }
+body.landing #profile-form { display:flex; width:100%; min-height:70px; border:var(--control-border); border-radius:0; padding:0; align-items:stretch; background:transparent; transition:var(--control-motion); }
 body.landing #profile-form:focus-within { box-shadow:var(--control-shadow); }
 body.landing #profile-form input { flex:1; min-width:0; width:auto; min-height:66px; padding:13px 18px; border:0; border-radius:0; background:transparent; box-shadow:none; font-size:20px; }
 body.landing #profile-form input:focus-visible { outline:0; box-shadow:none; }
@@ -765,6 +767,8 @@ body:not(.landing) .step-options button.tried { border-color:#a1293d; background
 body:not(.landing) #options button.correct-answer { border-color:#126b48; background:#e5f3e8; }
 body:not(.landing) #submit,body:not(.landing) #save-reflection,body:not(.landing) #start-recommended,body:not(.landing) #download-report,body:not(.landing) #practice-skill { display:flex; align-items:center; justify-content:center; min-height:58px; padding:12px 20px; border:var(--control-border); background:transparent; color:var(--ink); text-align:center; }
 body:not(.landing) .exercise-settings { border:0; }
+body:not(.landing) .exercise-settings summary { min-height:52px; padding:10px 14px; border:var(--control-border); font-size:16px; }
+body:not(.landing) #note-toggle { min-height:48px; padding:10px 14px; font-size:15px; text-decoration:none; }
 body:not(.landing) .exercise-settings select,body:not(.landing) .exercise-settings input,
 body:not(.landing) .path-panel select,body:not(.landing) .graph-search input { border:var(--control-border); background:transparent; padding:12px 14px; }
 body:not(.landing) .skill-tile { border:2px solid var(--ink); padding:14px; min-height:88px; margin:0 0 12px; }
