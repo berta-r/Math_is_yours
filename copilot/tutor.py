@@ -1,7 +1,7 @@
-"""Bounded local hint selection. Only authored hint text reaches the student.
+"""Bounded loopback tutor transport; Python callers own grading and disclosure.
 
-The optional SLM selects between permitted hints, never grades or invents math.
-One worker, bounded pending work, per-student job access and stored fallbacks.
+Existing hint selection and optional conceptual prose share one worker and two
+slots. No internet, extra model process, or board dependency is introduced.
 """
 import json
 import re
@@ -9,6 +9,7 @@ import secrets
 import threading
 import time
 import urllib.request
+import urllib.error
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -102,3 +103,53 @@ class Tutor:
 
     def close(self):
         self.worker.shutdown(wait=True, cancel_futures=True)
+
+    def generate_hint(self, messages, completed):
+        """Call back once with short prose or a named fallback, within 45 seconds.
+
+        The caller persists a prepared response before dispatching. The deadline
+        includes queue time; a second request cannot create an unbounded queue.
+        """
+        queued = time.monotonic()
+        if not self.enabled or not self.slots.acquire(blocking=False):
+            completed(None, 'stored_disabled' if not self.enabled else 'stored_busy', {})
+            return
+
+        def work():
+            reply, source, timings = None, 'stored_unavailable', {}
+            try:
+                remaining = 45 - (time.monotonic() - queued)
+                if remaining < 4:
+                    source = 'stored_busy'
+                    return
+                payload = {'messages': messages, 'temperature': 0, 'seed': 42,
+                           'max_tokens': 64, 'cache_prompt': True}
+                req = urllib.request.Request(self.url, data=json.dumps(payload).encode(),
+                                             headers={'Content-Type': 'application/json'})
+                opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+                with opener.open(req, timeout=remaining) as response:
+                    data = json.loads(response.read(65536))
+                reply = data['choices'][0]['message']['content']
+                if not isinstance(reply, str):
+                    raise ValueError('Invalid tutor text')
+                source = 'local_model_generated'
+                timings = {key: data.get('timings', {}).get(key) for key in ('prompt_n', 'predicted_n')}
+                timings['finish_reason'] = data['choices'][0].get('finish_reason')
+            except TimeoutError:
+                source = 'stored_timeout'
+            except urllib.error.URLError as error:
+                if isinstance(error.reason, TimeoutError):
+                    source = 'stored_timeout'
+            except (OSError, ValueError, KeyError, TypeError, IndexError):
+                pass
+            finally:
+                timings['seconds'] = round(time.monotonic() - queued, 3)
+                try:
+                    completed(reply, source, timings)
+                finally:
+                    self.slots.release()
+        try:
+            self.worker.submit(work)
+        except RuntimeError:
+            self.slots.release()
+            completed(None, 'stored_unavailable', {})

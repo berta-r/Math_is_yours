@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#8a9ed4"><meta name="description" content="Offline math practice with guided thinking, connected skills and your own learning notebook.">
 <meta name="page-type" content="software"><meta name="site-kind" content="software"><title>Math Is Yours · Solve maths your way</title>
 <link rel="icon" href="data:,"><link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/style.css"><script src="/graph.js" defer></script><script src="/app.js" defer></script>
+<link rel="stylesheet" href="/style.css"><script src="/graph.js" defer></script><script src="/app.js" defer></script><script src="/coach.js" defer></script>
 </head>
 <body class="landing" data-view="practice">
 <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
@@ -22,12 +22,13 @@
 <section id="welcome" class="welcome" aria-labelledby="welcome-title">
 
 <div class="hero-intro"><h1 id="welcome-title">MATH<br>IS YOURS<span class="hero-period">.</span></h1></div>
-<div class="hero-bottom"><div class="hero-entry"><form id="profile-form"><input id="student" maxlength="40" required value="" placeholder="Choose a nickname" autocomplete="off" aria-label="Nickname"><button type="submit" class="primary" aria-label="Start practising" title="Start practising"><span aria-hidden="true">→</span></button></form></div></div>
+<div class="hero-bottom"><div class="hero-entry"><form id="profile-form"><input id="student" maxlength="40" required value="" placeholder="Choose a nickname" autocomplete="off" aria-label="Nickname"><button type="submit" class="primary" aria-label="Start practising" title="Start practising"><span aria-hidden="true">→</span></button></form><button id="start-number-practice" type="submit" form="profile-form" class="text-button" data-i18n="numbers_entry">Just practise numbers →</button></div></div>
 </section>
 <div id="workspace" hidden>
 <div class="workspace-heading sr-only"><h1 id="view-title" tabindex="-1">Solve</h1></div>
 <section id="practice-view" aria-label="Practice">
 <div class="practice-grid"><div class="practice-column">
+<div class="solve-utilities">
 <details id="exercise-settings" class="exercise-settings"><summary data-i18n="change_problem">Change problem</summary>
 <div class="settings-panel"><p id="dataset-info" role="status"></p>
 <div class="settings-fields">
@@ -36,6 +37,7 @@
 <div class="settings-field problem-picker"><label for="problem-select" data-i18n="choose_problem">Choose a problem</label><div class="picker-row"><select id="problem-select"></select><button id="open-problem" class="secondary" data-i18n="open">Open</button></div></div>
 </div></div>
 </details>
+<button id="open-number-practice" type="button" class="text-button" data-i18n="numbers_title">Number practice</button></div>
 <section class="card practice" aria-labelledby="practice-title">
 <div class="section-heading sr-only"><span id="skill" class="skill-label"></span></div>
 <div id="progress" class="progress-rail" hidden><ol id="step-rail" class="step-rail" aria-label="Thinking steps" data-i18n-aria="steps_aria"><li data-stage="understand"><span class="step-dot" aria-hidden="true"></span><span data-i18n="understand">Understand</span></li><li data-stage="plan"><span class="step-dot" aria-hidden="true"></span><span data-i18n="plan">Plan</span></li><li data-stage="check"><span class="step-dot" aria-hidden="true"></span><span data-i18n="check">Check</span></li></ol></div>
@@ -51,7 +53,14 @@
 <button id="next-problem" class="primary" type="button" hidden>Next problem →</button>
 <div class="row tools"><button id="hint" class="secondary" data-i18n="hint">Get a hint</button><button id="reveal" class="text-button" aria-describedby="solution-gate" data-i18n="see_answer">See answer</button><button id="solution" class="text-button" aria-describedby="solution-gate" data-i18n="see_explanation">See explanation</button></div>
 <p id="feedback" role="status" aria-live="polite"></p><small id="hint-source"></small><small id="solution-gate" class="sr-only">Try your idea and a hint before reviewing an answer.</small></section>
+<details id="coach-panel" class="coach-panel"><summary><span class="coach-summary-mark" aria-hidden="true">?</span><span data-i18n="coach_title">Help me think it through</span><span class="coach-summary-plus" aria-hidden="true">+</span></summary><div id="exercise-coach-slot" class="coach-slot"></div></details>
 </div></div></section>
+<section id="numbers-view" aria-labelledby="numbers-title" hidden>
+<div class="numbers-heading"><h2 id="numbers-title" class="view-title" data-i18n-title="numbers_title">Number practice<span class="hero-period">.</span></h2><button id="numbers-back" type="button" class="text-button" data-i18n="numbers_back">Back to Solve</button></div>
+<p class="numbers-intro" data-i18n="numbers_intro">Try a calculation, check a step, or ask how an idea works.</p>
+<div class="numbers-language"><label for="numbers-language" data-i18n="language">Language</label><select id="numbers-language"><option value="eng">English</option><option value="cat">Català</option></select></div>
+<div id="practice-coach-slot" class="coach-slot"></div>
+</section>
 <section id="map-view" aria-labelledby="map-title" hidden>
 <div class="map-intro"><h2 id="map-title" class="view-title" data-i18n-title="your_path">Your path<span class="hero-period">.</span></h2></div>
 <figure class="skill-tree"><div class="tree-scroll"><svg id="skill-tree" role="group" aria-label="Skill tree: each skill helps you learn the ones to its right" data-i18n-aria="tree_aria"></svg></div>
@@ -75,6 +84,7 @@
 </section>
 <section id="history-section" class="card"><h2 data-i18n="recent">Recent practice</h2><ul id="history"></ul></section>
 </section>
+<div class="workspace-finish"><button id="finish-session" type="button" class="text-button" data-i18n="finish">Finish & safely disconnect</button></div>
 </div>
 <p id="error" role="alert"></p><p id="activity-status" role="status" aria-live="polite"></p>
 </main>
@@ -84,4 +94,5 @@
 <div class="viewer-content"><img id="enlarged-image" alt="Enlarged original problem with diagrams and answer choices"></div>
 <p id="viewer-error" role="status"></p>
 </dialog>
+<dialog id="finish-dialog" class="finish-dialog" aria-labelledby="finish-title"><h2 id="finish-title" data-i18n="finish_title">Your work travels with you.</h2><p id="finish-message" role="status"></p><div class="finish-actions"><button id="finish-cancel" type="button" class="secondary" data-i18n="keep_learning">Keep learning</button><button id="poweroff" type="button" class="primary" data-i18n="poweroff" hidden>Power off Arduino</button></div></dialog>
 </body></html>
