@@ -511,7 +511,9 @@ $('save-reflection').onclick=()=>run(async()=>{
 function showSkill(skill) {
   if (!skill) return;
   const evidence = skill.probability === null ? t('skill_none') : t('skill_some', {n:skill.evidence, k:skill.successes});
-  $('skill-detail').textContent = `${skill.name} · ${stateLabel(skill.state)}. ${skill.description} ${evidence}`;
+  // The child sees only the skill name; the full sentence stays for screen readers.
+  $('skill-detail').textContent = skill.name;
+  $('skill-detail').setAttribute('aria-label', `${skill.name} · ${stateLabel(skill.state)}. ${skill.description} ${evidence}`);
   $('skill-review').textContent = skill.next_review ? (skill.due ? t('review_due') + '.' : t('review_next', {date:new Date(skill.next_review).toLocaleDateString(uiLang === 'ca' ? 'ca' : 'en')})) : t('review_later');
 }
 async function refreshRecommendation(skill = null) {
