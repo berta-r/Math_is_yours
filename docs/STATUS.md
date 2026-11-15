@@ -8,6 +8,54 @@
 
 **T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) everywhere: app title, docs, pitch, app id `math-is-yours`, launcher folder `MathIsYours`, board service description. Reinstall the Windows launcher from a new bundle after deploying, since the app id and folder changed.
 
+**T-129 implemented offline coach (2026-11-15, laptop):** main through `0b42034`
+is merged into `exp/slm-learning-coach` (`1dc4805`). Its current UI, assessment
+gates, BKT/Elo, difficulty and path/map loaders remain, with a new optional coach
+and standalone Number practice. Exact arithmetic bypasses model calculation;
+unfinished exercises receive checked intermediate steps. Conceptual dialogue uses
+the existing local model, compact context (at most 1100 characters), 64 output
+tokens, a bounded worker and explicit fallback sources. Conversations, private
+arithmetic state and drafts persist in additive SQLite tables; older coach records
+are imported without deleting originals. Help is recorded before inference and
+never awards independent mastery. Safe finish/shutdown and the existing EXE
+launcher contract are retained. Installers back up notebooks and refuse silent
+removal of installed training IDs/ML files. See [implementation/deployment](SLM-COACH.md)
+and [colleague design guide](COACH-DESIGN.md).
+
+The full application suite ran 135 tests (132 passed, three skipped); two added
+local-HTTP model-transport checks also passed. The
+deployment/setup/data-guard/options suite ran 40 tests (38 passed, two skipped).
+Both old Windows baseline failures are fixed in their tests (float tolerance and
+closing the fixture connection). Browser acceptance passed arithmetic, wrong
+claims, honest unavailable-model fallback, Catalan, reload/draft/session resume,
+safe finish and existing navigation at 320/390/1024/1440px with no JS errors or
+external requests. The prediction smoke test wrote five contract-valid fallback
+rows because no model server is running locally; this is not an accuracy result.
+The extracted 7.4 MB board archive also passed an isolated `python -S` startup,
+asset/arithmetic check and server-restart persistence check, without site-packages
+or repository imports. Feature commit: `d9513ce`; full validation is in EXPERIMENTS.
+
+No board is visible over USB, so this version has **not** been activated or
+benchmarked on the UNO Q. Its old deployed release is unchanged. This checkout
+has 170 training rows and 170 original images, but no newer `data/ml` artifacts;
+the prepared release lists those omissions. Actual SLM quality, latency, RAM,
+board migration and offline replug acceptance remain T-130. See the experiment
+entry for conditions; do not substitute historical larger-dataset reports below.
+
+**T-128 branch audit and SLM planning (2026-11-15):** fetched origin and advanced
+local main to `8274efa`; saved earlier deployed conversation work as `694d2b6` on
+`fix/adaptive-tutor-dialogue`. New `exp/slm-learning-coach` starts from main, with
+the proposal in [SLM-IMPLEMENTATION.md](SLM-IMPLEMENTATION.md). No feature code was
+ported or deployed. Most remote feature tips are already merged; OCR and Reason
+experiments remain distinct unmerged work. Branch/task/decision ID collisions
+are documented. This checkout's real loaders find 170 training rows, no difficulty
+entries, no map and no generated-content entries; fallback startup succeeds.
+The unchanged-main Windows baseline ran 113 tests: 108 passed, three skipped,
+one float-equality assertion failed and one SQLite teardown errored. Both reproduce
+individually. Resolve those baseline issues and obtain matching prepared artifacts
+before claiming full ML integration. Earlier all-pass reports below describe their
+original environment, not this audit. See D-019; implementation is next.
+
 **T-120 Solve and My path layout (2026-11-15, laptop only):** Solve is full width with "Change problem" top-left, the Understand / Plan / Check rail above the statement, a 3px rule before the thinking question and the answers, and feedback shown as large framed bands (glyph, 22–28px headline, 19px body); the optional note and the "Pick an answer first." helper are gone. In My path the skill tree has no legend or state labels (colour and corner glyph carry the state, names 22px), goal buttons are larger, and the path problem cards are whole buttons tinted by difficulty without question text. Design rules now live in [DESIGN.md](DESIGN.md). Playwright checks at 1440 / 1024 / 390 and 113 app tests pass.
 
 **T-118 map problems in My path (2026-11-15, laptop only):** choosing a goal skill now lists, under the tree, the problems the problem map computes as the route (T-117 API), each with difficulty label, level, category and an Open action; verified with the full map data at 1440 and 390 px, 113 app tests pass.

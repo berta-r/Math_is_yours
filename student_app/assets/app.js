@@ -95,6 +95,62 @@ const STRINGS = {
     choose_letter:'Primer tria A, B, C, D o E.',
   },
 };
+Object.assign(STRINGS.en, {
+  numbers_title:'Number practice', numbers_entry:'Just practise numbers →', numbers_back:'Back to Solve',
+  numbers_intro:'Try a calculation, check a step, or ask how an idea works.',
+  coach_title:'Help me think it through', coach_intro:'Show me your idea. We will find one useful step together.',
+  coach_label:'Your thought or question', coach_placeholder:'I got 13 for 18 − 6. Which step should I check?',
+  coach_send:'Ask my tutor →', coach_retry:'Try sending again →', coach_you:'You', coach_tutor:'Your tutor',
+  coach_wait_title:'Let’s think about it', coach_wait:'Your Arduino is preparing a short reply. You can keep working while you wait.',
+  coach_wait_other:'Your tutor is finishing another reply. You can write your next thought while you wait.',
+  coach_saved:'Saved on {place}', coach_saving:'Saving your thought…', coach_unsaved:'Not saved yet. Keep this page open and reconnect your Arduino.',
+  coach_send_failed:'Your message may have arrived. Reconnect and try sending again; the same message will not be added twice.',
+  coach_request_failed:'Your question could not be sent yet. Wait for any current reply, then try again.',
+  coach_load_failed:'Could not load your conversation. Reconnect your Arduino and try again.', coach_reload:'Reload conversation',
+  coach_source_math:'Calculation checked', coach_source_invalid:'Check this calculation', coach_source_model:'Local tutor', coach_source_prepared:'Prepared guidance',
+  coach_reason:'About this reply', coach_fallback:'The local tutor could not finish a reply, so here is a prepared thinking step.',
+  coach_help_notice:'Using the tutor counts this problem as practice with help.',
+  coach_practice_notice:'These calculations are practice. Your learning path changes when you try problems on your own.',
+  coach_practice_attached:'You have a problem open. Using number practice will count it as practice with help.',
+  coach_empty:'A small question is a good place to start.', coach_example_math:'What is 18 − 6?',
+  coach_example_check:'I got 13 for 18 − 6', coach_example_why:'Why does subtraction work?',
+  coach_board:'Arduino', coach_computer:'this computer', coach_pending_label:'Reply in progress',
+  finish:'Finish & safely disconnect', finish_title:'Your work travels with you.', keep_learning:'Keep learning',
+  poweroff:'Power off Arduino', finish_saved:'Your conversation and work are saved. Power off the Arduino before unplugging it.',
+  finish_local:'Your work is saved on this computer. You can close this tab.',
+  finish_wait:'Your tutor is still replying. Wait for the reply before powering off.',
+  finish_saving:'Saving your latest thought…', finish_error:'Could not confirm that your latest work is saved. Keep the Arduino connected and try again.',
+  poweroff_wait:'The Arduino is shutting down. Wait until it finishes before unplugging the cable.',
+  coach_unknown_reply:'Your reply was interrupted. Please send your question again.',
+});
+Object.assign(STRINGS.ca, {
+  numbers_title:'Practica amb nombres', numbers_entry:'Practica només amb nombres →', numbers_back:'Torna a Resol',
+  numbers_intro:'Prova un càlcul, comprova un pas o pregunta com funciona una idea.',
+  coach_title:'Ajuda’m a pensar-ho', coach_intro:'Ensenya’m la teva idea. Trobarem junts un pas útil.',
+  coach_label:'La teva idea o pregunta', coach_placeholder:'M’ha sortit 13 en fer 18 − 6. Quin pas hauria de comprovar?',
+  coach_send:'Pregunta al tutor →', coach_retry:'Torna-ho a enviar →', coach_you:'Tu', coach_tutor:'El teu tutor',
+  coach_wait_title:'Pensem-hi una mica', coach_wait:'L’Arduino prepara una resposta curta. Pots continuar treballant mentrestant.',
+  coach_wait_other:'El tutor està acabant una altra resposta. Pots escriure la següent idea mentrestant.',
+  coach_saved:'Desat a {place}', coach_saving:'Desant la teva idea…', coach_unsaved:'Encara no s’ha desat. Mantén aquesta pàgina oberta i reconnecta l’Arduino.',
+  coach_send_failed:'Pot ser que el missatge hagi arribat. Reconnecta i torna’l a enviar; no s’afegirà dues vegades.',
+  coach_request_failed:'Encara no s’ha pogut enviar la pregunta. Espera qualsevol resposta pendent i torna-ho a provar.',
+  coach_load_failed:'No s’ha pogut carregar la conversa. Reconnecta l’Arduino i torna-ho a provar.', coach_reload:'Torna a carregar la conversa',
+  coach_source_math:'Càlcul comprovat', coach_source_invalid:'Revisa aquest càlcul', coach_source_model:'Tutor local', coach_source_prepared:'Orientació preparada',
+  coach_reason:'Sobre aquesta resposta', coach_fallback:'El tutor local no ha pogut acabar la resposta. Aquí tens un pas preparat per continuar pensant.',
+  coach_help_notice:'Fer servir el tutor compta aquest problema com a pràctica amb ajuda.',
+  coach_practice_notice:'Aquests càlculs són pràctica. El teu camí canvia quan proves problemes pel teu compte.',
+  coach_practice_attached:'Tens un problema obert. Fer servir aquesta pràctica el comptarà com a pràctica amb ajuda.',
+  coach_empty:'Una pregunta petita és un bon començament.', coach_example_math:'Quant fa 18 − 6?',
+  coach_example_check:'M’ha sortit 13 per a 18 − 6', coach_example_why:'Per què funciona la resta?',
+  coach_board:'l’Arduino', coach_computer:'aquest ordinador', coach_pending_label:'Preparant la resposta',
+  finish:'Acaba i desconnecta amb seguretat', finish_title:'La teva feina viatja amb tu.', keep_learning:'Continua aprenent',
+  poweroff:'Apaga l’Arduino', finish_saved:'La conversa i la feina estan desades. Apaga l’Arduino abans de desconnectar-lo.',
+  finish_local:'La feina està desada en aquest ordinador. Ja pots tancar la pestanya.',
+  finish_wait:'El tutor encara està responent. Espera la resposta abans d’apagar-lo.',
+  finish_saving:'Desant la teva última idea…', finish_error:'No s’ha pogut confirmar que la feina està desada. Mantén l’Arduino connectat i torna-ho a provar.',
+  poweroff_wait:'L’Arduino s’està apagant. Espera que acabi abans de desconnectar el cable.',
+  coach_unknown_reply:'La resposta s’ha interromput. Torna a enviar la pregunta.',
+});
 const LANGUAGE_NAMES = {cat:'Català', eng:'English'};
 let uiLang = 'en';
 function t(key, values = {}) {
@@ -176,6 +232,7 @@ function syncControls() {
   $('start-recommended').textContent = currentRecommendation ? t('current_exercise') : t('start_next');
   $('workspace').setAttribute('aria-busy', String(busy));
   $('activity-status').textContent = busy ? t('working') : '';
+  window.MathCoach?.syncControls();
 }
 document.addEventListener('pointerdown', event => {
   const button = event.target.closest('button');
@@ -215,14 +272,17 @@ async function openProblem(key = null, returnTo = null) {
   }
   $('problem-select').value = chosen;
   const data = await api('start', {problem:chosen, return_to:returnTo});
+  await restoreProblem(data);
+}
+async function restoreProblem(data) {
   openData = data;
   current = data.problem; hasHints = data.has_hints; hasSolution = data.has_solution;
   const languageChanged = setLanguage(current.language);
-  thinkingSteps = data.thinking_steps || []; stepIndex = 0;
+  thinkingSteps = data.thinking_steps || []; stepIndex = data.steps_done || 0;
   // With steps, completing them unlocks the choices; without steps, a saved thought does.
-  reflected = !thinkingSteps.length && !data.reflection_required; savedReflection = ''; canReveal = !!data.can_reveal;
-  $('reflection').value = '';
-  session = data.session; selected = ''; solved = false; lastWrong = '';
+  reflected = thinkingSteps.length ? stepsComplete() : !data.reflection_required || !!data.reflection; savedReflection = data.reflection || ''; canReveal = !!data.can_reveal;
+  $('reflection').value = savedReflection;
+  session = data.session; selected = data.selected || ''; solved = !!data.solved; lastWrong = data.last_wrong || '';
   renderProblemText();
   renderThinking(data);
   clearFeedback();
@@ -231,6 +291,7 @@ async function openProblem(key = null, returnTo = null) {
   $('question').lang = current.language === 'cat' ? 'ca' : 'en';
   renderOptions();
   if (languageChanged) { populateProblems(); if (student) await refreshGraph(); }
+  window.MathCoach?.contextChanged();
 }
 // Copy that depends on the open problem; re-run when the language changes.
 function renderProblemText() {
@@ -279,6 +340,7 @@ function markOption(letter, state) {
   button.querySelector('.option-check').textContent = state === 'wrong' ? '✗' : '✓';
 }
 function renderThinking(data) {
+  $('step-options').replaceChildren();
   const hasSteps = thinkingSteps.length > 0;
   // The rail above the statement and the steps under it show together; the free note only without steps.
   $('thinking').hidden = !hasSteps; $('progress').hidden = !hasSteps;
@@ -296,7 +358,7 @@ function renderStep() {
     item.classList.toggle('done', index < stepIndex);
     if (index === stepIndex && !done) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current');
   });
-  if (done) return;  // Keep the last question and its resolved options visible.
+  if (done && $('step-options').children.length) return;
   const step = thinkingSteps[shown];
   $('step-question').textContent = step.question;
   $('step-options').replaceChildren();
@@ -528,6 +590,7 @@ $('download-report').onclick = () => run(async () => {
 });
 $('profile-form').onsubmit = event => {
   event.preventDefault();
+  const startWithNumbers = event.submitter?.id === 'start-number-practice';
   run(async () => {
     student = $('student').value.trim();
     const data = await api('problems');
@@ -537,8 +600,11 @@ $('profile-form').onsubmit = event => {
     await refreshGraph(); await refreshRecommendation();
     const requested = pendingProblem && listing.some(p => p.key === pendingProblem) ? pendingProblem : null;
     pendingProblem = null;
-    if (requested) await openProblem(requested);
-    else await openProblem(recommendation.problem || $('problem-select').value, recommendation.return_to);
+    if (!startWithNumbers) {
+      const resumed = !requested ? await api('resume') : null;
+      if (resumed?.session) { await restoreProblem(resumed); $('problem-select').value = current.key; }
+      else await openProblem(requested || recommendation.problem || $('problem-select').value, recommendation.return_to);
+    }
     await refreshRecommendation();
     $('workspace').hidden=false;
     storeNickname(student);
@@ -546,8 +612,9 @@ $('profile-form').onsubmit = event => {
     $('welcome').hidden = true; $('studio-nav').hidden = false; $('profile-switch').hidden = false;
     document.body.classList.remove('landing');
     $('profile-name').textContent = student;
-    setStudioView('practice', false);
-    $('question').focus();
+    setStudioView(startWithNumbers ? 'numbers' : 'practice', false);
+    window.MathCoach?.contextChanged();
+    if (startWithNumbers) $('coach-input').focus(); else $('question').focus();
   });
 };
 $('open-problem').onclick = () => run(async () => { await openProblem(); await refreshRecommendation(); $('question').focus(); });
@@ -616,9 +683,14 @@ $('reveal').onclick = () => run(async () => {
 syncControls();
 
 // Workspace navigation only changes presentation; every exercise remains in memory.
-const viewKeys = {practice:'nav_solve', map:'nav_path', notebook:'nav_work'};
+const viewKeys = {practice:'nav_solve', map:'nav_path', notebook:'nav_work', numbers:'numbers_title'};
 function setStudioView(view, focus = true) {
   if (!viewKeys[view] || $('workspace').hidden) return;
+  if (view === 'practice' && !current) {
+    run(async () => { await openProblem(recommendation?.problem || $('problem-select').value); setStudioView('practice', focus); });
+    return;
+  }
+  if (view === 'practice' && current) setLanguage(current.language);
   for (const name of Object.keys(viewKeys)) $(''+name+'-view').hidden = name !== view;
   document.querySelectorAll('#studio-nav button').forEach(button => {
     if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
@@ -626,10 +698,12 @@ function setStudioView(view, focus = true) {
   });
   document.body.dataset.view = view;
   $('view-title').textContent = t(viewKeys[view]);
+  window.MathCoach?.setView(view);
   if (focus) { $('view-title').focus({preventScroll:true}); window.scrollTo(0,0); }
 }
 document.querySelectorAll('#studio-nav [data-view]').forEach(button => button.addEventListener('click', () => setStudioView(button.dataset.view)));
 $('profile-switch').onclick = () => {
+  window.MathCoach?.leaveProfile();
   $('workspace').hidden = true; $('studio-nav').hidden = true; $('profile-switch').hidden = true; $('welcome').hidden = false;
   $('problem-map-link').hidden = true;
   document.body.classList.add('landing');
@@ -642,6 +716,7 @@ setLanguage = problemLanguage => {
   if (changed) {
     renderProblemText(); renderRecommendation();
     $('view-title').textContent = t(viewKeys[document.body.dataset.view] || 'nav_solve');
+    window.MathCoach?.languageChanged();
   }
   return changed;
 };

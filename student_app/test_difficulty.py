@@ -55,11 +55,15 @@ class DifficultyTests(unittest.TestCase):
     def test_tree_and_ensemble_evaluation(self):
         d = self.load()
         low = d.evaluate({'embedding': [0.9, 0.3], 'level': 2})
-        self.assertEqual((low['model'], low['probabilities']), ('tree', [0.7, 0.2, 0.1]))
+        self.assertEqual(low['model'], 'tree')
+        for actual, expected in zip(low['probabilities'], [0.7, 0.2, 0.1]):
+            self.assertAlmostEqual(actual, expected)
         self.assertAlmostEqual(low['expected_points'], 3.4)
         high = d.evaluate({'embedding': [0.9, 0.3], 'level': 6}, 'tree')
         self.assertEqual(high['probabilities'], [0.0, 0.25, 0.75])
-        self.assertEqual(d.evaluate({'embedding': [0.1, 0.3], 'level': None}, 'tree')['probabilities'], [0.7, 0.2, 0.1])
+        unknown = d.evaluate({'embedding': [0.1, 0.3], 'level': None}, 'tree')['probabilities']
+        for actual, expected in zip(unknown, [0.7, 0.2, 0.1]):
+            self.assertAlmostEqual(actual, expected)
         ens = d.evaluate({'embedding': [0.9, 0.3], 'level': 6}, 'ensemble')
         self.assertEqual(ens['model'], 'ensemble')
         self.assertAlmostEqual(sum(ens['probabilities']), 1.0)

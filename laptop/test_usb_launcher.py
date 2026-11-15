@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 import socket
+import sqlite3
 import tarfile
 import tempfile
 import threading
@@ -198,6 +199,9 @@ class PackagingTests(unittest.TestCase):
             info = build_bundle(ROOT, output)
             with tarfile.open(output) as archive:
                 names = archive.getnames()
+                manifest = json.load(archive.extractfile('release-manifest.json'))
+            self.assertEqual(set(manifest['files']), set(names) - {'release-manifest.json'})
+            self.assertFalse(manifest['includes_progress'])
             self.assertTrue(info['sha256'])
             self.assertIn('student_app/server.py', names)
             self.assertIn('board/install_student_service.py', names)
@@ -217,9 +221,36 @@ class PackagingTests(unittest.TestCase):
         self.assertNotIn('Wants=math-llm.service', plain)
         self.assertIn('Wants=math-llm.service', enabled)
         self.assertIn('--local-tutor', enabled)
+        shutdown = service.unit_text('/home/arduino/math tutor', 'arduino', local_tutor=True, safe_shutdown=True)
+        self.assertIn('--safe-shutdown', shutdown)
+        self.assertIn('PathExists=/var/lib/math-student/poweroff.request', service.shutdown_units()['math-student-poweroff.path'])
+        self.assertIn('ExecStartPost=/usr/bin/systemctl poweroff', service.shutdown_units()['math-student-poweroff.service'])
         for root in ['/home/user/%bad', '/home/user/\nInjected=1']:
             with self.assertRaises(ValueError):
                 service.unit_text(root, 'arduino')
+
+    def test_upgrade_backup_preserves_notebooks_and_previous_unit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            db, unit = root / 'live.db', root / 'math-student.service'
+            con = sqlite3.connect(db)
+            try:
+                con.execute('CREATE TABLE notes (body TEXT)')
+                con.execute('INSERT INTO notes VALUES (?)', ('Saved before upgrade',))
+                con.commit()
+                unit.write_text('previous release', encoding='utf-8')
+                folder = service.backup_existing(root, db, unit)
+                con.execute('INSERT INTO notes VALUES (?)', ('Later entry',))
+                con.commit()
+                snapshot = sqlite3.connect(folder / 'progress.db')
+                try:
+                    self.assertEqual(snapshot.execute('SELECT body FROM notes').fetchall(), [('Saved before upgrade',)])
+                finally:
+                    snapshot.close()
+                self.assertEqual((folder / 'math-student.service').read_text(), 'previous release')
+                self.assertEqual(con.execute('SELECT COUNT(*) FROM notes').fetchone()[0], 2)
+            finally:
+                con.close()
 
 
 if __name__ == '__main__':

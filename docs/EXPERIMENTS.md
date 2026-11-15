@@ -14,6 +14,54 @@ The reference points are random guessing at 20%, always-D at about 25%, and the 
 
 ## Results
 
+### T-129 integrated offline coach validation (2026-11-15)
+
+Code commit: **`d9513ce`**, `exp/slm-learning-coach`, after merging main `0b42034`
+in `1dc4805`. Windows Python 3.11; no Arduino visible over USB and the previous
+Wi-Fi SSH address did not answer the connection check. No model settings,
+official prediction code or live board release were changed.
+
+| Check | Result | Conditions / limit |
+| --- | --- | --- |
+| Full student app suite | 135 tests: 132 passed, 3 skipped; 44.036 s | Includes arithmetic and coach HTTP integration; prepared local dataset |
+| Added real HTTP transport tests | 2 passed; 1.044 s | Loopback fixture checks prose request, temperature 0, seed 42, max 64, proxy bypass and explicit unavailable fallback; not a real model |
+| Deployment, setup, release-data guard, options | 40 tests: 38 passed, 2 skipped; 1.943 s | No registry changes, real systemd or hardware activation |
+| Chrome browser acceptance | Passed at 1440, 1024, 390 and 320 px | Arithmetic, incorrect claim, fallback label, Catalan, guided state/draft/session reload, safe finish, main navigation, real-image expand/Escape; no JS errors or external requests |
+| Extracted release with `python -S` | Passed | 279 payload files verified by SHA-256; no repository imports/site-packages; assets, arithmetic and draft/history survived server restart |
+| Prediction contract smoke | 5 valid rows, one A–E letter each | All `D` with explicit unavailable-model error; no accuracy claim |
+| `eval.py --limit 50 --name slm_coach_v3` | **Not run** | Board/model unavailable; do not turn fallback-only laptop output into an accuracy experiment |
+
+172 automated tests passed and five were skipped across the suites above. The two
+reproduced baseline problems were fixed in tests: probability assertions use
+float tolerance, and the Elo fixture closes its SQLite connection on Windows.
+
+The board archive contains about **7.4 MB compressed / 9.0 MB payload**: 170 train
+rows, all 170 original images and 30 bundled diagnostics. The ZIP also carries
+the unchanged Windows setup EXE (verified SHA-256
+`b13fc2c63caa4ef07b427361c7655c92624d1a076d07e3bd85eb431e6551f1da`).
+`data/ml` is absent locally, so learned map/difficulty/generated-content loaders
+report unavailable; their support remains intact. Activation now rejects silent
+loss of installed training IDs or optional artifacts. Private databases, weights,
+validation data and credentials are excluded from the release.
+
+Conclusion: the product integration and durable Python arithmetic work locally.
+Actual SLM teaching quality, cold latency, full-board RAM, real notebook migration
+and power-cycle behaviour require T-130 hardware acceptance. Generated prose is
+guarded but not certified correct, and no learning-gain claim is supported. See
+[SLM-COACH.md](SLM-COACH.md) and the ignored `results/slm-coach-*.json` reports.
+
+T-128 repository baseline audit (2026-11-15), main `8274efa`, Windows Python 3.11:
+`python -m unittest discover -s student_app -p 'test*.py' -q` ran 113 tests in
+44.879 s: 108 passed, three skipped, one failure and one error. Individually
+reproduced the exact floating-point comparison in
+`test_difficulty.test_tree_and_ensemble_evaluation` and the open SQLite file
+cleanup error in `test_elo.EloAppTests.test_catalan_reason_and_skill_rating`.
+Actual loader smoke check: 170 train rows/IDs; zero difficulty entries, map nodes
+and generated-content entries; temporary-DB handler starts with fallbacks.
+This is an environment/baseline check, not a new model experiment. No solver or
+runtime changes, board inference, or new accuracy claim. Integration plan and
+limits: [SLM-IMPLEMENTATION.md](SLM-IMPLEMENTATION.md).
+
 | Date | Name | Commit | Input / langs / n | RAG k | Accuracy | Mean s | Worst s | Over 60 s | Change, and conclusion |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | — | (organizers) baseline | template | 40 eng, text-only | 0 | 22.5% | 8.7 | 12.7 | 0 | Reference. Letter bias: D×21, A×14 |
