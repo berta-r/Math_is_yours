@@ -1200,3 +1200,17 @@ body:not(.landing) button.path-problem:active:not(:disabled) { transform:scale(.
   body:not(.landing) button.path-problem:not(:disabled):hover { transform:translate(-2px,-2px); box-shadow:var(--control-shadow); color:var(--ink); }
   body:not(.landing) button.path-problem.goal:not(:disabled):hover { box-shadow:inset 0 0 0 1px var(--accent),var(--control-shadow); }
 }
+
+/* Studio 10: no small text in My path. Steps show only the skill name; footer controls at 18px. */
+body:not(.landing) #learning-path .path-step { min-height:64px; padding:16px 20px; font-size:20px; display:flex; align-items:center; }
+body:not(.landing) #learning-path .path-step strong { font-size:20px; font-weight:700; }
+body:not(.landing) #learning-path .path-step span { display:none; }
+body:not(.landing) #learning-path li::before { font-size:20px; margin-top:18px; }
+body:not(.landing) #workspace .method-note summary, body:not(.landing) #workspace .method-note p, body:not(.landing) #workspace .method-note small, body:not(.landing) #problem-map-link { font-size:18px; }
+body:not(.landing) #problem-map-link { min-height:52px; padding:10px 20px; font-weight:700; }
+/* Studio 10, Solve: more air between the rail, the statement and the thinking question / answers. */
+body:not(.landing) .progress-rail { margin-bottom:40px; }
+body:not(.landing) #question { margin:0 0 24px; }
+body:not(.landing) .reflection-box,body:not(.landing) #answer-stage { margin-top:32px; padding-top:48px; }
+body:not(.landing) #workspace #map-view .method-note summary,body:not(.landing) #workspace #map-view .method-note p { font-size:18px; }
+@media (max-width:760px) { body:not(.landing) .progress-rail { margin-bottom:28px; } body:not(.landing) .reflection-box,body:not(.landing) #answer-stage { margin-top:20px; padding-top:32px; } }
