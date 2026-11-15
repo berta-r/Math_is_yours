@@ -12,7 +12,7 @@ In a terminal at the repository root:
 python student_app/server.py
 ```
 
-Open **http://127.0.0.1:7011**. Enter a nickname and choose **Open my notebook**.
+Open **http://127.0.0.1:7011**. Enter a nickname and choose **Open my notebook**. The Kangaroo Studio navigation separates Solve, My path and My work while keeping your exercise in progress when you switch views.
 Use `py` instead of `python` if necessary. Leave the terminal running; **Ctrl+C**
 stops it. Restart with the same command after code or annotation changes. If the
 port is occupied, stop the earlier server; Windows may need a short wait to release
@@ -32,7 +32,11 @@ attempts. Use `--db path/to/practice.db` for a separate demo database.
 
 1. Open a new notebook. A short diagnostic is suggested, with a reason.
 2. Choose **Quick check: Division · 1 · eng** from the problem list and open it.
-   Write a first idea or uncertainty, then choose **Explore answer choices**.
+   Answer three short thinking steps (Understand · Plan · Check). Each choice gets
+   immediate feedback with a one-sentence reason; a wrong choice can be retried.
+   The answer choices appear after the last step. **Add a note (optional)** still
+   saves a written idea. Problems without reviewed skills have no steps: write a
+   first idea, then choose **Explore answer choices**.
 3. Submit a wrong answer. Only division receives that observation; other
    nodes remain unknown. The route can first check addition/subtraction, then
    multiplication, before returning to division, depending on existing evidence.

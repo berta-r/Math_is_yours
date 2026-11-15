@@ -6,6 +6,15 @@
 
 ## Summary
 
+**T-091 thinking steps (2026-11-14, laptop only, uncommitted on `ui/thinking-steps`):**
+before the A–E choices, students now answer three multiple-choice process steps
+(Understand · Plan · Check) with immediate, model-free feedback; the written note
+is optional when steps exist and still required for unclassified problems. The
+bank has general English steps for all 10 skills and problem steps for the five
+samples (Catalan for sample-4/5), validated at load and leak-checked against the
+catalog at startup. BKT is unchanged. 48 tests pass locally; not yet deployed or
+tried with students. Training items use the general skill steps until T-092.
+
 **T-090 one-time Windows setup (2026-11-14):** the user subsequently authorized
 installation. A standalone 26.8 MB `START.EXE` bundles Python/Tk and ADB; it installs
 per user, creates a Start-menu control and registers the USB watcher at login.
@@ -128,6 +137,8 @@ States: ⬜ pending · 🟨 in progress · ✅ done · ❌ blocked (say why).
 ## Chosen idea
 
 The team wants reasoning plus adaptive teaching. The teaching path now uses authored Markdown skills, reviewed problem tags, conservative Bayesian Knowledge Tracing, diagnostics and 1/3/7-day reviews. A wrong multi-skill answer never lowers all its connected skills. An optional bounded SLM worker selects permitted stored hints; deterministic Python owns grading, state and recommendations. Laptop k-means exports candidates for explicit review. See [curriculum documentation](../knowledge/README.md) and [student app instructions](../student_app/README.md).
+
+The Kangaroo Studio redesign on `ui/kangaroo-studio` now uses a blue typographic entrance based on the supplied reference, child-facing Solve / My path / My work views, an exercise-first layout and readable skill tiles. The start action is visible at 320–1440px with no horizontal overflow. Chrome checks at desktop and mobile widths report no JavaScript errors; the full three-step answer-to-next-exercise flow and 48 application tests pass locally. Physical touch and board visual validation remain pending.
 
 ## Known issues
 

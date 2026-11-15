@@ -23,7 +23,8 @@ class PracticeTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.db = Path(self.temp.name) / "test.db"
         app.initialize(self.db)
-        handler = app.make_handler(self.db, self.catalog(), include_diagnostics=False)
+        self.knowledge = app.Knowledge(annotations=[app.ROOT / 'data/teaching_annotations.json'])
+        handler = app.make_handler(self.db, self.catalog(), knowledge=self.knowledge, include_diagnostics=False)
         handler.log_message = lambda *args: None
         self.server = app.StudentServer(("127.0.0.1", 0), handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
@@ -43,6 +44,10 @@ class PracticeTests(unittest.TestCase):
             result = json.load(response)
         if action == 'start':
             self.post('reflect', session=result['session'], reflection='I will compare the quantities first.')
+            # Thinking steps gate the answer stage when they exist; answer them correctly.
+            problem = {'id': result['problem']['id'], 'language': result['problem']['language']}
+            for index, step in enumerate(self.knowledge.thinking_steps(problem)[0]):
+                self.post('step', session=result['session'], index=index, choice=step['answer'])
         return result
 
     def unlock(self, session):

@@ -46,7 +46,15 @@ class LearningTests(unittest.TestCase):
             result = json.load(response)
         if route == 'start' and reflect:
             self.post('reflect', session=result['session'], reflection='I will look for equal groups and check the units.')
+            self.complete_steps(result)
         return result
+
+    def complete_steps(self, opened):
+        # Thinking steps now gate the answer stage; answer them correctly so BKT tests are unaffected.
+        problem = self.catalog.problems[opened['problem']['key']]
+        steps, _ = self.knowledge.thinking_steps(problem)
+        for index, step in enumerate(steps):
+            self.post('step', session=opened['session'], index=index, choice=step['answer'])
 
     def answer(self, pid, correct=True, **data):
         opened = self.post('start', problem=pid, **data)
@@ -109,13 +117,16 @@ class LearningTests(unittest.TestCase):
     def test_reflection_and_help_gate_are_enforced_on_server(self):
         opened = self.post('start', problem='diagnostic-arithmetic-1', _reflect=False)
         sid = opened['session']
-        self.assertTrue(opened['reflection_required'])
-        for action, body in [('answer', {'answer':'C'}), ('reveal', {}), ('solution', {})]:
-            with self.assertRaises(urllib.error.HTTPError):
-                self.post(action, session=sid, **body)
+        # Problems with thinking steps gate on the steps; the written note is optional.
+        self.assertFalse(opened['reflection_required'])
+        self.assertEqual(opened['steps_scope'], 'skill')
         with self.assertRaises(urllib.error.HTTPError):
             self.post('reflect', session=sid, reflection='   ')
         self.post('reflect', session=sid, reflection='I need to subtract the beads that were removed.')
+        for action, body in [('answer', {'answer':'C'}), ('reveal', {}), ('solution', {})]:
+            with self.assertRaises(urllib.error.HTTPError):
+                self.post(action, session=sid, **body)
+        self.complete_steps(opened)
         for _ in range(2):
             result = self.post('answer', session=sid, answer='A')
             self.assertFalse(result['can_reveal'])

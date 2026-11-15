@@ -7,6 +7,7 @@ import sys
 import socket
 import os
 from contextlib import contextmanager
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -18,7 +19,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from copilot.knowledge import Knowledge
+from copilot.knowledge import Knowledge, leaked
 from copilot import student_model, scheduler
 from copilot.config import CONFIG
 from copilot.tutor import Tutor
@@ -60,6 +61,12 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         for p in knowledge.diagnostics:
             catalog.problems[p['id'] + '|' + p['language']] = p
     problems = catalog.problems
+    # Problem-specific thinking steps must not contain the correct option's value.
+    for key, p in problems.items():
+        steps, scope = knowledge.thinking_steps(p)
+        label = p.get('label')
+        if scope == 'problem' and label in list('ABCDE') and leaked(steps, p.get('options', {}).get(label)):
+            raise ValueError(f'Thinking steps for {key} contain the correct option value')
     with connection(db) as con:
         for sid, skill in knowledge.skills.items():
             con.execute('INSERT OR REPLACE INTO curriculum_skills(id,title) VALUES(?,?)', (sid, skill['title']))
@@ -79,9 +86,21 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         hints, _ = knowledge.hints(p)
         return (' + '.join(names) or 'Unclassified', hints, annotation.get('solution') if annotation.get('language', 'eng') == p['language'] else None)
 
+    def ready(session, key):
+        """Thinking gate: all thinking steps done, or a written thought when no steps exist."""
+        steps, _ = knowledge.thinking_steps(problems[key])
+        return bool(session['steps_done'] >= len(steps)) if steps else bool(session['reflection'])
+
     def can_reveal(session, key):
-        return bool(session['solved'] or (session['reflection'] and session['tries'] >= 2
+        return bool(session['solved'] or (ready(session, key) and session['tries'] >= 2
                     and (session['hints'] > 0 or not content(key)[1])))
+
+    def steps_summary(con, session, key):
+        steps, _ = knowledge.thinking_steps(problems[key])
+        first = {r['stage']: r['correct'] for r in con.execute(
+            'SELECT stage, correct FROM thinking_events WHERE session_id=? AND first=1', (session['id'],))}
+        return '; '.join(f"{s['stage']} step {'not reached' if s['stage'] not in first else 'ok' if first[s['stage']] else 'missed'}"
+                         for s in steps)
 
     def learning_route(con, student, body):
         state = student_model.states(con, student, knowledge)
@@ -94,6 +113,36 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 if tags:
                     goal = min(tags, key=lambda sid: (state[sid]['evidence'] > 0, state[sid]['mastery'], sid))
         return build_path(state, knowledge, goal=goal, related_edges=graph.related_edges)
+
+    def thinking_step(con, student, session, key, body):
+        """Check one multiple-choice process question. Pure Python: no model call, no mastery update."""
+        steps, scope = knowledge.thinking_steps(problems[key])
+        if not steps:
+            raise ValueError('This problem has no thinking steps. Write a first thought instead.')
+        index, choice = body.get('index'), body.get('choice')
+        if session['steps_done'] >= len(steps):
+            raise ValueError('All thinking steps are already done. Explore the answer choices.')
+        if type(index) is not int or index != session['steps_done']:
+            raise ValueError('Answer the current thinking step first.')
+        if type(choice) is not int or not 0 <= choice <= 2:
+            raise ValueError('Choose one of the three options.')
+        step = steps[index]
+        correct = choice == step['answer']
+        first = not con.execute('SELECT 1 FROM thinking_events WHERE session_id=? AND stage=?', (session['id'], step['stage'])).fetchone()
+        now = student_model.utc_now()
+        previous = con.execute('SELECT max(created) FROM thinking_events WHERE session_id=?', (session['id'],)).fetchone()[0]
+        started = datetime.fromisoformat(previous or session['started_at'] or now)
+        seconds = max(0.0, (datetime.fromisoformat(now) - started).total_seconds())
+        con.execute('''INSERT INTO thinking_events(student,session_id,problem_id,language,stage,skill_id,scope,choice,correct,first,seconds,created)
+                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',
+                    (student, session['id'], problems[key]['id'], problems[key]['language'], step['stage'],
+                     knowledge.steps_skill(problems[key]), scope, choice, int(correct), int(first), seconds, now))
+        done = session['steps_done'] + int(correct)
+        con.execute('UPDATE sessions SET steps_done=?, steps_wrong=steps_wrong+? WHERE id=?', (done, int(not correct), session['id']))
+        completed = done >= len(steps)
+        message = ('Yes. Now explore the answer choices.' if completed else 'Yes. On to the next step.') if correct else 'Not yet. Read the explanation and try another option.'
+        return {'correct': correct, 'why': step['why'], 'stage': step['stage'], 'next_index': done,
+                'completed': completed, 'message': message}
 
     class Handler(BaseHTTPRequestHandler):
         teaching_tutor = tutor
@@ -172,7 +221,9 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
             if path == "/api/profile":
                 skills = list(student_model.states(con, student, knowledge).values())
                 history = [dict(r) for r in con.execute('SELECT problem_id,language,kind,skill_id,correct,eligible,reason,created FROM learning_events WHERE student=? ORDER BY id DESC LIMIT 12', (student,))]
+                process, process_summary = student_model.process(con, student, knowledge)
                 return {'skills': skills, 'edges': knowledge.public_graph(), 'history': history,
+                        'process': process, 'process_summary': process_summary,
                         'related_edges': graph.related_edges, 'graph_method': graph.method,
                         'learning_path': learning_route(con, student, body),
                         'attempts': con.execute('SELECT count(*) FROM attempts WHERE student=?', (student,)).fetchone()[0],
@@ -211,18 +262,24 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                     return_to = catalog.resolve(return_to)
                 sid = secrets.token_urlsafe(24)
                 con.execute("INSERT INTO sessions(id,student,problem,started_at,return_to) VALUES(?,?,?,?,?)", (sid, student, pid, student_model.utc_now(), return_to))
+                steps, steps_scope = knowledge.thinking_steps(problems[pid])
+                steps_skill = knowledge.steps_skill(problems[pid])
                 return {"session": sid, "problem": catalog.public(pid), "skill": content(pid)[0],
                         'skills': knowledge.annotation(problems[pid])['skills'],
                         'assessment_skill': knowledge.annotation(problems[pid]).get('assessment_skill'),
                         'kind': problems[pid].get('kind', 'exercise'),
-                        'reflection_required': True, 'can_reveal': False,
+                        # Answers and explanations stay on the server until a choice is made.
+                        'thinking_steps': [{'stage': s['stage'], 'question': s['question'], 'options': s['options']} for s in steps],
+                        'steps_scope': steps_scope, 'steps_language': steps[0]['language'] if steps else None,
+                        'steps_skill': knowledge.skills[steps_skill]['title'] if steps and steps_skill else None,
+                        'reflection_required': not steps, 'can_reveal': False,
                         'reflection_prompt': 'What do you notice? Describe a first step, a useful relationship, or what you are unsure about before choosing an answer.',
                         "has_hints": bool(content(pid)[1]), "has_solution": bool(content(pid)[2])}
             if path == "/api/problems":
                 return {'version': 'connected-graph-v2', "sources": catalog.sources, "problems": [{"key": key, "id": p["id"], "skill": content(key)[0],
                          'skills': knowledge.annotation(p)['skills'], 'kind': p.get('kind', 'exercise'),
                          "language": p["language"], "format": catalog.public(key)["format"]} for key, p in problems.items()]}
-            if path not in ("/api/answer", "/api/hint", "/api/solution", "/api/reveal", '/api/reflect'):
+            if path not in ("/api/answer", "/api/hint", "/api/solution", "/api/reveal", '/api/reflect', '/api/step'):
                 raise ValueError("Unknown action")
             session = con.execute("SELECT * FROM sessions WHERE id=? AND student=?", (body.get("session"), student)).fetchone()
             if session is None:
@@ -236,8 +293,10 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                     raise ValueError('Write a short thought or question (5–1200 characters) before choosing an answer.')
                 con.execute('UPDATE sessions SET reflection=? WHERE id=?', (reflection.strip(), session['id']))
                 return {'reflection_saved': True, 'message': 'Your thinking is saved. Explore the choices and test your idea.'}
+            if path == '/api/step':
+                return thinking_step(con, student, session, pid, body)
             if path in ('/api/reveal', '/api/solution') and not can_reveal(session, pid):
-                raise ValueError('First share your thinking, make two attempts, and try a hint when available. Then you can review the answer.')
+                raise ValueError('First work through your thinking, make two attempts, and try a hint when available. Then you can review the answer.')
             if path == "/api/reveal":
                 label = problems[pid].get("label")
                 if label not in list("ABCDE"):
@@ -248,9 +307,13 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 hints, scope = knowledge.hints(problems[pid])
                 if not hints:
                     return {"message": "Reviewed hints are not yet available for this dataset problem.", 'can_reveal': can_reveal(session, pid)}
-                rung = min(session["hints"], len(hints) - 1)
+                # A missed plan step means the student needs the method, so skip the broad first prompt.
+                missed_plan = session['steps_wrong'] > 0 and con.execute(
+                    "SELECT 1 FROM thinking_events WHERE session_id=? AND stage='plan' AND first=1 AND correct=0", (session['id'],)).fetchone()
+                rung = min(session["hints"] + (1 if missed_plan else 0), len(hints) - 1)
                 con.execute("UPDATE sessions SET hints=hints+1 WHERE id=?", (session["id"],))
-                result = tutor.request(student, problems[pid], content(pid)[0], session['last_answer'], hints, rung, scope, reflection=session['reflection'])
+                context = session['reflection'] or steps_summary(con, session, pid)
+                result = tutor.request(student, problems[pid], content(pid)[0], session['last_answer'], hints, rung, scope, reflection=context)
                 updated = dict(session, hints=session['hints'] + 1)
                 return dict(result, can_reveal=can_reveal(updated, pid))
             if path == "/api/solution":
@@ -259,7 +322,9 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 con.execute("UPDATE sessions SET revealed=1 WHERE id=?", (session["id"],))
                 return {"message": content(pid)[2]}
             answer = body.get("answer")
-            if not session['reflection']:
+            if not ready(session, pid):
+                if knowledge.thinking_steps(problems[pid])[0]:
+                    raise ValueError('Work through the thinking steps before selecting an answer.')
                 raise ValueError('Share a first thought before selecting an answer.')
             if answer not in list("ABCDE"):
                 raise ValueError("Choose an answer")

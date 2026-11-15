@@ -93,3 +93,21 @@ If we choose a Teach idea, its own metrics go here (hint leak rate, rung latency
 | 2026-11-14 | T-047 selector simulation | Seed 42; 30 synthetic learners, 20 recommendations each; same seeded diagnostic failure; original fixtures; static response probabilities | Weak/supporting-skill targeting: adaptive 36.8%, random 22.0%, correct-harder 23.5%; all 600 recommendations per policy fresh. Mean skills practised: 6.33 / 9.47 / 9.50. Adaptive Python selection mean 0.310 ms, worst 1.772 ms on laptop | Targeting is a declared tag proxy, not learning improvement. Most diagnostics share grade level 0, limiting the harder/easier comparator. No learned student parameters, delayed assessment or board latency. |
 | 2026-11-14 | T-086 clustering preparation | 52 unique English training IDs; deterministic k=8, seed 42; explicit TF-IDF fallback | Review CSV and vectors/centroids/assignments/representatives exported to ignored `data/clustering-teaching-v1/`; no labels inferred automatically | Keyword clustering exercised locally; semantic embedding quality and educator label review pending. |
 | 2026-11-14 | Preserve option display after dataset regeneration | Input files were expanded during T-086 to 170 train / 30 validation rows. Re-enriched remaining incomplete choices and checked IDs/labels before and after. | Train: 101 text + 10 picture sets; validation: 17 text + 1 picture set. All 200 supplied labels unchanged. Added a source-change check so OCR cannot overwrite a concurrently regenerated JSONL file. | 59 train / 12 validation items still require original images. New questions remain unclassified without reviewed tags. This is display preparation, not solver evaluation. |
+
+## Process metrics (planned, not yet measured)
+
+Defined by T-091, to be measured with real students in T-093. All come from
+`thinking_events` (first choice per step) and `learning_events` joined to
+`sessions` by session ID; `/api/profile` returns them as `process_summary` and the
+notebook prints them. They are descriptive indicators: steps never change BKT.
+
+| Metric | Definition | Conditions |
+| --- | --- | --- |
+| `steps_first_try_rate` | Steps answered right on the first choice / steps attempted | First choice per step and session only; retries excluded |
+| `problems_with_all_steps_right` | Problem sessions with all three steps done and no wrong choice | Sessions with thinking steps only |
+| `first_attempt_accuracy_when_steps_right` | Share of correct answers among eligible first attempts in sessions where every step was right first time | Eligible = unaided first exposure, as in BKT; null without data |
+| `first_attempt_accuracy_when_step_missed` | Same, in sessions where at least one step was missed first time | Same conditions; the gap between the two is the "does process predict outcome" signal, not a causal effect |
+
+Also planned for T-093: hints requested per problem before and after steps were
+introduced, on comparable problems. Nothing has been measured yet.
+

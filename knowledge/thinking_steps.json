@@ -1,0 +1,577 @@
+{
+  "version": 1,
+  "skills": {
+    "arithmetic": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What is this kind of problem asking you to find?",
+        "options": [
+          "How a quantity changes after an event",
+          "Which object in the story is largest",
+          "How many equal groups there are"
+        ],
+        "answer": 0,
+        "why": "Addition and subtraction problems describe a starting amount and a change, so you want the amount after that change."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Add every number that appears in the text",
+          "Name the starting amount and what changes",
+          "Guess from the biggest answer option shown"
+        ],
+        "answer": 1,
+        "why": "Naming the start and the change tells you whether to add or subtract, instead of combining every number automatically."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits this kind of problem best?",
+        "options": [
+          "Check that the answer is a round number",
+          "Check that the answer uses every number given",
+          "Check if the result should be bigger or smaller"
+        ],
+        "answer": 2,
+        "why": "If something is taken away the result must be smaller than the start, and if something is added it must be bigger."
+      }
+    ],
+    "division": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does a division problem usually ask you to find?",
+        "options": [
+          "How much bigger one amount is than another",
+          "How many items there are in total",
+          "The size or the number of equal groups"
+        ],
+        "answer": 2,
+        "why": "Division splits a known total into equal groups, so the unknown is either the group size or how many groups fit."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Find the total and what must be equal",
+          "Multiply the two largest numbers you can see",
+          "Subtract the smaller number from the larger one"
+        ],
+        "answer": 0,
+        "why": "You can only share fairly once you know the total and whether the number of groups or their size is fixed."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits a division answer best?",
+        "options": [
+          "The answer is smaller than every given number",
+          "Your answer times the divisor gives the total",
+          "The answer appears somewhere in the problem text"
+        ],
+        "answer": 1,
+        "why": "Multiplication undoes division, so multiplying your answer back must rebuild the original total exactly."
+      }
+    ],
+    "geometry_measurement": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What should you decide first about a shape question?",
+        "options": [
+          "Whether the shape looks bigger than the others",
+          "Whether it asks about the boundary or inside",
+          "Whether the numbers given are odd or even"
+        ],
+        "answer": 1,
+        "why": "Perimeter measures the boundary and area measures the inside, so they need different calculations and different units."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Multiply every length that appears together",
+          "Add the numbers and divide by two",
+          "Label the known lengths on a sketch"
+        ],
+        "answer": 2,
+        "why": "A labelled sketch shows which lengths you know and which single missing length to find next."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits a perimeter or area answer?",
+        "options": [
+          "Area uses square units and length does not",
+          "The answer should be a whole number",
+          "The answer matches the longest side given"
+        ],
+        "answer": 0,
+        "why": "Area counts unit squares, so it is measured in square units, while perimeter is a length in ordinary units."
+      }
+    ],
+    "logical_constraints": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does a logic problem ask you to find?",
+        "options": [
+          "Options that satisfy every condition together",
+          "The option that satisfies the first condition",
+          "The option with the largest number"
+        ],
+        "answer": 0,
+        "why": "A valid answer must survive all the conditions at once, not just the one you read first."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Pick the option that sounds most likely",
+          "Combine all the conditions into one guess",
+          "Write each condition as a separate check"
+        ],
+        "answer": 2,
+        "why": "Separate checks let you test a candidate against each rule without forgetting any of them."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "When can you cross out a candidate?",
+        "options": [
+          "When it feels less likely than the others",
+          "When you can name the condition it breaks",
+          "When it uses a number from the problem"
+        ],
+        "answer": 1,
+        "why": "A candidate is ruled out only by a specific broken condition; otherwise it may still be the answer."
+      }
+    ],
+    "multiplication": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does a multiplication problem usually describe?",
+        "options": [
+          "One amount taken away from another",
+          "Several groups that all have the same size",
+          "Two amounts compared to find a difference"
+        ],
+        "answer": 1,
+        "why": "Multiplication counts a total made of equal groups, so you need the number of groups and the size of each."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Write the number of groups and group size",
+          "Add together all the numbers you can see",
+          "Pick the largest number and double it"
+        ],
+        "answer": 0,
+        "why": "Keeping the number of groups separate from the size of each group stops you from mixing them up."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits a multiplication answer?",
+        "options": [
+          "The answer must be an even number",
+          "The answer is smaller than each factor",
+          "Repeated addition of the groups gives this total"
+        ],
+        "answer": 2,
+        "why": "Adding one group again and again, once per group, must give the same total as your multiplication."
+      }
+    ],
+    "order_of_operations": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does an expression with several operations ask for?",
+        "options": [
+          "Each operation done strictly from left to right",
+          "The largest result you can possibly make",
+          "One value, following agreed priority rules"
+        ],
+        "answer": 2,
+        "why": "Everyone follows one agreed order, brackets and multiplication before addition, so the expression has exactly one value."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Calculate the first two numbers you see",
+          "Look for brackets and multiplication first",
+          "Add all the numbers, then multiply"
+        ],
+        "answer": 1,
+        "why": "Brackets and multiplication have priority, so finding them first tells you which part to calculate before the rest."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits this kind of problem?",
+        "options": [
+          "Every operation was used exactly once",
+          "The answer is bigger than every number",
+          "The answer is the same read backwards"
+        ],
+        "answer": 0,
+        "why": "Rewriting the expression after each step shows whether an operation was skipped or used twice."
+      }
+    ],
+    "patterns": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does a pattern problem ask you to find?",
+        "options": [
+          "A rule that explains every step shown",
+          "The largest number in the sequence shown",
+          "The step that looks the most different"
+        ],
+        "answer": 0,
+        "why": "A pattern is described by a rule, and the rule must work for every step, not only the last one."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Copy the last step and change it slightly",
+          "Describe what stays the same and what changes",
+          "Add the first and last visible terms"
+        ],
+        "answer": 1,
+        "why": "Separating what stays fixed from what changes reveals the repeating block or the constant difference."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits your proposed rule?",
+        "options": [
+          "It produces the very last step shown",
+          "It gives a number that looks reasonable",
+          "It works on several steps, not just one"
+        ],
+        "answer": 2,
+        "why": "A rule that fits only one step may be a coincidence, so test it on several earlier steps too."
+      }
+    ],
+    "proportional_reasoning": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does a proportion problem ask you to keep?",
+        "options": [
+          "The same difference between the two amounts",
+          "The same total of both quantities",
+          "The same scale factor between two quantities"
+        ],
+        "answer": 2,
+        "why": "Quantities in proportion grow by multiplying, so the ratio between them stays fixed while the difference changes."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Find the two quantities that change together",
+          "Add the same amount to both quantities",
+          "Guess the answer from the biggest option"
+        ],
+        "answer": 0,
+        "why": "Spotting which two quantities are linked lets you compare one group with the requested number of groups."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits a proportion answer?",
+        "options": [
+          "Each quantity changed by the same amount",
+          "Each quantity changed by the same factor",
+          "The answer is larger than both quantities"
+        ],
+        "answer": 1,
+        "why": "If one quantity triples, the linked quantity must also triple; otherwise the relationship has changed."
+      }
+    ],
+    "spatial_reasoning": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does a spatial problem usually ask you to track?",
+        "options": [
+          "How many colours the picture contains",
+          "How shapes or parts move or change view",
+          "Which shape has the longest outline drawn"
+        ],
+        "answer": 1,
+        "why": "Spatial problems are about following positions and orientations through a movement, fold or change of viewpoint."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Compare only the overall outline of shapes",
+          "Count all the sides you can see",
+          "Choose one distinctive corner or mark to follow"
+        ],
+        "answer": 2,
+        "why": "Following one distinctive feature through the movement makes it easier to tell a rotation from a reflection."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits your chosen answer?",
+        "options": [
+          "Several features match, not only the outline",
+          "The outline looks roughly the same size",
+          "It is the most symmetric picture shown"
+        ],
+        "answer": 0,
+        "why": "Reflections and rotations can share an outline, so checking several features avoids choosing a mirror image by mistake."
+      }
+    ],
+    "systematic_counting": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does a counting problem ask you to find?",
+        "options": [
+          "How many different valid cases exist",
+          "The largest case that follows the rules",
+          "Which single case is the correct one"
+        ],
+        "answer": 0,
+        "why": "Counting problems ask for the number of possibilities, so each valid case must be found exactly once."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Write down cases in whatever order they come",
+          "Multiply the numbers given in the problem",
+          "Keep one feature fixed while listing cases"
+        ],
+        "answer": 2,
+        "why": "Fixing one feature at a time gives an organised list, which makes missing or repeated cases easy to spot."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits your count?",
+        "options": [
+          "Your total is close to the biggest option",
+          "Each case follows the rules and appears once",
+          "Each case uses different digits or objects"
+        ],
+        "answer": 1,
+        "why": "A careful count includes every valid case, excludes invalid ones, and never counts the same case twice."
+      }
+    ]
+  },
+  "problems": {
+    "sample-1": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does the question ask you to find?",
+        "options": [
+          "How many apples are in each bag",
+          "How many apples Anna has at the end",
+          "How many apples Anna ate in total"
+        ],
+        "answer": 1,
+        "why": "The question asks how many are left, which is the amount after Anna eats some apples."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Find how many apples are in the bags",
+          "Add the numbers three, four and two",
+          "Take two away from the four apples"
+        ],
+        "answer": 0,
+        "why": "You need the starting total of apples before you can take away the ones Anna eats."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits your final answer?",
+        "options": [
+          "It is bigger than the total in the bags",
+          "It equals the number of apples in one bag",
+          "It is less than the total in the bags"
+        ],
+        "answer": 2,
+        "why": "Anna eats some apples, so she must end with fewer apples than were in the bags at the start."
+      }
+    ],
+    "sample-2": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does the question ask you to find?",
+        "options": [
+          "The result of working left to right",
+          "The sum of all three numbers shown",
+          "The single value of the whole expression"
+        ],
+        "answer": 2,
+        "why": "An expression has exactly one value, found by following the agreed order of operations."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which part should you calculate first?",
+        "options": [
+          "The addition two plus three",
+          "The multiplication three times four",
+          "Whichever operation is written first"
+        ],
+        "answer": 1,
+        "why": "Multiplication comes before addition, so the multiplication is calculated before anything is added."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits your final answer?",
+        "options": [
+          "Each operation was used exactly once",
+          "The answer is the largest one possible",
+          "The answer equals five times four"
+        ],
+        "answer": 0,
+        "why": "Each operation in the expression must be used once, and in the right order, to give its value."
+      }
+    ],
+    "sample-3": [
+      {
+        "stage": "understand",
+        "language": "eng",
+        "question": "What does the question ask you to find?",
+        "options": [
+          "The space inside the square",
+          "The length around the square",
+          "The length of one diagonal"
+        ],
+        "answer": 0,
+        "why": "Area measures the inside of a shape, while the perimeter you are given measures its boundary."
+      },
+      {
+        "stage": "plan",
+        "language": "eng",
+        "question": "Which first move is most useful?",
+        "options": [
+          "Multiply the perimeter by itself",
+          "Divide the perimeter by two",
+          "Find the length of one side"
+        ],
+        "answer": 2,
+        "why": "A square has four equal sides, so the perimeter tells you one side length, which you need for the area."
+      },
+      {
+        "stage": "check",
+        "language": "eng",
+        "question": "Which check fits your final answer?",
+        "options": [
+          "It is in centimetres, like the perimeter",
+          "It is in square centimetres",
+          "It is four times the perimeter"
+        ],
+        "answer": 1,
+        "why": "Area counts unit squares, so the answer must be measured in square centimetres, not centimetres."
+      }
+    ],
+    "sample-4": [
+      {
+        "stage": "understand",
+        "language": "cat",
+        "question": "Què et demana la pregunta?",
+        "options": [
+          "Quants cromos dóna en Pau",
+          "Quants cromos li queden a en Pau",
+          "Quants cromos té la seva germana"
+        ],
+        "answer": 1,
+        "why": "La pregunta vol saber quants cromos li queden després de donar-ne alguns a la germana."
+      },
+      {
+        "stage": "plan",
+        "language": "cat",
+        "question": "Quin primer pas és més útil?",
+        "options": [
+          "Sumar tots els nombres que apareixen",
+          "Triar l'opció més gran de totes",
+          "Identificar quants en tenia i quants en dóna"
+        ],
+        "answer": 2,
+        "why": "Saber la quantitat inicial i la que canvia et diu si has de sumar o restar."
+      },
+      {
+        "stage": "check",
+        "language": "cat",
+        "question": "Quina comprovació encaixa amb la teva resposta?",
+        "options": [
+          "Ha de ser menys de quinze cromos",
+          "Ha de ser més de quinze cromos",
+          "Ha de ser igual als cromos donats"
+        ],
+        "answer": 0,
+        "why": "En Pau dóna cromos, així que n'ha de tenir menys que els quinze que tenia al principi."
+      }
+    ],
+    "sample-5": [
+      {
+        "stage": "understand",
+        "language": "cat",
+        "question": "Què et demana la pregunta?",
+        "options": [
+          "Quin és el nombre més gran possible",
+          "Quina és la suma de les xifres",
+          "Quants nombres compleixen la condició"
+        ],
+        "answer": 2,
+        "why": "Has de comptar quants nombres de dues xifres tenen la suma demanada, no trobar-ne només un."
+      },
+      {
+        "stage": "plan",
+        "language": "cat",
+        "question": "Quin primer pas és més útil?",
+        "options": [
+          "Fixar la xifra de les desenes i provar",
+          "Multiplicar els nombres que surten a l'enunciat",
+          "Escriure nombres a l'atzar fins a cansar-te"
+        ],
+        "answer": 0,
+        "why": "Si fixes les desenes una per una, cada cas té una sola xifra de les unitats possible i no te'n deixes cap."
+      },
+      {
+        "stage": "check",
+        "language": "cat",
+        "question": "Quina comprovació encaixa amb el teu recompte?",
+        "options": [
+          "Has comptat també nombres que comencen per zero",
+          "Cada nombre compleix la regla i surt una vegada",
+          "El total coincideix amb l'opció més gran"
+        ],
+        "answer": 1,
+        "why": "Un nombre de dues xifres no pot començar per zero, i cada nombre vàlid es compta exactament una vegada."
+      }
+    ]
+  }
+}

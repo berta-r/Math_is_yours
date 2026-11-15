@@ -107,6 +107,87 @@ attribution is ambiguous. Scaffolding is shown only for its declared language;
 English general skill hints are a labelled fallback for known primary skills.
 The loader does not validate arbitrary authored mathematics.
 
+## Thinking steps
+
+Before the A–E choices appear, a student answers three tiny multiple-choice
+*process* questions: **understand** (what kind of quantity or relationship is
+asked for), **plan** (which first move is most useful) and **check** (which sanity
+check applies). Feedback is immediate and automatic: pure Python compares the
+choice with the authored key, with no model call. A wrong choice shows the
+authored explanation and the student retries the same step; a right choice
+advances. Each step is small enough for working memory and gives one clear win.
+
+Steps live in `thinking_steps.json`:
+
+```json
+{
+  "version": 1,
+  "skills": {
+    "arithmetic": [
+      {"stage": "understand", "language": "eng",
+       "question": "What is this kind of problem asking you to find?",
+       "options": ["How a quantity changes after an event", "Which object in the story is largest", "How many equal groups there are"],
+       "answer": 0,
+       "why": "Addition and subtraction problems describe a starting amount and a change, so you want the amount after that change."},
+      {"stage": "plan", "...": "..."},
+      {"stage": "check", "...": "..."}
+    ]
+  },
+  "problems": {
+    "sample-4": [ "three steps in the problem's own language (here Catalan)" ]
+  }
+}
+```
+
+The loader (`copilot/knowledge.py`) rejects the file with a `ValueError` unless:
+
+- Each list has exactly three steps, with stages `understand`, `plan`, `check` in
+  that order, all in the same language. Every skill has a list; skill lists are
+  in English.
+- Each step has exactly three distinct, non-empty options of at most 10 words,
+  and their word counts differ by at most 2, so formatting gives no clue. No
+  option starts with "All", "None" or "Both".
+- `answer` is an integer 0–2, and across the whole file each position is the
+  key in at least 25% of steps.
+- `question` and `why` have at most 25 words; `why` is exactly one sentence.
+- Problem steps never contain the correct option's value in the question, an
+  option or the explanation (case-insensitive, matched at token boundaries, so
+  "15" does not leak "5"). The loader checks the committed samples; the server
+  repeats the check against every loaded catalog problem at startup and refuses
+  to start on a leak.
+
+Authoring advice: build wrong options from the skill's **Common difficulty**
+(for example "add every number that appears" or "the same difference" instead of
+the same scale factor), keep them plausible, and vary the key's position.
+
+A reviewed annotation in `data/teaching_annotations.json` may carry its own
+`"thinking_steps": [...]` list with the same shape and rules; it overrides the
+file for that problem and language.
+
+**Fallback order:** problem steps whose language matches the displayed problem;
+otherwise the general English steps of the assessment skill, else of the first
+tagged skill, labelled "General steps for … in English" in the page; otherwise
+none. Unclassified problems keep the written-thought gate exactly as before.
+
+**Answer gate:** when steps exist, `/api/answer` and the review gate require all
+three steps done; the free-text note becomes optional (still saved through
+`/api/reflect`). Without steps, a saved written thought is required.
+
+**Hint rule:** if the student's first choice on the **plan** step was wrong, the
+first hint starts at the method rung (rung 2 of 3) instead of the broad prompt.
+When no written note exists, a short summary such as `understand step ok; plan
+step missed; check step ok` is passed to the local hint selector as context. The
+selector grammar and its permitted choices are unchanged.
+
+**Steps never update mastery.** BKT, eligibility and review dates ignore them:
+a step is a scaffold, not evidence. Every choice is stored in `thinking_events`
+(`first` marks the first choice per step). The profile exposes per-skill
+first-try counts by stage plus four descriptive indicators: first-try step rate,
+problems with every step right first time, and first-attempt accuracy on eligible
+answers when every step was right versus when one was missed. The notebook's
+"Thinking process" section repeats them and labels them as descriptive, not
+validated learning gains.
+
 ## Provisional Bayesian Knowledge Tracing
 
 `model.json` holds unfitted prototype parameters: prior 0.20, guess 0.20, slip
@@ -147,9 +228,10 @@ explicit graph-node choices override suggestions.
 | SQLite table | Stored data |
 | --- | --- |
 | `curriculum_skills`, `prerequisites`, `problem_skills` | Loaded graph and tags |
-| `sessions` | Variant, start time, hints, tries, revealed state, last answer and original focus |
+| `sessions` | Variant, start time, hints, tries, revealed state, last answer, original focus and thinking-step progress |
 | `attempts` | Every letter and key-based result; legacy rows retained |
 | `learning_events` | First-attempt flag, help used, question kind, language, attribution, time and before/after estimates |
+| `thinking_events` | Each thinking-step choice: stage, scope, skill, choice, correctness, first-choice flag and time |
 | `student_skills` | Per-student probability, evidence/success counts and review schedule |
 
 The app derives the interactive graph and downloadable Markdown report from these
