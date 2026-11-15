@@ -8,12 +8,12 @@ const STRINGS = {
     steps_aria:'Thinking steps', understand:'Understand', plan:'Plan', check:'Check',
     heading_steps:'Think it through, one step at a time', heading_idea:'Start with an idea',
     steps_problem:'Steps for this problem', steps_skill:'General steps for {skill}, in English',
-    note_toggle:'Add a note (optional)', reflection_prompt:'What do you notice, and what could you try first?',
+    reflection_prompt:'What do you notice, and what could you try first?',
     reflection_placeholder:'I notice… My first step could be…', save_note:'Save my note', save_revised:'Save my new idea', see_choices:'Explore answer choices →',
     note_steps:'Optional. Your note is saved with your work. It is not marked.', note_free:'A rough idea is enough. You can ask for a hint before choosing.',
     note_saved:'Your idea is saved. It is a thinking note, not a test.',
     choose_answer:'Choose your answer', answer_choices:'Answer choices', check_answer:'Check my answer →', check_again:'Check again →',
-    pick_first:'Pick an answer first.', pick_other:'Pick a different answer to check again.', next_problem:'Next problem →',
+    next_problem:'Next problem →',
     hint:'Get a hint', see_answer:'See answer', see_explanation:'See explanation',
     gate_open:'You can now look at the answer and the explanation.', gate_hints:'The answer opens after two tries and one hint.', gate_plain:'The answer opens after two tries.',
     label_hint:'Hint', label_answer:'Answer', label_explanation:'Explanation', general_tip:'A general tip for this skill, in English', tutor_chose:'Chosen by your tutor',
@@ -21,7 +21,7 @@ const STRINGS = {
     correct_title:'That’s right!', wrong_title:'Try a different answer',
     yes:'Yes.', not_yet:'Not yet.',
     your_path:'Your path', your_steps:'Your steps', where_go:'Where do you want to get to?', guide_me:'Guide me',
-    tree_aria:'Skill tree: each skill helps you learn the ones to its right', legend_path:'Path to your goal', legend_goal:'Your goal',
+    tree_aria:'Skill tree: each skill helps you learn the ones to its right',
     kind_diagnostic:'Quick check', kind_prerequisite:'Let’s practise', kind_repair:'Let’s practise', kind_practice:'Let’s practise', kind_review:'Review time',
     kind_transfer:'Try something new', kind_stretch:'A challenge', kind_path:'Towards your goal', kind_chosen:'Your choice', kind_complete:'All done', kind_default:'Your next step',
     choose_next:'Choose your next challenge', start_next:'Start next step →', current_exercise:'Current problem',
@@ -29,7 +29,7 @@ const STRINGS = {
     problem_map:'Problem map',
     path_problems:'Problems on the way to {goal}', path_problems_loading:'Finding problems on the map…', path_problems_none:'No map problems for this goal yet.',
     path_problems_unavailable:'The problem map is not installed on this device.', path_problems_done:'You already solved the goal problem.',
-    diff_easy:'Easy', diff_medium:'Medium', diff_hard:'Hard', level:'Level {n}', open_problem:'Open →', solved:'Solved', goal_problem:'Goal problem', category:'Category',
+    diff_easy:'Easy', diff_medium:'Medium', diff_hard:'Hard', level:'Level {n}', solved:'Solved', goal_problem:'Goal problem', category:'Category',
     practice_notes:'Your practice notes', select_skill:'Pick a skill to see how you are doing.', practise_skill:'Practise this skill →',
     skill_none:'You have not tried this skill on your own yet.', skill_some:'You have answered {n} on your own and got {k} right.',
     review_due:'Review today', review_next:'Next review: {date}.', review_later:'A review date appears after you practise on your own.', answers_saved:'{n} answers saved.',
@@ -55,12 +55,12 @@ const STRINGS = {
     steps_aria:'Passos per pensar', understand:'Entén', plan:'Planifica', check:'Comprova',
     heading_steps:'Pensa-ho pas a pas', heading_idea:'Comença amb una idea',
     steps_problem:'Passos per a aquest problema', steps_skill:'Passos generals de {skill}, en anglès',
-    note_toggle:'Afegeix una nota (opcional)', reflection_prompt:'Què hi veus i què podries provar primer?',
+    reflection_prompt:'Què hi veus i què podries provar primer?',
     reflection_placeholder:'Hi veig… El meu primer pas podria ser…', save_note:'Desa la nota', save_revised:'Desa la nova idea', see_choices:'Mira les opcions de resposta →',
     note_steps:'Opcional. La nota es desa amb la teva feina. No es puntua.', note_free:'N’hi ha prou amb una idea aproximada. Pots demanar una pista abans de triar.',
     note_saved:'La teva idea està desada. És una nota per pensar, no un examen.',
     choose_answer:'Tria la teva resposta', answer_choices:'Opcions de resposta', check_answer:'Comprova la resposta →', check_again:'Torna a comprovar →',
-    pick_first:'Primer tria una resposta.', pick_other:'Tria una altra resposta per tornar a comprovar.', next_problem:'Problema següent →',
+    next_problem:'Problema següent →',
     hint:'Demana una pista', see_answer:'Mira la resposta', see_explanation:'Mira l’explicació',
     gate_open:'Ja pots mirar la resposta i l’explicació.', gate_hints:'La resposta s’obre després de dos intents i una pista.', gate_plain:'La resposta s’obre després de dos intents.',
     label_hint:'Pista', label_answer:'Resposta', label_explanation:'Explicació', general_tip:'Un consell general d’aquesta habilitat, en anglès', tutor_chose:'L’ha triat el teu tutor',
@@ -68,7 +68,7 @@ const STRINGS = {
     correct_title:'Ben fet!', wrong_title:'Prova una altra resposta',
     yes:'Sí.', not_yet:'Encara no.',
     your_path:'El teu camí', your_steps:'Els teus passos', where_go:'On vols arribar?', guide_me:'Guia’m',
-    tree_aria:'Arbre d’habilitats: cada habilitat t’ajuda a aprendre les que té a la dreta', legend_path:'Camí fins al teu objectiu', legend_goal:'El teu objectiu',
+    tree_aria:'Arbre d’habilitats: cada habilitat t’ajuda a aprendre les que té a la dreta',
     kind_diagnostic:'Prova ràpida', kind_prerequisite:'Practiquem', kind_repair:'Practiquem', kind_practice:'Practiquem', kind_review:'Hora de repassar',
     kind_transfer:'Prova una cosa nova', kind_stretch:'Un repte', kind_path:'Cap al teu objectiu', kind_chosen:'La teva tria', kind_complete:'Tot fet', kind_default:'El teu pas següent',
     choose_next:'Tria el teu proper repte', start_next:'Comença el pas següent →', current_exercise:'Problema actual',
@@ -76,7 +76,7 @@ const STRINGS = {
     problem_map:'Mapa de problemes',
     path_problems:'Problemes pel camí fins a {goal}', path_problems_loading:'Buscant problemes al mapa…', path_problems_none:'Encara no hi ha problemes del mapa per a aquest objectiu.',
     path_problems_unavailable:'El mapa de problemes no està instal·lat en aquest dispositiu.', path_problems_done:'Ja has resolt el problema objectiu.',
-    diff_easy:'Fàcil', diff_medium:'Mitjà', diff_hard:'Difícil', level:'Nivell {n}', open_problem:'Obre →', solved:'Resolt', goal_problem:'Problema objectiu', category:'Categoria',
+    diff_easy:'Fàcil', diff_medium:'Mitjà', diff_hard:'Difícil', level:'Nivell {n}', solved:'Resolt', goal_problem:'Problema objectiu', category:'Categoria',
     practice_notes:'Les teves notes de pràctica', select_skill:'Tria una habilitat per veure com vas.', practise_skill:'Practica aquesta habilitat →',
     skill_none:'Encara no has provat aquesta habilitat pel teu compte.', skill_some:'N’has respost {n} pel teu compte i n’has encertat {k}.',
     review_due:'Repassa-la avui', review_next:'Proper repàs: {date}.', review_later:'Quan practiquis pel teu compte, apareixerà una data de repàs.', answers_saved:'{n} respostes desades.',
@@ -148,9 +148,6 @@ function syncControls() {
   $('submit').disabled = busy || !reflected || !selected || selected === lastWrong || solved || !current?.gradable;
   $('submit').hidden = solved;
   $('submit').textContent = lastWrong ? t('check_again') : t('check_answer');
-  // A disabled primary action always says why.
-  const helper = !busy && !solved && current?.gradable && reflected ? (!selected ? t('pick_first') : selected === lastWrong ? t('pick_other') : '') : '';
-  $('submit-helper').textContent = helper; $('submit-helper').hidden = !helper;
   $('next-problem').hidden = !solved;
   $('next-problem').textContent = t('next_problem');
   $('hint').disabled = busy || !hasHints;
@@ -160,6 +157,7 @@ function syncControls() {
   $('save-reflection').disabled = busy || !current?.gradable || $('reflection').value.trim().length < 5 || $('reflection').value.trim() === savedReflection;
   $('answer-stage').hidden = !reflected;
   $('step-options').querySelectorAll('button').forEach(b => b.disabled = busy || stepsComplete() || !current?.gradable);
+  document.querySelectorAll('#path-problem-list .path-problem').forEach(b => b.disabled = busy || !b.dataset.key);
   $('save-reflection').textContent = thinkingSteps.length ? t('save_note') : reflected ? t('save_revised') : t('see_choices');
   $('solution-gate').textContent = canReveal ? t('gate_open') : hasHints ? t('gate_hints') : t('gate_plain');
   $('problem-select').disabled = busy;
@@ -276,10 +274,9 @@ function markOption(letter, state) {
 }
 function renderThinking(data) {
   const hasSteps = thinkingSteps.length > 0;
-  $('thinking').hidden = !hasSteps;
-  $('note-toggle').hidden = !hasSteps;
+  // The rail above the statement and the steps under it show together; the free note only without steps.
+  $('thinking').hidden = !hasSteps; $('progress').hidden = !hasSteps;
   $('note-area').hidden = hasSteps;
-  $('note-toggle').setAttribute('aria-expanded', 'false');
   $('step-feedback').hidden = true; $('step-feedback').textContent = '';
   $('step-options').classList.remove('resolved');
   if (!hasSteps) return;
@@ -314,8 +311,12 @@ function answerStep(choice, button) {
     // One channel during the steps: the server's message and the reason, under the options.
     const feedback = $('step-feedback');
     feedback.hidden = false; feedback.dataset.state = result.correct ? 'correct' : 'retry';
-    const label = document.createElement('strong'); label.textContent = (result.correct ? '✓ ' : '') + (result.message || (result.correct ? t('yes') : t('not_yet')));
-    feedback.replaceChildren(label, document.createTextNode(' ' + result.why));
+    // A framed band: glyph, a large headline, the reason underneath.
+    const glyph = document.createElement('span'); glyph.className = 'band-glyph'; glyph.setAttribute('aria-hidden', 'true'); glyph.textContent = result.correct ? '✓' : '✗';
+    const label = document.createElement('strong'); label.className = 'band-title'; label.textContent = result.message || (result.correct ? t('yes') : t('not_yet'));
+    const why = document.createElement('span'); why.className = 'band-body'; why.textContent = result.why || '';
+    const text = document.createElement('span'); text.className = 'band-text'; text.append(label, why);
+    feedback.replaceChildren(glyph, text);
     if (!result.correct) { button.classList.add('tried'); button.querySelector('.option-check').textContent = '✗'; return; }
     stepIndex = result.next_index;
     if (result.completed) {
@@ -329,11 +330,6 @@ function answerStep(choice, button) {
     else if (!stepsComplete()) $('step-options').querySelector('button')?.focus({preventScroll:true});
   });
 }
-$('note-toggle').onclick = () => {
-  const open = $('note-area').hidden;
-  $('note-area').hidden = !open; $('note-toggle').setAttribute('aria-expanded', String(open));
-  if (open) $('reflection').focus();
-};
 function renderMedia() {
   if (!current) return;
   const mode = $('display-mode').value;
@@ -453,22 +449,23 @@ async function renderPathProblems() {
   note.textContent = '';
   const goalId = result.goal_problem?.id || result.goal;
   steps.forEach((step, index) => {
-    const li = document.createElement('li'); li.className = 'path-problem' + (step.id === goalId ? ' goal' : '') + (step.solved ? ' solved' : '');
-    const head = document.createElement('div'); head.className = 'path-problem-head';
+    // The whole card is the button: number, category, difficulty. No question text (T-120).
+    const li = document.createElement('li'); li.className = 'path-problem-item';
+    const card = document.createElement('button'); card.type = 'button';
+    card.className = 'path-problem' + (step.id === goalId ? ' goal' : '') + (step.solved ? ' solved' : '');
+    card.dataset.key = step.key || ''; card.dataset.level = step.difficulty_label || '';
     const order = document.createElement('span'); order.className = 'path-problem-order'; order.textContent = String(index + 1).padStart(2, '0');
-    const chip = document.createElement('span'); chip.className = 'path-problem-difficulty'; chip.dataset.level = step.difficulty_label || '';
+    const category = document.createElement('span'); category.className = 'path-problem-category'; category.textContent = step.skill_name || step.category || '';
     const diff = step.difficulty_label ? t('diff_' + step.difficulty_label) : '';
-    chip.textContent = [diff, step.level != null ? t('level', {n: step.level}) : ''].filter(Boolean).join(' · ');
-    head.append(order, chip);
-    const text = document.createElement('p'); text.className = 'path-problem-text';
-    text.textContent = step.text_preview ? step.text_preview + (step.text_preview.length >= 90 ? '…' : '') : step.id;
-    const meta = document.createElement('p'); meta.className = 'path-problem-meta';
-    const category = step.skill_name || step.category || '';
-    meta.textContent = [category, step.id === goalId ? t('goal_problem') : '', step.solved ? '✓ ' + t('solved') : ''].filter(Boolean).join(' · ');
-    const open = document.createElement('button'); open.type = 'button'; open.className = 'secondary path-problem-open'; open.textContent = t('open_problem');
-    open.disabled = busy || !step.key;
-    open.onclick = () => run(async () => { await openProblem(step.key); setStudioView('practice'); $('question').focus(); });
-    li.append(head, text, meta, open); list.append(li);
+    const level = document.createElement('span'); level.className = 'path-problem-difficulty';
+    level.textContent = [diff, step.level != null ? t('level', {n: step.level}) : ''].filter(Boolean).join(' · ');
+    const extra = document.createElement('span'); extra.className = 'sr-only';
+    extra.textContent = [step.id === goalId ? t('goal_problem') : '', step.solved ? t('solved') : ''].filter(Boolean).join(', ');
+    card.append(order, category, level, extra);
+    if (step.solved) { const mark = document.createElement('span'); mark.className = 'path-problem-check'; mark.setAttribute('aria-hidden', 'true'); mark.textContent = '✓'; card.append(mark); }
+    card.disabled = busy || !step.key;
+    card.onclick = () => { if (step.key) run(async () => { await openProblem(step.key); setStudioView('practice'); $('question').focus(); }); };
+    li.append(card); list.append(li);
   });
 }
 // One small button per skill; "Guide me" clears the goal and lets progress choose the route.

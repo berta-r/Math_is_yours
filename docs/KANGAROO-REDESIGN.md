@@ -1,5 +1,7 @@
 # Kangaroo Studio · child-first redesign brief
 
+> The current rule set for the student app's look is [DESIGN.md](DESIGN.md). This brief is kept as history; where they differ, DESIGN.md wins.
+
 Status: **implemented on `ui/kangaroo-studio` (2026-11-15)**. This document records the design gate used before implementation. Review the structure and language before changing the app. The existing offline tutor, stored progress, answer gate, hints and deterministic grading remain the product foundation.
 
 ## Audience and promise

@@ -69,6 +69,7 @@ docs/DATATHON-GUIDE.md    ← organizers' guide, steps 0–15 (source of truth f
 | Know why something was decided | [docs/DECISIONS.md](docs/DECISIONS.md) |
 | Explain the selection system (difficulty, Elo, 70% rule, map, paths) | [docs/ML.md](docs/ML.md) |
 | Choose an ML improvement for the tutor | [docs/ML-OPTIONS.md](docs/ML-OPTIONS.md) |
+| Change the look of the student app | [docs/DESIGN.md](docs/DESIGN.md) |
 | Board-specific operations | [.skills/unoq-board/SKILL.md](.skills/unoq-board/SKILL.md) |
 | Change or measure the copilot | [.skills/m3kang-copilot/SKILL.md](.skills/m3kang-copilot/SKILL.md) |
 | Web page or LED matrix (App Lab) | [.skills/unoq-hardware-ui/SKILL.md](.skills/unoq-hardware-ui/SKILL.md) |
