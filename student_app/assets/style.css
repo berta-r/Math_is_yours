@@ -218,7 +218,7 @@ button.pointer-press { transform: scale(.98); transition: transform 120ms var(--
 }
 @media (max-width:440px) { .graph-toolbar button { min-height:44px; }.reflection-box { padding:14px; }.graph-search input { font-size:16px; }.skill-actions { align-items:stretch;flex-direction:column; } }
 
-/* Kangaroo Studio: an editorial shell around the existing offline tutor. */
+/* Math Is Yours: an editorial shell around the existing offline tutor. */
 :root { --ink:#192b27; --muted:#57655f; --line:#d8ddd5; --paper:#f7f5f0; --surface:#fffefa; --soft:#eeeee6; --accent:#aa472d; --green:var(--ink); color:var(--ink); background:var(--paper); font-family:Arial,"Segoe UI",system-ui,sans-serif; }
 body { min-width:320px; }
 .site-header { max-width:none; padding:18px max(24px,calc((100vw - 1440px)/2)); min-height:80px; background:var(--paper); border-color:#d9ddd5; }

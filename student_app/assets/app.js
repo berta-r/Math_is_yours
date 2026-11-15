@@ -132,7 +132,7 @@ let mediaError = false, openData = null;
 // A problem key in the URL (from the problem map) opens directly; it is consumed once.
 let pendingProblem = new URLSearchParams(location.search).get('problem');
 if (pendingProblem !== null) history.replaceState(null, '', '/');
-const NICKNAME_KEY = 'kangaroo-student';
+const NICKNAME_KEY = 'math-is-yours';
 function storedNickname() { try { return localStorage.getItem(NICKNAME_KEY) || ''; } catch { return ''; } }
 function storeNickname(name) { try { localStorage.setItem(NICKNAME_KEY, name); } catch { /* private mode: nothing to remember */ } }
 // Thinking steps: answers stay on the server; the page only knows questions and options.

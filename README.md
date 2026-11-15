@@ -1,14 +1,14 @@
-# Kangaroo Studio: an offline maths tutor on the Arduino UNO Q
+# Math Is Yours: an offline maths tutor on the Arduino UNO Q
 
 Our entry to the Datathon FME 2026, Qualcomm challenge "Math on the Edge".
 
 ## What it does
 
-Kangaroo Studio is a maths tutor that runs entirely on an Arduino UNO Q 4 GB, with no internet. A student opens a Kangaroo competition problem in English or Catalan, answers three short thinking questions (Understand, Plan, Check) before the answer choices appear, and gets feedback that names a likely slip without giving the answer away. The tutor picks the next problem from the student's own record, kept in SQLite on the board, and shows a path of gradually harder problems on a map of the training problems.
+Math Is Yours is a maths tutor that runs entirely on an Arduino UNO Q 4 GB, with no internet. A student opens a Kangaroo competition problem in English or Catalan, answers three short thinking questions (Understand, Plan, Check) before the answer choices appear, and gets feedback that names a likely slip without giving the answer away. The tutor picks the next problem from the student's own record, kept in SQLite on the board, and shows a path of gradually harder problems on a map of the training problems.
 
 > **[PHOTO/VIDEO: the board connected over USB with the tutor open in the browser. To be added on 2026-11-15 by the team.]**
 
-The repository also keeps `predict.py`, the official entry point that answers one letter A–E per problem. We did not improve it: see [Results](#results).
+The repository also keeps `predict.py`, the official entry point that answers one letter A–E per problem. It now uses a compute-first solver: a small code model writes one Python expression and Python computes the answer. See [Results](#results).
 
 ## Architecture
 
@@ -26,10 +26,12 @@ flowchart LR
     S["math-student service<br/>student_app/server.py on 127.0.0.1:7011<br/>copilot/*.py (standard library) + SQLite"]
     L["math-llm: llama-server :8081<br/>Qwen3.5 0.8B Q8_0"]
     E["math-embed: llama-server :8082<br/>bge-small-en-v1.5 Q8_0"]
+    C["math-compute: llama-server :8084<br/>Qwen2.5-Coder 1.5B Q8_0"]
     R["predict.py / eval.py<br/>copilot/pipeline.py"]
     S -- "hint selection (optional)" --> L
     R --> L
     R -- "RAG (optional)" --> E
+    R -- "SOLVER=compute" --> C
   end
   MCU["Microcontroller + 8×13 LED matrix<br/>NOT IMPLEMENTED"]
   PC["Student's PC browser"]
@@ -38,10 +40,11 @@ flowchart LR
   Board -. "Bridge (not used)" .- MCU
 ```
 
-**On the board's Linux side.** Three systemd services:
+**On the board's Linux side.** Four systemd services:
 
 - `math-llm`: `llama-server` on `127.0.0.1:8081` with Qwen3.5 0.8B Q8_0. It answers `predict.py`, and in the tutor it only chooses one of the stored, verified hints (grammar-constrained index, 25 s timeout, the stored hint is shown at once). It never writes text a student reads ([D-013](docs/DECISIONS.md)).
 - `math-embed`: `llama-server` on `127.0.0.1:8082` with bge-small-en-v1.5 Q8_0, for RAG in `predict.py` and for preparation jobs.
+- `math-compute`: `llama-server` on `127.0.0.1:8084` with Qwen2.5-Coder 1.5B Instruct Q8_0 (Apache 2.0). Used only by `predict.py` and `eval.py` when `SOLVER=compute`: it writes one Python expression per problem and Python computes the answer ([docs/COMPUTE_SOLVER.md](docs/COMPUTE_SOLVER.md)). A one-off `math-compute-warm` unit reads its examples into the server cache at boot.
 - `math-student`: `student_app/server.py` on `127.0.0.1:7011`, Python standard library only. It grades with the dataset's answer key, keeps the student record in `/var/lib/math-student/progress.db`, and uses these pure-Python modules:
 
 | Module | What it does |
@@ -86,7 +89,10 @@ Copy the prepared data from the guide's checkout into `data/` of this one (`data
 
 ### 2. Check the official entry point (board)
 
+After steps 04 and 05 of the guide, start the code model of the compute solver (it downloads 1.9 GB once, installs `math-compute` and `math-compute-warm`, and reads the examples in the background, about 6 minutes the first time):
+
 ```bash
+bash board/06_compute_server.sh
 python3 predict.py --input data/sample_problems.jsonl --output results/check.csv && cat results/check.csv
 ```
 
@@ -165,7 +171,7 @@ curl -s http://127.0.0.1:7011/api/health; echo
 free -m
 ```
 
-You should see three services `active (running)` and JSON with `"app": "kangaroo-student"` and `"status": "ready"`. `free -m` should leave well over 2 GB available (we measured a minimum of 2697 MiB with both models and the tutor, see Results).
+You should see three services `active (running)` and JSON with `"app": "math-is-yours"` and `"status": "ready"`. `free -m` should leave well over 2 GB available (we measured a minimum of 2697 MiB with both models and the tutor, see Results).
 
 ### 7. Open the tutor (PC)
 
@@ -203,8 +209,9 @@ python3 -S -m unittest discover -s student_app 2>&1 | tail -3
 | Always `D` | same 30 as below | 43.3% (13/30) | 0 s | 0 | The answer key of our small validation sample |
 | `unoq-wifi-baseline` | 30 English validation | 36.7% (11/30) | 10.4 / 25.6 s | 0 | UNO Q, RAG k=0, solver unchanged from the template, development deployment (commit `c081129` + uncommitted teaching work) |
 | `usb-setup-v1` | same 30 | 36.7% (11/30) | 8.3 / 12.3 s | 0 | Same solver; deployment continuity check, not an improvement |
+| Compute-first solver | 30 rows of the organisers' practice set (15 eng, 15 cat) | 50.0% (15/30) | 26.2 / 56.0 s | 0 | UNO Q, `SOLVER=compute`; English 9/15, Catalan 6/15; 9 rows guessed (6 need their figure); examples written after seeing the practice set, so optimistic. See [docs/COMPUTE_SOLVER.md](docs/COMPUTE_SOLVER.md) |
 
-Our board baseline trails always-`D` on this small, D-heavy sample. It does not show that the model reasons reliably, and it says nothing about the hidden test. We kept the organisers' solver unchanged on this branch.
+Our board baseline trails always-`D` on this small, D-heavy sample. It does not show that the model reasons reliably, and it says nothing about the hidden test. The compute-first solver row is on a different set (the organisers' practice set, labels balanced, always-`D` = 20%), so it is not directly comparable with the rows above.
 
 ### Teach: the tutor's models
 

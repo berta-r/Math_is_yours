@@ -166,7 +166,7 @@ def gui(payload, manifest):
         status.set('Setting up this computer…')
         root.update_idletasks()
         try:
-            result=install(payload,manifest,Path(os.environ['LOCALAPPDATA'])/'KangarooTutor')
+            result=install(payload,manifest,Path(os.environ['LOCALAPPDATA'])/'MathIsYours')
         except Exception as error:
             messagebox.showerror('Setup could not finish',str(error),parent=root)
             status.set('Your Arduino notebooks have not been changed.')
@@ -193,7 +193,7 @@ def main():
             args.verify.write_text(json.dumps({'valid':True,'version':manifest['version'],
                 'files':len(manifest['files']),'frozen':bool(getattr(sys,'frozen',False))},indent=2))
         elif args.accept:
-            result=install(payload,manifest,Path(os.environ['LOCALAPPDATA'])/'KangarooTutor')
+            result=install(payload,manifest,Path(os.environ['LOCALAPPDATA'])/'MathIsYours')
             if args.report:args.report.write_text(json.dumps(result,indent=2))
         else:
             gui(payload,manifest)

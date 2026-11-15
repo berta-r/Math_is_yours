@@ -18,8 +18,8 @@ import time
 import urllib.request
 import webbrowser
 
-APP_ID = 'kangaroo-student'
-RUN_NAME = 'KangarooTutorUSB'
+APP_ID = 'math-is-yours'
+RUN_NAME = 'MathIsYoursUSB'
 LOG = logging.getLogger('kangaroo-usb')
 
 
@@ -148,7 +148,7 @@ class Watcher:
 def installation_dir():
     if os.name != 'nt':
         raise ValueError('Login installation is Windows-only. Use watch or open on other systems.')
-    return Path(os.environ['LOCALAPPDATA'])/'KangarooTutor'
+    return Path(os.environ['LOCALAPPDATA'])/'MathIsYours'
 
 
 def install(args):
@@ -216,7 +216,7 @@ def single_instance(port):
     kernel.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
     kernel.CreateMutexW.restype = ctypes.c_void_p
     ctypes.set_last_error(0)
-    handle = kernel.CreateMutexW(None, False, f'Local\\KangarooTutorUSB-{port}')
+    handle = kernel.CreateMutexW(None, False, f'Local\\MathIsYoursUSB-{port}')
     if not handle:
         raise OSError('Could not acquire the launcher instance lock')
     if ctypes.get_last_error() == 183:

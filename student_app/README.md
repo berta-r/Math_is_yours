@@ -12,7 +12,7 @@ In a terminal at the repository root:
 python student_app/server.py
 ```
 
-Open **http://127.0.0.1:7011**. Enter a nickname and choose **Open my notebook**. The Kangaroo Studio navigation separates Solve, My path and My work while keeping your exercise in progress when you switch views.
+Open **http://127.0.0.1:7011**. Enter a nickname and choose **Open my notebook**. The Math Is Yours navigation separates Solve, My path and My work while keeping your exercise in progress when you switch views.
 Use `py` instead of `python` if necessary. Leave the terminal running; **Ctrl+C**
 stops it. Restart with the same command after code or annotation changes. If the
 port is occupied, stop the earlier server; Windows may need a short wait to release

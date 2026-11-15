@@ -167,7 +167,7 @@ security policies. macOS, Linux and Windows ARM installers are not provided.
 
 Use **Start > Math Tutor** to reopen the notebook or turn off automatic opening.
 Disabling removes only the tutor's login entry and stops its watcher. Its files
-remain under `%LOCALAPPDATA%\KangarooTutor`; board notebooks are retained. Run
+remain under `%LOCALAPPDATA%\MathIsYours`; board notebooks are retained. Run
 `START.EXE` again to enable it. The configured USB serial identifies this particular
 board; create a package for each board when distributing additional units.
 
@@ -240,14 +240,14 @@ Once that test works, install per-user automatic opening on the **PC**:
 python laptop/usb_launcher.py install --serial BOARD_SERIAL
 ```
 
-This copies the launcher/configuration into `%LOCALAPPDATA%\KangarooTutor`, adds
+This copies the launcher/configuration into `%LOCALAPPDATA%\MathIsYours`, adds
 its own named entry under the current user's Windows login startup settings, and
 starts it without a console window. Python's existing `pythonw.exe` is used;
 keep that Python installation and ADB available. No Python packages are installed.
 The watcher opens the page once per USB connection, waits through board boot, and
 opens it again after reconnection. The PC must be logged in and the helper running.
 
-Logs are in `%LOCALAPPDATA%\KangarooTutor\launcher.log`. The helper does not handle
+Logs are in `%LOCALAPPDATA%\MathIsYours\launcher.log`. The helper does not handle
 student answers, access the board database or perform model inference. A normal
 practice request stays on the USB connection and board loopback.
 

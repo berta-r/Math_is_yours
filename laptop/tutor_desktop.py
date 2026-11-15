@@ -21,7 +21,7 @@ def app_folder():
 
 
 def install_folder():
-    return Path(os.environ['LOCALAPPDATA']) / 'KangarooTutor'
+    return Path(os.environ['LOCALAPPDATA']) / 'MathIsYours'
 
 
 def load_config(path):

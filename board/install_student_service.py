@@ -25,7 +25,7 @@ def unit_text(root, user, port=7011, local_tutor=False):
         raise ValueError('Unsupported service user name')
     dependency = 'After=math-llm.service\nWants=math-llm.service\n' if local_tutor else ''
     return f'''[Unit]
-Description=Kangaroo offline student tutor
+Description=Math Is Yours offline student tutor
 {dependency}
 [Service]
 Type=simple
