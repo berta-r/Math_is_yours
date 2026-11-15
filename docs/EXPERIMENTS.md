@@ -164,6 +164,18 @@ signatures are worded as "could come from" and kept to one sentence; the copied
 number and the method-rung hint are the reliable parts. A teammate should repeat the
 30-item check before the pitch quotes a precision figure (T-112).
 
+**Update after the OCR refill (T-120, 2026-11-15 10:00).** `prepare_m3kang.py`
+had left 1069 training and 223 validation rows with empty options because the
+parser required all five A–E markers and RapidOCR often loses one. A tolerant
+parser (`laptop/prepare_m3kang.py`, tests in `laptop/test_prepare_options.py`)
+and `laptop/fill_options.py` (OCR only on the empty rows, 0.9 s/row, 19 min, raw
+boxes cached in `data/.ocr_boxes.jsonl`) filled 314 training and 55 validation
+rows (`options_source = ocr-refill`); 755 + 168 stay empty: picture options
+(most of level 0) or values the OCR lost. Signatures rebuilt on the new rows:
+970 all-numeric problems (was 805), 3880 distractors, 1189 explained (30.6%,
+was 981), 630 problems with at least one explained distractor, 153 with an
+`answer_op`. The generated content re-verifies unchanged (0 dropped).
+
 ## Difficulty model (T-102, laptop, 2026-11-15)
 
 Target: points (3/4/5) derived from the problem's position within its level-year
