@@ -161,6 +161,7 @@ class KnowledgeMap {
     if(id&&!moved)this.select(id);
     setTimeout(()=>{this.suppressClick=false;},0);
   }
-  static stateLabel(value) {return {not_assessed:'Not assessed',developing:'Developing',demonstrated:'Demonstrated independently',due:'Due for review'}[value]||value;}
+  // Child-facing labels; the server sends localised ones in profile.state_labels.
+  static stateLabel(value) {return (KnowledgeMap.labels||{})[value]||{not_assessed:'Not tried yet',developing:'Getting there',demonstrated:'Got it',due:'Time to review'}[value]||value;}
 }
 window.KnowledgeMap=KnowledgeMap;

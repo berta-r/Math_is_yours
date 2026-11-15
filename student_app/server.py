@@ -29,6 +29,90 @@ from copilot.difficulty import Difficulty
 from copilot.learning_map import LearningMap
 ASSETS = Path(__file__).resolve().parent / "assets"
 
+# Child-facing messages, by problem language. English is the fallback for any other language.
+MESSAGES = {
+    'eng': {
+        'step_done': 'Yes. Now explore the answer choices.',
+        'step_next': 'Yes. On to the next step.',
+        'step_retry': 'Not yet. Read the explanation and try another option.',
+        'correct_independent': 'Correct! You solved it on your own, first try.',
+        'correct_assisted': 'Correct! This one counts as practice with help.',
+        'wrong': 'Not quite. Try a hint or a short skill check to find the next step.',
+        'multi_skill': 'This problem mixes several skills. A quick check will show what to practise next.',
+        'reveal': 'The correct answer is {label}. From now on, this problem counts as practice with help.',
+        'no_hints': 'There are no hints for this problem yet.',
+        'no_solution': 'There is no explanation for this problem yet.',
+        'reflect_saved': 'Your idea is saved. Now look at the choices and test it.',
+        'language_fallback': 'This check is in English.',
+        'repeat': "You have seen this one before, so it is extra practice.",
+        'states': {'not_assessed': 'Not tried yet', 'developing': 'Getting there',
+                   'demonstrated': 'Got it', 'due': 'Time to review'},
+        'summary': {
+            'diagnostic': "Let's see what you already know about {skill}.",
+            'prerequisite': '{skill} will help you with harder problems. Practise it now.',
+            'repair': 'Practise {skill} with a new problem.',
+            'practice': 'Practise {skill} with a new problem.',
+            'review': 'It is time to review {skill}.',
+            'transfer': 'Try {skill} in a new kind of problem.',
+            'path': 'This is the next step towards your goal: {skill}.',
+            'chosen': 'You chose to practise {skill}.',
+            'stretch': 'A challenge in {skill}. Hints are ready if you need them.',
+            'complete': 'You have tried every problem here. Pick any one for extra practice.',
+        },
+        'step_reason': {'not_assessed': 'Start with a quick check.', 'developing': 'Practise with a new problem.',
+                        'demonstrated': 'Use it in a new kind of problem.', 'due': 'Time for a short review.'},
+    },
+    'cat': {
+        'step_done': 'Molt bé. Ara mira les opcions de resposta.',
+        'step_next': 'Molt bé. Passem al pas següent.',
+        'step_retry': "Encara no. Llegeix l'explicació i prova una altra opció.",
+        'correct_independent': "Correcte! L'has resolt pel teu compte al primer intent.",
+        'correct_assisted': 'Correcte! Aquest compta com a pràctica amb ajuda.',
+        'wrong': 'Gairebé. Demana una pista o fes una prova curta per trobar el pas següent.',
+        'multi_skill': 'Aquest problema barreja diverses habilitats. Una prova curta et dirà què has de practicar.',
+        'reveal': 'La resposta correcta és la {label}. A partir d’ara, aquest problema compta com a pràctica amb ajuda.',
+        'no_hints': 'Encara no hi ha pistes per a aquest problema.',
+        'no_solution': 'Encara no hi ha cap explicació per a aquest problema.',
+        'reflect_saved': 'La teva idea està desada. Ara mira les opcions i posa-la a prova.',
+        'language_fallback': 'Aquesta prova només està en anglès.',
+        'repeat': 'Aquest ja l’has vist abans, així que és pràctica extra.',
+        'states': {'not_assessed': 'Encara no l’has provat', 'developing': 'Hi estàs arribant',
+                   'demonstrated': 'Ho tens!', 'due': 'Toca repassar'},
+        'summary': {
+            'diagnostic': 'Vegem què saps de {skill}.',
+            'prerequisite': '{skill} t’ajudarà amb problemes més difícils. Practica-ho ara.',
+            'repair': 'Practica {skill} amb un problema nou.',
+            'practice': 'Practica {skill} amb un problema nou.',
+            'review': 'És hora de repassar {skill}.',
+            'transfer': 'Prova {skill} en un problema diferent.',
+            'path': 'Aquest és el pas següent cap al teu objectiu: {skill}.',
+            'chosen': 'Has triat practicar {skill}.',
+            'stretch': 'Un repte de {skill}. Si et cal, tens pistes.',
+            'complete': 'Ja has provat tots els problemes. Tria el que vulguis per practicar més.',
+        },
+        'step_reason': {'not_assessed': 'Comença amb una prova curta.', 'developing': 'Practica amb un problema nou.',
+                        'demonstrated': 'Fes-ho servir en un problema diferent.', 'due': 'Toca un repàs curt.'},
+    },
+}
+
+
+def messages(language):
+    """Message table for a problem language ('cat', 'eng', ...); English when unknown."""
+    return MESSAGES.get(language if isinstance(language, str) else 'eng', MESSAGES['eng'])
+
+
+def child_summary(result, language):
+    """A plain sentence for the child; the technical `reason` stays for the method note."""
+    table = messages(language)
+    kind = result.get('kind') or 'practice'
+    text = table['summary'].get(kind, table['summary']['practice']).format(skill=result.get('skill') or '')
+    if result.get('problem') and result.get('fresh') is False:
+        text += ' ' + table['repeat']
+    return text
+
+
+FONTS = {'/fonts/archivo-latin.woff2': 'archivo-latin.woff2', '/fonts/archivo-latin-ext.woff2': 'archivo-latin-ext.woff2'}
+
 
 @contextmanager
 def connection(db):
@@ -189,7 +273,11 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 tags = knowledge.annotation(problem)['skills'] if problem else []
                 if tags:
                     goal = min(tags, key=lambda sid: (state[sid]['evidence'] > 0, state[sid]['mastery'], sid))
-        return build_path(state, knowledge, goal=goal, related_edges=graph.related_edges)
+        route = build_path(state, knowledge, goal=goal, related_edges=graph.related_edges)
+        reasons = messages(body.get('language'))['step_reason']
+        for step in route['steps']:
+            step['child_reason'] = reasons['due'] if step.get('due') else reasons.get(step['state'], step['reason'])
+        return route
 
     def thinking_step(con, student, session, key, body):
         """Check one multiple-choice process question. Pure Python: no model call, no mastery update."""
@@ -217,7 +305,8 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         done = session['steps_done'] + int(correct)
         con.execute('UPDATE sessions SET steps_done=?, steps_wrong=steps_wrong+? WHERE id=?', (done, int(not correct), session['id']))
         completed = done >= len(steps)
-        message = ('Yes. Now explore the answer choices.' if completed else 'Yes. On to the next step.') if correct else 'Not yet. Read the explanation and try another option.'
+        table = messages(problems[key]['language'])
+        message = table['step_done' if completed else 'step_next'] if correct else table['step_retry']
         return {'correct': correct, 'why': step['why'], 'stage': step['stage'], 'next_index': done,
                 'completed': completed, 'message': message}
 
@@ -252,6 +341,15 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 self.send_response(200)
                 self.send_header("Content-Type", mime)
                 self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("Content-Length", str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+                return
+            if path in FONTS:
+                raw = (ASSETS / 'fonts' / FONTS[path]).read_bytes()
+                self.send_response(200)
+                self.send_header('Content-Type', 'font/woff2')  # binary: no charset
+                self.send_header('Cache-Control', 'max-age=86400')
                 self.send_header("Content-Length", str(len(raw)))
                 self.end_headers()
                 self.wfile.write(raw)
@@ -307,7 +405,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                         'rating': student_model.ratings(con, student), 'difficulty_enabled': difficulty_enabled,
                         'attempts': con.execute('SELECT count(*) FROM attempts WHERE student=?', (student,)).fetchone()[0],
                         'parameters': knowledge.model, 'tutor': 'local selection' if local_tutor else 'stored guidance',
-                        'coverage': coverage()}
+                        'coverage': coverage(), 'state_labels': messages(body.get('language'))['states']}
             if path == '/api/recommendation':
                 goal = body.get('goal')
                 learning_path = learning_route(con, student, body)
@@ -331,6 +429,10 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                             result['return_to'] = previous['return_to'] or previous['problem']
                     if not result['fresh']:
                         result['reason'] += ' This repeats an exposed item; it will not count as new independent evidence.'
+                language = body.get('language') or 'eng'
+                result['summary'] = child_summary(result, language)
+                if result.get('language_fallback'):
+                    result['language_note'] = messages(language)['language_fallback']
                 result['learning_path'] = learning_path
                 return result
             if path == '/api/map':
@@ -371,7 +473,9 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 return {'version': 'connected-graph-v2', "sources": catalog.sources, 'coverage': coverage(),
                         "problems": [{"key": key, "id": p["id"], "skill": content(key)[0],
                          'skills': knowledge.annotation(p)['skills'], 'tags_source': knowledge.tag_source(p), 'kind': p.get('kind', 'exercise'),
-                         "language": p["language"], "format": catalog.public(key)["format"]} for key, p in problems.items()]}
+                         "language": p["language"], "format": catalog.public(key)["format"],
+                         # A short, child-readable label for the problem picker (T-101).
+                         'preview': ' '.join((p.get('text') or '').split())[:60]} for key, p in problems.items()]}
             if path not in ("/api/answer", "/api/hint", "/api/solution", "/api/reveal", '/api/reflect', '/api/step'):
                 raise ValueError("Unknown action")
             session = con.execute("SELECT * FROM sessions WHERE id=? AND student=?", (body.get("session"), student)).fetchone()
@@ -380,12 +484,13 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
             pid = session["problem"]
             if pid not in problems:
                 raise ValueError("This problem is no longer loaded. Open another problem.")
+            table = messages(problems[pid]['language'])
             if path == '/api/reflect':
                 reflection = body.get('reflection')
                 if not isinstance(reflection, str) or not 5 <= len(reflection.strip()) <= 1200:
                     raise ValueError('Write a short thought or question (5–1200 characters) before choosing an answer.')
                 con.execute('UPDATE sessions SET reflection=? WHERE id=?', (reflection.strip(), session['id']))
-                return {'reflection_saved': True, 'message': 'Your thinking is saved. Explore the choices and test your idea.'}
+                return {'reflection_saved': True, 'message': table['reflect_saved']}
             if path == '/api/step':
                 return thinking_step(con, student, session, pid, body)
             if path in ('/api/reveal', '/api/solution') and not can_reveal(session, pid):
@@ -395,7 +500,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 if label not in list("ABCDE"):
                     raise ValueError("No official answer key is available for this problem.")
                 con.execute("UPDATE sessions SET revealed=1 WHERE id=?", (session["id"],))
-                return {"answer": label, "message": f"The official correct answer is {label}. Further attempts on this problem count as assisted practice."}
+                return {"answer": label, "message": table['reveal'].format(label=label)}
             if path == "/api/hint":
                 # After a wrong answer with a generated Socratic question, that question is the first hint.
                 slip = misconceptions.explain(problems[pid], session['last_answer']) if session['last_answer'] and not session['solved'] else None
@@ -405,7 +510,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                             'can_reveal': can_reveal(dict(session, hints=session['hints'] + 1), pid)}
                 hints, scope = knowledge.hints(problems[pid])
                 if not hints:
-                    return {"message": "Reviewed hints are not yet available for this dataset problem.", 'can_reveal': can_reveal(session, pid)}
+                    return {"message": table['no_hints'], 'can_reveal': can_reveal(session, pid)}
                 # A missed plan step or a recognised slip means the student needs the method,
                 # so skip the broad first prompt.
                 missed_plan = session['steps_wrong'] > 0 and con.execute(
@@ -422,7 +527,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
             if path == "/api/solution":
                 text, scope = knowledge.solution(problems[pid])
                 if not text:
-                    return {"message": "A reviewed explanation is not yet available for this problem."}
+                    return {"message": table['no_solution']}
                 con.execute("UPDATE sessions SET revealed=1 WHERE id=?", (session["id"],))
                 return {"message": text, 'scope': scope}
             answer = body.get("answer")
@@ -452,9 +557,9 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                                             difficulty=difficulty)
             con.execute("UPDATE sessions SET tries=tries+1, solved=?, last_answer=?, misconception=? WHERE id=?",
                         (int(correct), answer, slip['op'] if slip else session['misconception'], session["id"]))
-            message = ('Correct! Independent first-attempt success.' if independent else 'Correct! Recorded as assisted or repeat practice.') if correct else 'Not quite. Try a hint or a short skill check to find the next step.'
+            message = table['correct_independent' if independent else 'correct_assisted'] if correct else table['wrong']
             if evidence['reason'] == 'multi_skill_requires_diagnostic':
-                message += ' This problem combines skills; a short diagnostic will help identify what to practise.'
+                message += ' ' + table['multi_skill']
             result = {"correct": correct, "message": message, 'evidence': evidence,
                       'can_reveal': can_reveal(dict(session, tries=session['tries'] + 1, solved=int(correct)), pid)}
             if slip:
