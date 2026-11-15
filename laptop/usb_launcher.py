@@ -18,7 +18,7 @@ import time
 import urllib.request
 import webbrowser
 
-APP_ID = 'math-is-yours'
+APP_ID = 'kangaroo-student'
 RUN_NAME = 'MathIsYoursUSB'
 LOG = logging.getLogger('kangaroo-usb')
 

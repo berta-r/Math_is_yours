@@ -6,7 +6,7 @@
 
 ## Summary
 
-**T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) everywhere: app title, docs, pitch, app id `math-is-yours`, launcher folder `MathIsYours`, board service description. Reinstall the Windows launcher from a new bundle after deploying, since the app id and folder changed.
+**T-125 one product name (2026-11-15):** the tutor is Math Is Yours (MIY) everywhere: app title, docs, pitch, app id kept as `kangaroo-student` so the launcher already installed on the demo PC keeps opening the tutor (fix/launcher-app-id), launcher folder `MathIsYours`, board service description. Reinstall the Windows launcher from a new bundle after deploying, since the app id and folder changed.
 
 **T-129 implemented offline coach (2026-11-15, laptop):** main through `0b42034`
 is merged into `exp/slm-learning-coach` (`1dc4805`). Its current UI, assessment
