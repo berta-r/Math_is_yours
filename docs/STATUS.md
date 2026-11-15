@@ -6,6 +6,8 @@
 
 ## Summary
 
+**T-108/T-109 error signatures (2026-11-15, laptop only, branch `exp/ml-tutor`):** a laptop script explains 981 of 3220 numeric distractors with a naive operation on the problem's numbers (`data/ml/signatures.json`), and after a matching wrong answer the student app says which operation gives that number, without revealing the answer, and starts hints at the method rung; BKT is unchanged and nothing is deployed yet (T-110).
+
 **T-091 thinking steps (2026-11-14, laptop only, uncommitted on `ui/thinking-steps`):**
 before the A–E choices, students now answer three multiple-choice process steps
 (Understand · Plan · Check) with immediate, model-free feedback; the written note

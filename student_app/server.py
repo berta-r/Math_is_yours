@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from copilot.knowledge import Knowledge, leaked
+from copilot.misconceptions import Misconceptions
 from copilot import student_model, scheduler
 from copilot.config import CONFIG
 from copilot.tutor import Tutor
@@ -52,11 +53,13 @@ def initialize(db):
         student_model.initialize(con)
 
 
-def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, local_tutor=False):
+def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, local_tutor=False, signatures=None):
     catalog = catalog or Catalog([ROOT / "data/sample_problems.jsonl"], ROOT / "data/images")
     knowledge = knowledge or Knowledge(annotations=[ROOT / 'data/teaching_annotations.json'])
     graph = LearningGraph(knowledge, artifact=ROOT / 'data/skill_graph.json')
     tutor = Tutor(enabled=local_tutor, port=int(CONFIG['LLM_PORT']))
+    # Optional laptop artifact (T-108); missing file means no misconception feedback.
+    misconceptions = Misconceptions(signatures) if signatures else Misconceptions()
     if include_diagnostics:
         for p in knowledge.diagnostics:
             catalog.problems[p['id'] + '|' + p['language']] = p
@@ -307,12 +310,15 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 hints, scope = knowledge.hints(problems[pid])
                 if not hints:
                     return {"message": "Reviewed hints are not yet available for this dataset problem.", 'can_reveal': can_reveal(session, pid)}
-                # A missed plan step means the student needs the method, so skip the broad first prompt.
+                # A missed plan step or a recognised slip means the student needs the method,
+                # so skip the broad first prompt.
                 missed_plan = session['steps_wrong'] > 0 and con.execute(
                     "SELECT 1 FROM thinking_events WHERE session_id=? AND stage='plan' AND first=1 AND correct=0", (session['id'],)).fetchone()
-                rung = min(session["hints"] + (1 if missed_plan else 0), len(hints) - 1)
+                rung = min(session["hints"] + (1 if missed_plan or session['misconception'] else 0), len(hints) - 1)
                 con.execute("UPDATE sessions SET hints=hints+1 WHERE id=?", (session["id"],))
                 context = session['reflection'] or steps_summary(con, session, pid)
+                if session['misconception']:
+                    context += f"; misconception: {session['misconception']}"
                 result = tutor.request(student, problems[pid], content(pid)[0], session['last_answer'], hints, rung, scope, reflection=context)
                 updated = dict(session, hints=session['hints'] + 1)
                 return dict(result, can_reveal=can_reveal(updated, pid))
@@ -342,14 +348,20 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
             independent = correct and eligible
             attempt_id = con.execute("INSERT INTO attempts(student,problem,answer,correct,independent) VALUES(?,?,?,?,?)", (student, pid, answer, int(correct), int(independent))).lastrowid
             reason = 'independent_first_attempt' if eligible else 'assisted' if session['hints'] or session['revealed'] else 'repeat_or_translation'
+            slip = None if correct else misconceptions.explain(problems[pid], answer)
             evidence = student_model.record(con, student, session, problems[pid], knowledge.annotation(problems[pid]), correct,
-                                            attempt_id, eligible, reason, knowledge)
-            con.execute("UPDATE sessions SET tries=tries+1, solved=?, last_answer=? WHERE id=?", (int(correct), answer, session["id"]))
+                                            attempt_id, eligible, reason, knowledge, misconception=slip and slip['op'])
+            con.execute("UPDATE sessions SET tries=tries+1, solved=?, last_answer=?, misconception=? WHERE id=?",
+                        (int(correct), answer, slip['op'] if slip else session['misconception'], session["id"]))
             message = ('Correct! Independent first-attempt success.' if independent else 'Correct! Recorded as assisted or repeat practice.') if correct else 'Not quite. Try a hint or a short skill check to find the next step.'
             if evidence['reason'] == 'multi_skill_requires_diagnostic':
                 message += ' This problem combines skills; a short diagnostic will help identify what to practise.'
-            return {"correct": correct, "message": message, 'evidence': evidence,
-                    'can_reveal': can_reveal(dict(session, tries=session['tries'] + 1, solved=int(correct)), pid)}
+            result = {"correct": correct, "message": message, 'evidence': evidence,
+                      'can_reveal': can_reveal(dict(session, tries=session['tries'] + 1, solved=int(correct)), pid)}
+            if slip:
+                result['message'] += ' ' + slip['message']
+                result['misconception'] = {'op': slip['op'], 'answer_op': slip['answer_op']}
+            return result
     return Handler
 
 

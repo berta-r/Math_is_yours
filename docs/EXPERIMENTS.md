@@ -111,3 +111,43 @@ notebook prints them. They are descriptive indicators: steps never change BKT.
 Also planned for T-093: hints requested per problem before and after steps were
 introduced, on comparable problems. Nothing has been measured yet.
 
+
+## Error signatures (T-108)
+
+`laptop/ml/signatures.py` on 2026-11-15 (laptop, standard library, 0.2 s). Input:
+`data/train.jsonl` + `data/val.jsonl` (1747 canonical problems, English row used,
+Catalan row checked for the same numeral multiset). Coincidence limit 0.6; costs and
+order as in [laptop/ml/README.md](../laptop/ml/README.md). Report:
+`results/signatures-report.json`.
+
+| Measure | Value |
+| --- | --- |
+| Problems considered | 1747 |
+| Problems with all five options numeric | 805 |
+| Distractors (4 per numeric problem) | 3220 |
+| Distractors explained | 981 (30.5%) |
+| … excluding copied number and off-by-one-from-answer | 402 (12.5%) |
+| Matches dropped as coincidental | 407 |
+| Problems with ≥ 1 explained distractor | 518 |
+| Problems with an unambiguous `answer_op` | 125 |
+| English/Catalan pairs whose numerals differ | 40 (OCR/translation, e.g. `lvl-0_2015_4`); English row used |
+
+Operations: answer −1 246, answer +1 215, copied number 118, difference 55, sum 52,
+double 49, half 49, product 30, ×10 24, quotient 20, count of numbers 19, −1 17,
+÷10 16, +1 16, (a+b)×c 14, add all 11, a×b−c 9, square 7, (a−b)×c 6, a×b+c 5,
+multiply all 3. Samples: 15/20 distractors explained.
+
+Ablation of the coincidence limit (same input): no limit 1388 explained (43.1%);
+0.67 → 1075; **0.6 → 981 (chosen)**; 0.5 → 962 but drops the textbook (2+3)×4 slip in
+sample-2; 0.34 → 834. Two rule changes after a first spot check: the copied-number
+match is tried first (a "10" in the text was explained as "11 − 1"), and sums or
+differences with 0 and products or quotients with 1 are not generated.
+
+**Spot check (agent, not yet a human review):** 30 random explained distractors
+(seed 2026, off-by-one excluded) were judged against the problem text: 11/30 are a
+plausible slip (8 of them copied numbers, e.g. "48 children" answering "how many
+families"), 19/30 are coincidences, mostly small values or numbers like years.
+Conclusion: real Kangaroo problems rarely fail by one naive operation, so arithmetic
+signatures are worded as "could come from" and kept to one sentence; the copied
+number and the method-rung hint are the reliable parts. A teammate should repeat the
+30-item check before the pitch quotes a precision figure (T-112).

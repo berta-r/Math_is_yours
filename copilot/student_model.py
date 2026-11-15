@@ -42,12 +42,15 @@ def initialize(con):
     ''')
     columns = {r[1] for r in con.execute('PRAGMA table_info(sessions)')}
     for name, definition in [('started_at', 'TEXT'), ('return_to', 'TEXT'), ('last_answer', 'TEXT'), ('reflection', "TEXT NOT NULL DEFAULT ''"),
-                             ('steps_done', 'INTEGER NOT NULL DEFAULT 0'), ('steps_wrong', 'INTEGER NOT NULL DEFAULT 0')]:
+                             ('steps_done', 'INTEGER NOT NULL DEFAULT 0'), ('steps_wrong', 'INTEGER NOT NULL DEFAULT 0'),
+                             ('misconception', 'TEXT')]:
         if name not in columns:
             con.execute(f'ALTER TABLE sessions ADD COLUMN {name} {definition}')
     event_columns = {r[1] for r in con.execute('PRAGMA table_info(learning_events)')}
     if 'reflection' not in event_columns:
         con.execute("ALTER TABLE learning_events ADD COLUMN reflection TEXT NOT NULL DEFAULT ''")
+    if 'misconception' not in event_columns:
+        con.execute('ALTER TABLE learning_events ADD COLUMN misconception TEXT')
 
 
 def states(con, student, knowledge, now=None):
@@ -70,7 +73,8 @@ def states(con, student, knowledge, now=None):
     return result
 
 
-def record(con, student, session, problem, annotation, correct, attempt_id, eligible, reason, knowledge, now=None):
+def record(con, student, session, problem, annotation, correct, attempt_id, eligible, reason, knowledge, now=None, misconception=None):
+    """Store one answer. `misconception` (an error-signature op) is descriptive only: it never changes BKT."""
     now = now or utc_now()
     primary = annotation.get('assessment_skill')
     if not primary:
@@ -101,7 +105,8 @@ def record(con, student, session, problem, annotation, correct, attempt_id, elig
       (attempt_id, student, session['id'], problem['id'], problem['language'], problem.get('kind', 'exercise'), primary,
        int(correct), int(session['tries'] == 0), session['hints'], session['revealed'], int(eligible), reason,
        before, after, seconds, now))
-    con.execute('UPDATE learning_events SET reflection=? WHERE attempt_id=?', (session['reflection'] or '', attempt_id))
+    con.execute('UPDATE learning_events SET reflection=?, misconception=? WHERE attempt_id=?',
+                (session['reflection'] or '', misconception, attempt_id))
     return {'updated': eligible, 'skill_id': primary, 'reason': reason,
             'before': round(before, 4) if before is not None else None, 'after': round(after, 4) if after is not None else None}
 
@@ -169,6 +174,13 @@ def report(con, student, knowledge, now=None):
     lines.extend(['', f"First-attempt accuracy when every step was right first try: {percent(summary['first_attempt_accuracy_when_steps_right'])}; "
                       f"when a step was missed: {percent(summary['first_attempt_accuracy_when_step_missed'])}.",
                   'These are descriptive indicators, not validated learning gains, and they never change the skill estimates.'])
+    slips = con.execute('''SELECT misconception, count(*) FROM learning_events WHERE student=? AND misconception IS NOT NULL
+                           GROUP BY misconception ORDER BY count(*) DESC, misconception LIMIT 8''', (student,)).fetchall()
+    if slips:
+        lines.extend(['', '## Common slips', '',
+                      'Wrong answers that match a naive operation on the numbers in the problem (likely slips, not diagnoses).', '',
+                      '| Slip | Times |', '| --- | --- |'])
+        lines.extend(f"| {row[0].replace('_', ' ')} | {row[1]} |" for row in slips)
     lines.extend(['', '## Student reasoning', '', 'Student-written notes; their mathematical correctness has not been assessed.', ''])
     for row in con.execute("SELECT problem_id,reflection FROM learning_events WHERE student=? AND reflection!='' ORDER BY id DESC LIMIT 10", (student,)):
         clean = row['reflection'].replace('\r', ' ').replace('\n', ' ')
