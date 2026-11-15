@@ -102,3 +102,15 @@ before `/api/answer` is accepted; reviewed answers are gated after attempts/help
 `GET /api/health` identifies the app and reports bounded local-model readiness.
 Deployment tools install a board boot service with a stable database location and
 a PC USB watcher. See [deployment workflow](../board/STUDENT_DEPLOYMENT.md).
+
+### ML tutor modules (T-101 to T-109)
+
+All optional: each loads a laptop-built artifact from `data/ml/` (gitignored, shipped
+by T-110) and falls back to the earlier behaviour when the file is missing.
+
+| Module | Artifact | Used by |
+| --- | --- | --- |
+| `copilot/difficulty.py` | `difficulty.json`, `difficulty_model.json` | Problem difficulty b in [0, 1], `probability`, `elo_update`; `student_model` keeps `student_elo` and `scheduler` targets p ≈ 0.7 |
+| `copilot/learning_map.py` | `problem_map.json` | `POST /api/map`, `POST /api/path` and the `/map` page (`assets/map.html`, `assets/map.js`) |
+| `copilot/alignment.py` | `procrustes.json` | `rag.Index` rotates Catalan query vectors when `ALIGN_CATALAN=1` (default 0) |
+| `copilot/misconceptions.py` | `signatures.json` | Wrong-answer feedback naming a likely slip |

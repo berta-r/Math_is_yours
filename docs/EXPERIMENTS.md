@@ -200,3 +200,9 @@ Artifacts: `data/ml/problem_map.json`, `results/map-metrics.json`.
 vectors (`laptop/ml/embed_problems.py --local`) because the board was unreachable
 overnight. Regenerate with `--port 8082` (board GGUF Q8) before quoting numbers in
 the final README; differences are expected to be small.
+
+## Catalan query alignment in RAG (T-105, 2026-11-15)
+
+`ALIGN_CATALAN=1` maps Catalan query vectors with `data/ml/procrustes.json`
+before the cosine search in `copilot/rag.py` (default 0: `predict.py` unchanged).
+Not yet measured on the board: run `eval.py --languages cat --name align-cat` with ALIGN_CATALAN=1.

@@ -1,5 +1,26 @@
-"""Provisional BKT and separate review dates. No model fitting or network calls."""
+"""Provisional BKT and separate review dates. No model fitting or network calls.
+
+An Elo-style ability rating (T-103) runs beside BKT and never changes it: one
+global theta (skill_id '*') and one per primary skill, updated only after an
+independent first attempt with ``difficulty.elo_update``. Ratings start at
+INITIAL_THETA = 0.25, the middle of the level-2 band on the [0, 1] difficulty
+scale (b = level / 8), a cautious start for the 8-12 year olds the app targets.
+"""
 from datetime import datetime, timedelta, timezone
+
+from . import difficulty as difficulty_module
+
+INITIAL_THETA = 0.25
+GLOBAL = '*'
+_difficulty = None
+
+
+def default_difficulty():
+    """Shared Difficulty() built on first use, so old callers of record() keep working."""
+    global _difficulty
+    if _difficulty is None:
+        _difficulty = difficulty_module.Difficulty()
+    return _difficulty
 
 
 def utc_now():
@@ -39,6 +60,9 @@ def initialize(con):
       skill_id TEXT, scope TEXT NOT NULL, choice INTEGER NOT NULL, correct INTEGER NOT NULL,
       first INTEGER NOT NULL, seconds REAL NOT NULL, created TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS thinking_student ON thinking_events(student, session_id);
+    CREATE TABLE IF NOT EXISTS student_elo (
+      student TEXT, skill_id TEXT, theta REAL NOT NULL,
+      updates INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(student, skill_id));
     ''')
     columns = {r[1] for r in con.execute('PRAGMA table_info(sessions)')}
     for name, definition in [('started_at', 'TEXT'), ('return_to', 'TEXT'), ('last_answer', 'TEXT'), ('reflection', "TEXT NOT NULL DEFAULT ''"),
@@ -73,9 +97,37 @@ def states(con, student, knowledge, now=None):
     return result
 
 
-def record(con, student, session, problem, annotation, correct, attempt_id, eligible, reason, knowledge, now=None, misconception=None):
-    """Store one answer. `misconception` (an error-signature op) is descriptive only: it never changes BKT."""
+def ratings(con, student):
+    """{'global': theta, 'by_skill': {skill: theta}, 'updates': n} with the initial value when unrated."""
+    rows = {r[0]: (r[1], r[2]) for r in con.execute('SELECT skill_id, theta, updates FROM student_elo WHERE student=?', (student,))}
+    theta, updates = rows.pop(GLOBAL, (INITIAL_THETA, 0))
+    return {'global': round(theta, 4), 'by_skill': {sid: round(v[0], 4) for sid, v in sorted(rows.items())}, 'updates': updates}
+
+
+def theta(con, student, skill_id=GLOBAL):
+    row = con.execute('SELECT theta FROM student_elo WHERE student=? AND skill_id=?', (student, skill_id)).fetchone()
+    return row[0] if row else None
+
+
+def update_elo(con, student, skill_id, b, correct):
+    before = theta(con, student, skill_id)
+    before = INITIAL_THETA if before is None else before
+    after = difficulty_module.elo_update(before, b, correct)
+    con.execute('''INSERT INTO student_elo(student,skill_id,theta,updates) VALUES(?,?,?,1)
+      ON CONFLICT(student,skill_id) DO UPDATE SET theta=excluded.theta, updates=updates+1''', (student, skill_id, after))
+    return before, after
+
+
+def record(con, student, session, problem, annotation, correct, attempt_id, eligible, reason, knowledge, now=None, misconception=None,
+           difficulty=None):
+    """Store one answer. `misconception` (an error-signature op) is descriptive only: it never changes BKT.
+
+    The Elo rating uses the attempt's own eligibility (independent first attempt),
+    so the global theta also moves on unclassified or multi-skill problems that
+    BKT cannot attribute to one skill.
+    """
     now = now or utc_now()
+    independent = eligible
     primary = annotation.get('assessment_skill')
     if not primary:
         eligible, reason = False, 'multi_skill_requires_diagnostic' if annotation.get('skills') else 'unclassified'
@@ -107,8 +159,16 @@ def record(con, student, session, problem, annotation, correct, attempt_id, elig
        before, after, seconds, now))
     con.execute('UPDATE learning_events SET reflection=?, misconception=? WHERE attempt_id=?',
                 (session['reflection'] or '', misconception, attempt_id))
+    current = theta(con, student)
+    elo_before = elo_after = INITIAL_THETA if current is None else current
+    if independent:
+        b = (difficulty or default_difficulty()).b(problem['id'], problem.get('level'))
+        elo_before, elo_after = update_elo(con, student, GLOBAL, b, correct)
+        if primary:
+            update_elo(con, student, primary, b, correct)
     return {'updated': eligible, 'skill_id': primary, 'reason': reason,
-            'before': round(before, 4) if before is not None else None, 'after': round(after, 4) if after is not None else None}
+            'before': round(before, 4) if before is not None else None, 'after': round(after, 4) if after is not None else None,
+            'elo_before': round(elo_before, 4), 'elo_after': round(elo_after, 4)}
 
 
 STAGES = ('understand', 'plan', 'check')

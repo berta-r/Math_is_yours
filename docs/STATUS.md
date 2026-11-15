@@ -6,6 +6,8 @@
 
 ## Summary
 
+**T-103/T-105/T-107 integration (2026-11-15, laptop only, branch `exp/ml-tutor`):** the student app keeps an Elo rating beside BKT and picks problems near a 70% predicted success with an explained reason, serves a standalone problem map at `/map?student=<nickname>` with stepping-stone paths, and `ALIGN_CATALAN` (off by default) can rotate Catalan RAG queries; 93 student-app tests pass, nothing is deployed or measured on the board yet.
+
 **T-097 flat interface correction (2026-11-15, laptop only):** the decorative arithmetic preview and white/pale-blue cards are removed. The nickname field sits directly on the blue landing area with a black underline; Solve, My path and My work use spacing and separators. A final answer now produces a large green or red inline signal with reduced-motion support. Chrome at 390/1440px showed no page errors or overflow, both answer states were exercised, and all 75 current student-app tests pass. Physical touch and board visual review are pending.
 
 **ML tutor bundle, night of 2026-11-15 (laptop only, board unreachable from this Mac):** difficulty model from Kangaroo paper position (ensemble 0.516 vs 0.395 majority on 2023–24), Procrustes Catalan→English alignment (held-out recall@1 0.50 → 0.72), 1747-problem map with 15 clusters and stepping-stone paths, and error signatures with misconception feedback (30.5% of numeric distractors explained; an automated spot check found only 11/30 explanations plausible, so the wording is tentative and a human check is pending). Board code for these is pure Python with tests; server integration, deployment and board timing are in progress. See [ML-OPTIONS.md](ML-OPTIONS.md) and the EXPERIMENTS rows.

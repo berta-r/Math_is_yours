@@ -25,6 +25,8 @@ from copilot import student_model, scheduler
 from copilot.config import CONFIG
 from copilot.tutor import Tutor
 from copilot.learning_graph import LearningGraph, build_path
+from copilot.difficulty import Difficulty
+from copilot.learning_map import LearningMap
 ASSETS = Path(__file__).resolve().parent / "assets"
 
 
@@ -53,13 +55,18 @@ def initialize(db):
         student_model.initialize(con)
 
 
-def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, local_tutor=False, signatures=None):
+def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, local_tutor=False, signatures=None,
+                 difficulty=None, map_path=None):
     catalog = catalog or Catalog([ROOT / "data/sample_problems.jsonl"], ROOT / "data/images")
     knowledge = knowledge or Knowledge(annotations=[ROOT / 'data/teaching_annotations.json'])
     graph = LearningGraph(knowledge, artifact=ROOT / 'data/skill_graph.json')
     tutor = Tutor(enabled=local_tutor, port=int(CONFIG['LLM_PORT']))
     # Optional laptop artifact (T-108); missing file means no misconception feedback.
     misconceptions = Misconceptions(signatures) if signatures else Misconceptions()
+    # Optional laptop artifacts (T-102, T-106); missing files keep today's behaviour.
+    difficulty = difficulty if difficulty is not None else Difficulty()
+    difficulty_enabled = bool(difficulty.problems)
+    problem_map = LearningMap(map_path)
     if include_diagnostics:
         for p in knowledge.diagnostics:
             catalog.problems[p['id'] + '|' + p['language']] = p
@@ -88,6 +95,57 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
         names = [knowledge.skills[sid]['title'] for sid in annotation['skills']]
         hints, _ = knowledge.hints(p)
         return (' + '.join(names) or 'Unclassified', hints, annotation.get('solution') if annotation.get('language', 'eng') == p['language'] else None)
+
+    by_id = {}
+    for key, p in problems.items():
+        by_id.setdefault(p['id'], {}).setdefault(p['language'], key)
+
+    def solved_and_exposed(con, student):
+        """Canonical ids with a correct attempt, and ids seen (tried, hinted or revealed) by this student."""
+        solved = {r[0].split('|')[0] for r in con.execute('SELECT problem FROM attempts WHERE student=? AND correct=1', (student,))}
+        exposed = {r[0].split('|')[0] for r in con.execute(
+            'SELECT problem FROM sessions WHERE student=? AND (tries>0 OR hints>0 OR revealed>0)', (student,))}
+        return solved, exposed
+
+    def map_view(con, student, body):
+        if not problem_map.enabled:
+            return {'enabled': False, 'nodes': [], 'clusters': [], 'edges': [], 'student_b_mean': None}
+        solved, exposed = solved_and_exposed(con, student)
+        nodes = [{'id': n['id'], 'level': n['level'], 'x': n['x'], 'y': n['y'], 'cluster': n['cluster'], 'b': round(n['b'], 4),
+                  'solved': n['id'] in solved, 'exposed': n['id'] in exposed or n['id'] in solved, 'languages': n['languages']}
+                 for n in problem_map.nodes]
+        solved_b = [n['b'] for n in nodes if n['solved']]
+        # Edges are [source index, target index, weight] into nodes; omit with {"edges": false}.
+        edges = [[a, b, round(w, 3)] for a, b, w in problem_map.edges] if body.get('edges', True) is not False else []
+        return {'enabled': True, 'nodes': nodes, 'clusters': problem_map.clusters(), 'edges': edges,
+                'student_b_mean': round(sum(solved_b) / len(solved_b), 4) if solved_b else None}
+
+    def map_step(pid, language):
+        node = problem_map.node(pid) or {}
+        keys = by_id.get(pid, {})
+        key = keys.get(language) or keys.get('eng') or (next(iter(sorted(keys.values()))) if keys else None)
+        text = problems[key].get('text') if key else None
+        return {'id': pid, 'level': node.get('level'), 'b': node.get('b'), 'cluster': node.get('cluster'),
+                'key': key, 'text_preview': text[:90] if isinstance(text, str) else None}
+
+    def map_path(con, student, body):
+        goal, language = body.get('goal'), body.get('language') or 'eng'
+        if not isinstance(goal, str) or not goal:
+            raise ValueError('Choose a goal problem on the map')
+        if not problem_map.enabled:
+            return {'enabled': False, 'goal': goal, 'steps': [], 'frontier': [], 'reachable': False}
+        solved, _ = solved_and_exposed(con, student)
+        solved = sorted(solved)
+        route = problem_map.path(solved, goal)  # unknown goal -> ValueError -> 400
+        frontier = [dict(map_step(f['id'], language), gap=f['gap'], via=f['via']) for f in problem_map.frontier(solved)]
+        return dict(route, enabled=True, steps=[map_step(pid, language) for pid in route['steps']], frontier=frontier)
+
+    def rating_for(con, student, skill_id=None):
+        """Theta for the selected skill, else the global rating, else the initial value."""
+        value = student_model.theta(con, student, skill_id) if skill_id else None
+        if value is None:
+            value = student_model.theta(con, student)
+        return student_model.INITIAL_THETA if value is None else value
 
     def ready(session, key):
         """Thinking gate: all thinking steps done, or a written thought when no steps exist."""
@@ -182,7 +240,8 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 self.end_headers()
                 self.wfile.write(raw)
                 return
-            files = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/graph.js": ("graph.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
+            files = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/graph.js": ("graph.js", "text/javascript"), "/style.css": ("style.css", "text/css"),
+                     '/map': ('map.html', 'text/html'), '/map.js': ('map.js', 'text/javascript')}
             if path not in files:
                 return self.send_json({"error": "Not found"}, 404)
             filename, mime = files[path]
@@ -229,6 +288,7 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                         'process': process, 'process_summary': process_summary,
                         'related_edges': graph.related_edges, 'graph_method': graph.method,
                         'learning_path': learning_route(con, student, body),
+                        'rating': student_model.ratings(con, student), 'difficulty_enabled': difficulty_enabled,
                         'attempts': con.execute('SELECT count(*) FROM attempts WHERE student=?', (student,)).fetchone()[0],
                         'parameters': knowledge.model, 'tutor': 'local selection' if local_tutor else 'stored guidance',
                         'coverage': {'tagged': sum(bool(knowledge.annotation(p)['skills']) for p in problems.values() if p.get('kind') != 'diagnostic'),
@@ -241,11 +301,15 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                 result = scheduler.recommend(con, student, catalog, knowledge, focus=body.get('focus'),
                                            language=body.get('language') or 'eng', skill_id=selected_skill,
                                            preferred_kind='diagnostic' if step and step['state'] == 'not_assessed' else None,
-                                           prefer_assessment=not body.get('skill'))
+                                           prefer_assessment=not body.get('skill'),
+                                           difficulty=difficulty if difficulty_enabled else None,
+                                           theta=rating_for(con, student, selected_skill) if difficulty_enabled else None)
                 if not body.get('skill') and result.get('problem'):
                     step = next(s for s in learning_path['steps'] if s['id'] == selected_skill)
                     kind = 'path' if goal else 'review' if step['due'] else 'prerequisite' if step['role'] == 'support' else 'diagnostic' if step['state'] == 'not_assessed' else 'transfer' if step['state'] == 'demonstrated' else 'repair'
                     result.update(kind=kind, reason=learning_path['reason'] + ' ' + step['reason'])
+                    if result.get('difficulty_reason'):
+                        result['reason'] += ' ' + result['difficulty_reason']
                     if body.get('focus'):
                         previous = con.execute('SELECT problem,return_to FROM sessions WHERE id=? AND student=?', (body['focus'], student)).fetchone()
                         if previous:
@@ -254,6 +318,10 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
                         result['reason'] += ' This repeats an exposed item; it will not count as new independent evidence.'
                 result['learning_path'] = learning_path
                 return result
+            if path == '/api/map':
+                return map_view(con, student, body)
+            if path == '/api/path':
+                return map_path(con, student, body)
             if path == '/api/report':
                 return {'markdown': student_model.report(con, student, knowledge)}
             if path == '/api/hint-job':
@@ -350,7 +418,8 @@ def make_handler(db, catalog=None, knowledge=None, include_diagnostics=True, loc
             reason = 'independent_first_attempt' if eligible else 'assisted' if session['hints'] or session['revealed'] else 'repeat_or_translation'
             slip = None if correct else misconceptions.explain(problems[pid], answer)
             evidence = student_model.record(con, student, session, problems[pid], knowledge.annotation(problems[pid]), correct,
-                                            attempt_id, eligible, reason, knowledge, misconception=slip and slip['op'])
+                                            attempt_id, eligible, reason, knowledge, misconception=slip and slip['op'],
+                                            difficulty=difficulty)
             con.execute("UPDATE sessions SET tries=tries+1, solved=?, last_answer=?, misconception=? WHERE id=?",
                         (int(correct), answer, slip['op'] if slip else session['misconception'], session["id"]))
             message = ('Correct! Independent first-attempt success.' if independent else 'Correct! Recorded as assisted or repeat practice.') if correct else 'Not quite. Try a hint or a short skill check to find the next step.'

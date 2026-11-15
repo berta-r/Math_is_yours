@@ -1,9 +1,23 @@
-"""Deterministic, explainable practice recommendations; prerequisites are advice."""
+"""Deterministic, explainable practice recommendations; prerequisites are advice.
+
+With a difficulty table and an ability theta (T-103), candidates that pass the
+existing rules are ranked by how close their predicted success is to TARGET
+(about 70%), before the level tie-breaker.
+"""
+from .difficulty import probability
 from .student_model import states, utc_now
 
+TARGET = 0.7
+DIFFICULTY_REASON = {
+    'eng': 'Chosen so that you have about a 70% chance: your rating is {theta:.2f} and this problem\'s difficulty is {b:.2f}.',
+    'cat': "Triat perquè tinguis prop d'un 70% de probabilitats d'encert: la teva puntuació és {theta:.2f} i la dificultat d'aquest problema és {b:.2f}.",
+}
 
-def recommend(con, student, catalog, knowledge, focus=None, language='eng', skill_id=None, now=None, preferred_kind=None, prefer_assessment=False):
+
+def recommend(con, student, catalog, knowledge, focus=None, language='eng', skill_id=None, now=None, preferred_kind=None, prefer_assessment=False,
+              difficulty=None, theta=None):
     now = now or utc_now()
+    targeted = difficulty is not None and theta is not None
     state = states(con, student, knowledge, now)
     if skill_id and skill_id not in state:
         raise ValueError('Unknown skill')
@@ -40,16 +54,23 @@ def recommend(con, student, catalog, knowledge, focus=None, language='eng', skil
                 continue
             if p['id'] == exclude or (not allow_repeat and p['id'] in seen):
                 continue
+            gap = abs(probability(theta, difficulty.b(p['id'], p.get('level'))) - TARGET) if targeted else 0.0
             candidates.append((p['id'] in seen, tag.get('assessment_skill') != sid,
-                               p['language'] != language, int(p.get('level') or 0), key, p))
+                               p['language'] != language, gap, int(p.get('level') or 0), key, p))
         return min(candidates, key=lambda c: c[:-1])[-2:] if candidates else None
 
     def result(pair, sid, reason, kind, return_to=None):
         key, p = pair
-        return {'problem': key, 'id': p['id'], 'language': p['language'], 'skill_id': sid,
-                'skill': knowledge.skills[sid]['title'], 'reason': reason, 'kind': kind,
-                'return_to': return_to, 'fresh': p['id'] not in seen,
-                'language_fallback': p['language'] != language}
+        out = {'problem': key, 'id': p['id'], 'language': p['language'], 'skill_id': sid,
+               'skill': knowledge.skills[sid]['title'], 'reason': reason, 'kind': kind,
+               'return_to': return_to, 'fresh': p['id'] not in seen,
+               'language_fallback': p['language'] != language}
+        if targeted:
+            b = difficulty.b(p['id'], p.get('level'))
+            sentence = DIFFICULTY_REASON.get(p['language'], DIFFICULTY_REASON['eng']).format(theta=theta, b=b)
+            out.update(p_success=round(probability(theta, b), 2), b=round(b, 4), difficulty_reason=sentence,
+                       reason=reason + ' ' + sentence)
+        return out
 
     # A user-selected node is always available, regardless of prerequisites.
     if skill_id:

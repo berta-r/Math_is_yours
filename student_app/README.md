@@ -28,6 +28,17 @@ restart. Nicknames select local profiles; there are no passwords. Existing
 prototype attempts are retained, while richer skill estimates start with new
 attempts. Use `--db path/to/practice.db` for a separate demo database.
 
+## Problem map
+
+With `data/ml/problem_map.json` present, open
+**http://127.0.0.1:7011/map?student=Explorer** (use your nickname). Every dot is a
+problem placed near similar ones and coloured by group; solved problems have a
+dark ring and tried ones are faded. Scroll or use + / − to zoom and drag to pan.
+Click a dot to get a short path of similar, gradually harder problems from what you
+solved to that goal, listed on the right with links. Without the file the page
+says the map is not installed. With `data/ml/difficulty.json` present the main
+recommendation also aims for about a 70% chance of success and says so.
+
 ## Try the teaching flow
 
 1. Open a new notebook. A short diagnostic is suggested, with a reason.
