@@ -140,7 +140,7 @@ class LearningTests(unittest.TestCase):
     def test_health_has_app_identity_without_student_history(self):
         with urllib.request.urlopen(self.url.replace('/api/', '/api/health')) as response:
             data = json.load(response)
-        self.assertEqual(data['app'], 'math-is-yours')
+        self.assertEqual(data['app'], 'kangaroo-student')
         self.assertEqual(data['model']['state'], 'disabled')
         self.assertNotIn('student', data)
 
