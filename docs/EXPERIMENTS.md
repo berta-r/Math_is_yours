@@ -189,6 +189,9 @@ held-out numbers. Matrix: `data/ml/procrustes.json`, 1.18 MB.
 
 1747 nodes (English vectors), kNN k=5 cosine, 6971 undirected edges, Louvain
 (seed 42) → 15 clusters, modularity 0.699; UMAP layout (seed 42). File 286 KB.
+The deployed map is rebuilt with `--input data/train.jsonl` only (1466 nodes), because
+the student app never loads validation problems; see the current numbers in
+`results/map-metrics.json`.
 Cross-lingual check on the 349 held-out ids: the Catalan vector's nearest English
 neighbour lies in the English twin's cluster 0.722 (unaligned) → 0.888 (aligned);
 an English vector's nearest English neighbour does so 0.907 of the time.
