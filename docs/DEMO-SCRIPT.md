@@ -26,7 +26,7 @@ PY
 ```
 For the primary problem, the wrong letter to click is the one whose op is `sum`.
 
-**Generated content check** (D-013 generation was still running at 02:10). Before rehearsal, confirm the demo ids have content and that the board served it:
+**Generated content check.** Generation finished at 05:31 and both demo ids have steps, explanations and solutions in `cat` and `eng` (verified on the laptop). Before rehearsal, confirm the files reached the board and that it served them (the startup log prints "Generated content: steps … served/… dropped"):
 ```bash
 python3 - <<'PY'
 import json, os
@@ -38,7 +38,7 @@ for f in ('data/ml/thinking_steps_generated.json', 'data/ml/slm_explanations.jso
         print(f, 'MISSING')
 PY
 ```
-If generation for these ids is missing, run SUBMISSION.md step c5 for them. Without generated steps, the problem uses the general steps of its tagged skill (if a tag was loaded) or the written-note gate; without a generated explanation, the template sentence from the signature still appears and hints start at the method rung. The demo still works; adjust the narration.
+If the files did not ship, rebuild the bundle with `--with-data` (SUBMISSION.md step c6). Without generated steps, the problem uses the general steps of its tagged skill (if a tag was loaded) or the written-note gate; without a generated explanation, the template sentence from the signature still appears and hints start at the method rung. The demo still works; adjust the narration.
 
 ## Setup, 10 minutes before
 

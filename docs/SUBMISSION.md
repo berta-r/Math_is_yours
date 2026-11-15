@@ -104,12 +104,12 @@ python3 -m unittest discover -s student_app
 ```
 Copy the new numbers from `results/difficulty-metrics.json`, `results/alignment-metrics.json` and `results/map-metrics.json` into EXPERIMENTS as new rows (do not overwrite the fp32 rows), and update PITCH.md if they move.
 
-**5. Generated content for the demo problems (laptop).** At 02:10 only `data/ml/skills_generated.json` existed; explanations, steps and solutions were still being generated (D-013). Make sure at least the demo problems in [DEMO-SCRIPT.md](DEMO-SCRIPT.md) have content, then verify:
+**5. Generated content (laptop): DONE at 05:31.** Both passes finished (D-013; numbers in [EXPERIMENTS.md](EXPERIMENTS.md) "Generated teaching content"): tags for 1746/1747 problems, steps for 96% and solutions for 94% of the (problem, language) rows, explanations for 95% of the signed distractors. Both demo problems of [DEMO-SCRIPT.md](DEMO-SCRIPT.md) have steps, explanations and solutions in both languages. Nothing to run; just confirm the files are there before building the bundle:
 ```bash
-.venv-ml/bin/python laptop/ml/generate_content.py --api-base https://api.helmcode.com/v1 --kind all --ids lvl-0_2019_1 lvl-0_2019_19 --resume
 ls -la data/ml data/teaching_annotations.generated.json
+python3 -m unittest student_app.test_generated_content     # prints served/dropped per kind
 ```
-Rejected items land in `results/content-rejects.json`. The board re-verifies every item at start (`copilot/content_checks.py`) and logs served/dropped counts.
+Only if you regenerate: `.venv-ml/bin/python laptop/ml/generate_content.py --api-base https://api.helmcode.com/v1 --kind all --resume --retry-unparsed --min-tokens 4000` (the token floor matters: the API model reasons for ~1000 tokens before the JSON). Rejected items land in `results/content-rejects.json`. The board re-verifies every item at start (`copilot/content_checks.py`) and logs served/dropped counts.
 
 **6. Build and deploy the bundle with data (T-110).** The bundle carries `data/train.jsonl`, annotations, `data/ml/*.json` (except `embeddings.json`) and training images; it refuses credentials and model weights. Note: this Mac has **no `data/images/`**, so the bundle will report `missing_original_images`; the problems that need a diagram will show a missing-image warning. Build from the PC that holds the restored images, or demo only text problems.
 ```bash
@@ -210,7 +210,7 @@ Owners above are roles. Suggested from the commit history (confirm in the team c
 | 07:45–08:00 | UI | Commit the redesign; tests and one browser pass. |
 | 08:00–08:15 | ML | Merge plan step 2 (redesign + docs into `main`); laptop tests on `main`. |
 | 08:00–08:15 | Board | Start `build_index.py` (step 3) only if steps 4 will run; otherwise skip. |
-| 08:15–08:30 | ML | Generated content for the demo ids (step 5); build bundle (step 6). |
+| 08:15–08:30 | ML | Confirm generated files (step 5, already done); build bundle (step 6). |
 | 08:30–08:45 | Board | Deploy bundle, tests with `python3 -S`, restart services, `free -m` (steps 6–8). |
 | 08:45–09:00 | Reason | Merge `exp/reason-strategies` (or decide to skip); contract check on the board (step 9). Freeze `main`. |
 | 08:45–09:00 | Docs | README rewrite (T-074) from PITCH numbers; add `LICENSE`. |
