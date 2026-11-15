@@ -138,10 +138,16 @@ function storeNickname(name) { try { localStorage.setItem(NICKNAME_KEY, name); }
 // Thinking steps: answers stay on the server; the page only knows questions and options.
 let thinkingSteps = [], stepIndex = 0;
 const stepsComplete = () => thinkingSteps.length > 0 && stepIndex >= thinkingSteps.length;
+// Clicking a skill in the tree chooses it as the goal: the route and the problem plan follow.
+// Clicking the chosen skill again returns to the guided route.
 const skillTree = new SkillTree($('skill-tree'), skill => {
-  if (!skill) return;
-  selectedSkill = skill.id; showSkill(skill); syncControls();
-  $('skill-evidence').hidden = false; $('skill-detail').focus({preventScroll:true}); $('skill-evidence').scrollIntoView({block:'nearest'});
+  if (!skill || busy) return;
+  run(async () => {
+    const same = learningGoal === skill.id;
+    learningGoal = same ? null : skill.id; selectedSkill = same ? null : skill.id;
+    await refreshGraph(); await refreshRecommendation();
+    if (!same) $('path-problems').scrollIntoView({block:'nearest', behavior:'smooth'});
+  });
 });
 function syncControls() {
   document.querySelectorAll('button:not(#close-image)').forEach(b => b.disabled = busy);
@@ -168,8 +174,6 @@ function syncControls() {
   $('start-recommended').hidden = currentRecommendation;
   document.querySelector('.recommendation').hidden = currentRecommendation;
   $('start-recommended').textContent = currentRecommendation ? t('current_exercise') : t('start_next');
-  $('practice-skill').textContent = t('practise_skill');
-  $('practice-skill').disabled = busy || !selectedSkill;
   $('workspace').setAttribute('aria-busy', String(busy));
   $('activity-status').textContent = busy ? t('working') : '';
 }
@@ -405,14 +409,9 @@ async function refreshGraph() {
   $('stat-demonstrated').textContent = profile.skills.filter(s => s.state === 'demonstrated').length;
   $('stat-due').textContent = profile.skills.filter(s => s.due).length;
   skillTree.setData(profile, selectedSkill, learningGoal);
-  if (selectedSkill) showSkill(profile.skills.find(s => s.id === selectedSkill));
-  else $('skill-detail').textContent = t('select_skill');
-  $('skill-evidence').hidden = !selectedSkill;
   $('graph-method').textContent = 'The tree shows authored prerequisite links: each arrow points from a skill to one it helps you learn.';
-  renderGoals(profile.skills);
   renderPath(profile.learning_path);
   renderPathProblems();
-  $('total').textContent = t('answers_saved', {n:profile.attempts});
   $('history').replaceChildren();
   for (const event of profile.history) {
     const item = document.createElement('li');
@@ -470,18 +469,6 @@ async function renderPathProblems() {
     li.append(card); list.append(li);
   });
 }
-// One small button per skill; "Guide me" clears the goal and lets progress choose the route.
-function renderGoals(skills) {
-  const box = $('goal-buttons'); box.replaceChildren();
-  for (const [id, name] of [[null, t('guide_me')], ...skills.map(s => [s.id, s.name])]) {
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'goal-button' + (id ? '' : ' guide-me');
-    button.textContent = name; button.dataset.goal = id || '';
-    button.setAttribute('aria-pressed', String((id || null) === (learningGoal || null)));
-    button.disabled = busy;
-    button.onclick = () => run(async () => { learningGoal = id || null; await refreshGraph(); await refreshRecommendation(); skillTree.reveal(profileData?.learning_path?.next_skill); });
-    box.append(button);
-  }
-}
 function revealSkill(id) { skillTree.select(id); }
 function renderPath(path) {
   $('learning-path').replaceChildren();
@@ -510,14 +497,6 @@ $('save-reflection').onclick=()=>run(async()=>{
   reflected=!!result.reflection_saved;
   if(reflected){$('answer-stage').hidden=false;document.querySelector('#options button')?.focus();}
 });
-function showSkill(skill) {
-  if (!skill) return;
-  const evidence = skill.probability === null ? t('skill_none') : t('skill_some', {n:skill.evidence, k:skill.successes});
-  // The child sees only the skill name; the full sentence stays for screen readers.
-  $('skill-detail').textContent = skill.name;
-  $('skill-detail').setAttribute('aria-label', `${skill.name} · ${stateLabel(skill.state)}. ${skill.description} ${evidence}`);
-  $('skill-review').textContent = skill.next_review ? (skill.due ? t('review_due') + '.' : t('review_next', {date:new Date(skill.next_review).toLocaleDateString(uiLang === 'ca' ? 'ca' : 'en')})) : t('review_later');
-}
 async function refreshRecommendation(skill = null) {
   recommendation = await api('recommendation', {focus:session,language:$('language-filter').value || current?.language || 'eng',skill,goal:learningGoal});
   renderRecommendation();
@@ -532,7 +511,6 @@ function renderRecommendation() {
   $('method-reason').textContent = recommendation.reason || '';
 }
 $('start-recommended').onclick = () => run(async () => { if(recommendation?.problem) { await openProblem(recommendation.problem,recommendation.return_to); setStudioView('practice'); $('question').focus(); } });
-$('practice-skill').onclick = () => run(async () => { await refreshRecommendation(selectedSkill); if(recommendation?.problem) { await openProblem(recommendation.problem); setStudioView('practice'); $('question').focus(); } });
 $('next-problem').onclick = () => run(async () => {
   await refreshRecommendation();
   if (recommendation?.problem && recommendation.problem !== current?.key) await openProblem(recommendation.problem, recommendation.return_to);
@@ -569,7 +547,6 @@ $('profile-form').onsubmit = event => {
     document.body.classList.remove('landing');
     $('profile-name').textContent = student;
     setStudioView('practice', false);
-    $('skill-review').textContent = '';
     $('question').focus();
   });
 };
@@ -665,7 +642,6 @@ setLanguage = problemLanguage => {
   if (changed) {
     renderProblemText(); renderRecommendation();
     $('view-title').textContent = t(viewKeys[document.body.dataset.view] || 'nav_solve');
-    if (!selectedSkill) $('skill-detail').textContent = t('select_skill');
   }
   return changed;
 };
