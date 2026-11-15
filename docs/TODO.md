@@ -72,6 +72,27 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 - [ ] **T-057** Rewrite the problems offline, ahead of time, store them in SQLite, and check in code that numbers, options and answer are unchanged.
 - [ ] **T-058** Readability metrics, plus model accuracy on rewritten vs original problems. LED dots or bars for quantities.
 
+### D6 · Teach: thinking steps
+
+- [ ] **T-092** [P1] [laptop] **Generate per-problem thinking steps offline for the 170 training exercises with a strong model, validated by the bank rules and leak check; educator review.**
+- [ ] **T-093** [P2] [board] **Measure process metrics with real students: first-try step rate, conditional first-attempt accuracy, hints per problem before/after steps.**
+
+### D7 · Teach: ML tutor bundle (see [ML-OPTIONS.md](ML-OPTIONS.md); order is the dependency order)
+
+- [ ] **T-100** [P0] [board] **Embed every problem in both languages.** `python3 build_index.py --input data/train.jsonl --db data/index.db` (no `--only-with-options`, no language filter), then `scp` `data/index.db` to the laptop. Done when the `problems` table has one row per (id, language) and STATUS records the time it took. Everything below needs this.
+- [ ] **T-101** [P0] [laptop] **Dataset feature table.** `laptop/ml/features.py` → `data/ml/features.jsonl`: id, language, level, year, position parsed from the text prefix, points (3/4/5 by thirds of the max position per level-year), text length, numeral count, has image, option count, numeric options, embedding from `index.db`. Done when ≥1600 English rows have points and the counts are in 03-data.md.
+- [ ] **T-102** [P0] [laptop] **Difficulty model.** Gradient-boosted trees (or one depth-6 tree) on `features.jsonl`, target points then level, years 2023–2024 held out. Export `data/ml/difficulty_tree.json` (nested dicts) and `data/ml/difficulty.json` (id → b in [0,1]). Done when EXPERIMENTS has Spearman and 3/4/5 accuracy versus the majority baseline.
+- [ ] **T-103** [P0] [board] **Elo selection.** `copilot/difficulty.py` evaluates the exported tree in pure Python; `student_model` gains `student_elo(student, skill, theta)` updated after each eligible first attempt (K=32 on logistic scale); `scheduler.recommend` prefers items with p(correct)=1/(1+e^-(θ−b)) closest to 0.7 among the current rules. Tests for determinism and that BKT is unchanged.
+- [ ] **T-104** [P1] [laptop] **Procrustes alignment.** From the 1747 (eng, cat) embedding pairs compute the orthogonal W by SVD; export `data/ml/procrustes.json` (384×384). Done when EXPERIMENTS shows cat→eng retrieval@1 on held-out pairs before and after.
+- [ ] **T-105** [P1] [board] **Apply W for Catalan.** `copilot/embed.py` multiplies Catalan vectors by W when the file exists (pure Python matvec, < 50 ms measured on the board). Test with a fixed pair.
+- [ ] **T-106** [P1] [laptop] **Problem map.** kNN graph (k=5, cosine, aligned vectors), Louvain communities, UMAP 2-D coordinates. Export `data/ml/problem_map.json` (nodes: id, x, y, cluster, b; edges: source, target, weight). Done when the file is < 400 KB and cluster purity against the 51 reviewed tags is in EXPERIMENTS.
+- [ ] **T-107** [P1] [board] **Map UI and stepping-stone paths.** New `/api/map` and `/api/path` (Dijkstra, edge cost = |b_target − b_source| + 0.1, from any solved node to the goal). Renderer reuses `graph.js` zoom/pan with precomputed coordinates; solved nodes highlighted; goal selection draws the path. Tests for path determinism and 390 px width.
+- [ ] **T-108** [P1] [laptop] **Error signatures.** `laptop/ml/signatures.py`: for problems with all-numeric options, try naive operations over the numerals in the text (sum, difference, product, quotient, half, double, ±1, unit ×10/×100) and record which generates each distractor → `data/ml/signatures.json`. Done when coverage (distractors explained / distractors) is in EXPERIMENTS and 30 were checked by hand.
+- [ ] **T-109** [P1] [board] **Misconception feedback.** On a wrong answer with a signature, the feedback names the operation and the hint rung starts at the method hint. Tests.
+- [ ] **T-110** [P0] [board] **Deploy and verify the bundle.** Add `data/ml/*.json` to `laptop/deploy_student.py`; run all tests on the board with `python3 -S`; record `free -m` minimum and `/api/recommendation` latency in STATUS.
+- [ ] **T-111** [P2] [laptop] **Label propagation for skills.** Seeds: 51 reviewed tags + 30 diagnostics; spread over the T-106 graph; export only rows above a confidence threshold through `annotate_problems.py export`. Leave-one-out accuracy in EXPERIMENTS; eng/cat twins must agree.
+- [ ] **T-112** [P1] [team] **Pitch numbers.** One table: difficulty accuracy, retrieval@1 before/after alignment, signature coverage, map size, board latency and RAM. Feed README and the 3-minute pitch.
+
 ### Shared (needed by most ideas)
 
 - [ ] **T-060** [P1] **Topic labels:** cluster the embeddings plus keywords, and hand-label 50 problems to check. Required for the error analysis by topic.
@@ -89,7 +110,13 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ---
 
+- [x] **T-095** [P1] [laptop] **Build the blue typographic child-facing interface.** Original reference-inspired entrance with a visible first-screen start action, focused Solve workspace, readable skill tiles in My path and My work record. Existing tutor state and offline flow retained; 48 app tests and Chrome checks at five widths pass. Physical touch and board visual review remain pending. (2026-11-15)
+
+- [x] **T-094** [P1] [laptop] **Redesign the offline tutor as Kangaroo Studio.** Editorial identity, exercise-first layout, separate map and notebook views, compact responsive navigation, and accessible loading feedback. Browser and application checks pass. (2026-11-15)
+
 ## Done
+
+- [x] **T-091** [P1] [laptop] **Thinking-step process questions before answering.** Three multiple-choice steps (Understand · Plan · Check) with immediate, pure-Python feedback replace the mandatory free-text thought when steps exist; the note stays optional. `knowledge/thinking_steps.json` holds 30 general English skill steps and 15 sample-problem steps (Catalan for sample-4/5), validated at load (stage order, three options of balanced length, balanced key positions, one-sentence explanations, answer-leak check, repeated against the catalog at server start). New `/api/step`, `thinking_events` table, plan-miss hint rule, profile `process`/`process_summary` and a notebook "Thinking process" section. BKT is unaffected. 48 tests pass; browser flow checked at 390px in headless Chrome. Real-student metrics remain T-093; training-set steps remain T-092. (2026-11-14)
 
 - [x] **T-090** [P1] [board/laptop] **Ship one-time Windows setup from the Arduino.** Standalone x64 installer, bundled Python/Tk/ADB, per-user login watcher, Start-menu control and read-only FAT16 delivery image built. Installed and checked on this PC without external Python on PATH; nine setup/rollback checks pass on the board. Setup-drive service active/enabled, Windows volume and installer verified, inbox drivers loaded. Full shutdown/replug passed: all services resumed, drive returned, installed watcher opened the tutor, model became ready and test progress survived. User confirmed both drive and browser. A fresh Windows PC and actual Windows reboot/login remain separate validation. (2026-11-14)
 
