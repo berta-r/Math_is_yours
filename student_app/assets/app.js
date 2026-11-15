@@ -241,9 +241,11 @@ function renderProblemText() {
 function renderOptions() {
   $('options').replaceChildren();
   for (const letter of 'ABCDE') {
-    const value = current.options[letter] || (current.image_url ? t('choice_unavailable') : '—');
+    const value = current.options[letter] || '';
     const button = document.createElement('button');
     button.type = 'button';
+    // Picture answers: only the letter is shown; the picture carries the choice.
+    if (!value && !current.option_images?.[letter]) { button.classList.add('letter-only'); button.setAttribute('aria-label', `${letter}: ${t('choice_unavailable')}`); }
     const key = document.createElement('span'); key.className = 'option-letter'; key.textContent = letter;
     const label = document.createElement('span'); label.className = 'option-text';
     if (current.option_images?.[letter] && !current.options[letter]) {

@@ -121,6 +121,8 @@ D0 is the Reason workstream. D1–D5 are candidate approaches within the require
 
 ## Done
 
+- [x] **T-123** [P2] [laptop] **Picture answers show only the letter.** When an option has no text and no crop, the answer button shows just A–E in large type (the picture carries the choice); “See the picture” stays as the button’s aria-label. Verified on lvl-0_2017_10; 113 app tests pass. (2026-11-15)
+
 - [x] **T-122** [P2] [laptop] **Skill panel shows only the name and the action.** Clicking a tree node opens a panel with the skill name at 22–28px and “Practise this skill →”; the state, description, evidence and review sentences are kept only as the panel’s aria-label. Chrome at 1440 and 390: no errors, no overflow; 113 app tests pass. (2026-11-15)
 
 - [x] **T-121** [P2] [laptop] **No small text in My path; more air around the statement in Solve.** Learning-path steps show only the skill name at 20px, the estimates note and Problem map link are 18px; the step rail sits 40px above the statement and the thinking question / answers start 48px under a 3px rule. Chrome at 1440: no text under 18px in My path, no errors, no overflow; 113 app tests pass. (2026-11-15)
