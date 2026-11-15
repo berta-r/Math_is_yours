@@ -25,7 +25,8 @@ Kinds (--kind), each in the problem's own language and checked by verify_content
   all           the four, in that order.
 
 Rejected items go to results/content-rejects.json with reasons. --resume skips items
-already accepted or rejected; outputs are rewritten atomically every --save-every items.
+already accepted or rejected (add --retry-unparsed to redo parse failures, with --min-tokens 4000 for
+reasoning models whose thinking counts against max_tokens); outputs are rewritten atomically every --save-every items.
 
     .venv-ml/bin/python laptop/ml/generate_content.py --api-base https://api.helmcode.com/v1 --kind skills --limit 5 --show 5
     .venv-ml/bin/python laptop/ml/generate_content.py --api-base https://api.helmcode.com/v1 --kind all --resume
@@ -191,9 +192,10 @@ class ApiBackend:
     """
 
     def __init__(self, api_base, key, model='deepseek-v4-flash', fallback='glm5.3-flash', http=urllib_http,
-                 sleep=time.sleep, max_retries=5, backoff=2.0, timeout=120):
+                 sleep=time.sleep, max_retries=5, backoff=2.0, timeout=120, min_tokens=600):
         self.url = api_base.rstrip('/') + '/chat/completions'
         self._key = key
+        self.min_tokens = min_tokens  # reasoning tokens count against max_tokens: keep a floor
         self.model, self.fallback, self.name = model, fallback, model
         self.via = 'Helmcode' if 'helmcode' in api_base else urllib.parse.urlsplit(api_base).hostname
         self.http, self.sleep, self.max_retries, self.backoff, self.timeout = http, sleep, max_retries, backoff, timeout
@@ -209,7 +211,8 @@ class ApiBackend:
         current, retries = 0, 0
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self._key}'}
         while True:
-            body = {'model': models[current], 'messages': messages, 'temperature': 0, 'max_tokens': max(600, max_tokens),
+            body = {'model': models[current], 'messages': messages, 'temperature': 0,
+                    'max_tokens': max(self.min_tokens, max_tokens),
                     'reasoning_effort': 'low', 'response_format': {'type': 'json_object'}}
             try:
                 status, reply_headers, data = self.http(self.url, json.dumps(body).encode(), headers, self.timeout)
@@ -658,7 +661,17 @@ def run_kind(kind, backend, rows, args):
     if not isinstance(out, dict) or out.get('version') != 1 or not isinstance(out.get(kind.container), dict):
         out = {'version': 1, 'model': backend.name, 'via': backend.via, 'generated': now(), kind.container: {}}
     rejects = load_json(args.rejects_out, {}).get(kind.name, {}) if args.resume else {}
-    tasks = [t for t in kind.tasks(rows) if not (args.resume and (kind.has(out, t) or t.key in rejects))]
+    def skip(task):
+        if not args.resume:
+            return False
+        if kind.has(out, task):
+            return True
+        reject = rejects.get(task.key)
+        if reject is None:
+            return False
+        return not (getattr(args, 'retry_unparsed', False) and reject.get('reasons') == ['parse:failed'])
+
+    tasks = [t for t in kind.tasks(rows) if not skip(t)]
     if args.limit:
         tasks = tasks[:args.limit]
     stats = {'tasks': len(tasks), 'accepted': 0, 'rejected': 0, 'unparsed': 0, 'retried': 0}
@@ -758,6 +771,10 @@ def main(argv=None):
     parser.add_argument('--ids', nargs='+', help='only these problem ids (space or comma separated)')
     parser.add_argument('--limit', type=int, help='at most N items per kind')
     parser.add_argument('--resume', action='store_true', help='skip items already accepted or rejected in the outputs')
+    parser.add_argument('--retry-unparsed', action='store_true',
+                        help='with --resume: retry items whose only rejection reason is parse:failed')
+    parser.add_argument('--min-tokens', type=int, default=600,
+                        help='--api-base: floor for max_tokens (reasoning models spend ~1000 tokens thinking)')
     parser.add_argument('--text-only', action='store_true', help='steps: only problems with text_only true')
     parser.add_argument('--show', type=int, default=0, help='print the first N outputs per kind (accepted or not)')
     parser.add_argument('--save-every', type=int, default=50)
@@ -775,7 +792,8 @@ def main(argv=None):
         rows = [r for r in rows if r['id'] in wanted]
     started = time.time()
     if args.api_base:
-        backend = ApiBackend(args.api_base, load_api_key(args.api_key_env), args.model, args.fallback_model)
+        backend = ApiBackend(args.api_base, load_api_key(args.api_key_env), args.model, args.fallback_model,
+                             min_tokens=args.min_tokens)
         args.workers = args.workers or 8
     else:
         backend = LlamaBackend(args.gguf, threads=args.threads) if args.gguf else ServerBackend(args.port)
