@@ -116,6 +116,8 @@ Format: `- [ ] **T-XXX** [priority] [where] Title`. Priority: **P0** = must have
 
 ## Done
 
+- [x] **T-113** [P1] [laptop] **Restore problem images in the student app.** The laptop had no `data/images/`, so every problem rendered without its figure. Added `prepare_m3kang.py --images-only` to export the images from the cached shard without touching the JSONL files; verified locally that `/api/start` returns `image_url` and `/api/image` serves the file for 2932 problems. Copy the folder to the board with the next deployment. (2026-11-15)
+
 - [x] **T-098** [P1] [laptop] **Reduce landing and exercise typography and copy.** One Arial family and four-level hierarchy; problem-first workspace; only essential entry text; blue landing through the full viewport; transparent start action. Scoped navigation clicks to its buttons so exercise controls no longer refocus the page. Chrome at five widths and a wrong/correct answer flow pass; 89 app tests passed during review. Board touch review remains pending. (2026-11-15)
 
 - [x] **T-097** [P1] [laptop] **Flatten the Kangaroo Studio surfaces and clarify answer feedback.** Removed the decorative landing preview and white/pale-blue cards, put the nickname on a transparent underlined field, flattened path/notebook sections, and added large green/red result signals plus press feedback. The live sample reached both answer states; Chrome checks at 390 and 1440px and 75 current app tests pass. Board touch review remains pending. (2026-11-15)

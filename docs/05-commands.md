@@ -34,6 +34,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r laptop/requirements.txt
 python3 laptop/prepare_m3kang.py                          # eng,cat → data/train.jsonl, data/val.jsonl
 python3 laptop/prepare_m3kang.py --languages eng --save-images   # + data/images/*.png
+python3 laptop/prepare_m3kang.py --images-only                    # only data/images/*.png, JSONL untouched (student app shows no images without them)
 scp data/train.jsonl data/val.jsonl arduino@<ip>:~/datathon-UPC-maths-qualcomm-arduino-unoq/data/
 scp -r data/images arduino@<ip>:~/datathon-UPC-maths-qualcomm-arduino-unoq/data/
 ```

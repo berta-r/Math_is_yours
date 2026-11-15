@@ -22,7 +22,7 @@
 4. Splits train and validation **by problem ID**, so a problem and its translations never end up on both sides (`--val-fraction 0.15`, or `--val-years 2023,2024` to hold out whole years).
 5. Writes `data/train.jsonl` and `data/val.jsonl` (no images). With `--save-images`, it also writes `data/images/<id>_<lang>.png`.
 
-Other flags: `--out`, `--no-ocr`, `--limit N`. Requirements: `pip install -r laptop/requirements.txt` (`huggingface_hub`, `pyarrow`, `rapidocr_onnxruntime`), Python ≥ 3.10.
+Other flags: `--out`, `--no-ocr`, `--limit N`, `--images-only` (write only `data/images/*.png` for the selected languages, skip OCR and leave the JSONL files untouched; the student app and `laptop/deploy_student.py --with-data` need that folder to show problem images). Requirements: `pip install -r laptop/requirements.txt` (`huggingface_hub`, `pyarrow`, `rapidocr_onnxruntime`), Python ≥ 3.10.
 
 Then copy the files to the board (`scp` or `adb push`). See [05-commands.md](05-commands.md).
 
