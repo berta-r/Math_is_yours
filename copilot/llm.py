@@ -1,8 +1,14 @@
 """Ask the small language model for one letter, A to E."""
+import os
+import sys
+
 from .config import CONFIG
 from .client import post
 
 URL = f"http://127.0.0.1:{CONFIG['LLM_PORT']}/v1/chat/completions"
+# SOLVER=compute (config.env): a code model writes one Python expression and Python
+# computes the answer (copilot/compute.py). SOLVER=letter: the original baseline below.
+SOLVER = CONFIG.get("SOLVER", "letter")
 
 # Keep the system prompt stable: llama-server caches the start of the prompt,
 # so text that never changes is only read once.
@@ -40,6 +46,12 @@ def build_messages(problem, examples=(), image_b64=None):
 
 def answer_letter(problem, examples=(), timeout=60, image_b64=None, url=URL):
     """Return (letter, timings). The grammar makes any other output impossible."""
+    if SOLVER == "compute" and image_b64 is None:
+        from . import compute
+        try:
+            return compute.answer_letter(problem, timeout=timeout)
+        except compute.Unavailable:
+            pass  # the compute server is not usable: answer with the letter call below
     response = post(url, {
         "messages": build_messages(problem, examples, image_b64),
         "grammar": "root ::= [A-E]",
@@ -50,3 +62,10 @@ def answer_letter(problem, examples=(), timeout=60, image_b64=None, url=URL):
     }, timeout=timeout)
     letter = response["choices"][0]["message"]["content"].strip()
     return letter, response.get("timings", {})
+
+
+# The compute solver reads its examples once. Do that before the first problem is
+# timed when this is the official run or an evaluation, not inside a problem's clock.
+if SOLVER == "compute" and os.path.basename(sys.argv[0] or "") in ("predict.py", "eval.py"):
+    from . import compute
+    compute.warm_up()

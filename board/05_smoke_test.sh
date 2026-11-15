@@ -9,6 +9,10 @@ curl -sf "http://127.0.0.1:$LLM_PORT/health" >/dev/null && ok "LLM server answer
   || die "LLM server is down. Start it: sudo systemctl start math-llm"
 curl -sf "http://127.0.0.1:$EMBED_PORT/health" >/dev/null && ok "embedding server answers on port $EMBED_PORT" \
   || die "embedding server is down. Start it: sudo systemctl start math-embed"
+if [ "${SOLVER:-letter}" = "compute" ]; then
+  curl -sf "http://127.0.0.1:$COMPUTE_PORT/health" >/dev/null && ok "compute server answers on port $COMPUTE_PORT" \
+    || warn "the compute server is down: predict.py will fall back to the letter call. Run: bash board/06_compute_server.sh"
+fi
 
 step "One embedding"
 python3 - <<'PY'

@@ -11,6 +11,7 @@
  │  HF parquet → OCR options →  │ ──────────────► │                                                               │
  │  data/train.jsonl, val.jsonl │                 │  systemd: math-llm   llama-server :8081  Qwen3.5 0.8B Q8_0    │
  │  (+ data/images/*.png)       │                 │  systemd: math-embed llama-server :8082  bge-small-en-v1.5    │
+                                                  │  systemd: math-compute llama-server :8084  Qwen2.5-Coder 1.5B │
  └──────────────────────────────┘                 │  (optional)          llama-server :8083  vision (mmproj)      │
                                                   │                 ▲ HTTP 127.0.0.1 only                         │
                                                   │  copilot/ (Python stdlib) ◄── predict.py / eval.py / explorer │
@@ -28,11 +29,12 @@
 2. `solve()` starts a timer and sets the default result to `FALLBACK_ANSWER` (`D`) with status `ok`.
 3. **If `k > 0`:** `index.search(problem, k, exclude_id)` embeds the query (with the bge query prefix) and runs a brute-force dot product over all vectors in memory. It returns the top k `(score, problem)` pairs.
 4. **Time budget:** `remaining = 60 − elapsed − 3 s margin`.
-5. `llm.answer_letter()` builds the chat messages:
+5. **With `SOLVER=compute`** (the default in `config.env`), `llm.answer_letter()` hands the problem to `compute.answer()`: a blind try (the code model on `:8084` writes one Python expression from the statement), an informed try (it also sees the options), one feedback retry, and otherwise a guess without the model. `safe_eval` computes each expression and `values` matches it to A–E. If the compute server is unusable, it falls back to the letter call below. Details: [COMPUTE_SOLVER.md](COMPUTE_SOLVER.md).
+   **With `SOLVER=letter`**, `llm.answer_letter()` builds the chat messages:
    - a fixed system prompt (kept stable so llama-server's prompt cache reuses it),
    - for each example, a user turn (problem + `Answer:`) followed by an assistant turn (its label letter),
    - the target problem as text, `A) … E)`, then `Answer:`. If the options are missing: "(The options are in a picture…)". If `image_b64` is set, an `image_url` part is added.
-6. It POSTs to `:8081/v1/chat/completions` with `grammar: root ::= [A-E]`, `max_tokens 1`, `temperature 0`, `seed 42`, `cache_prompt true`.
+6. (`SOLVER=letter`) It POSTs to `:8081/v1/chat/completions` with `grammar: root ::= [A-E]`, `max_tokens 1`, `temperature 0`, `seed 42`, `cache_prompt true`.
 7. On a timeout, status is `timeout` and the answer stays `D`. On another URL error, status is `error: …`.
 8. It returns `{answer, seconds, status, prompt_tokens, retrieved, examples}`, and `predict.py` writes the CSV row.
 
@@ -43,6 +45,9 @@
 | `copilot/config.py` | Parse `config.env` (KEY=VALUE, shlex, `~` expanded). Environment variables override it | `CONFIG` dict, `ROOT` | Try a setting without editing: `LLM_PORT=9000 python3 eval.py` |
 | `copilot/client.py` | JSON over `urllib` | `post(url, payload, timeout)`, `get(url)` | stdlib only |
 | `copilot/llm.py` | Prompt format and LLM call | `SYSTEM`, `format_problem(p, sees_image)`, `build_messages(p, examples, image_b64)`, `answer_letter(p, examples, timeout, image_b64, url)` → `(letter, timings)` | `timings.prompt_n` = tokens actually read |
+| `copilot/compute.py` | Compute-first solver (`SOLVER=compute`) | `warm_up(force)`, `answer(p, timeout)` → `(letter, timings, info)`, `answer_letter`, `Unavailable` | Own server on `COMPUTE_PORT` with two slots that cache the examples. See [COMPUTE_SOLVER.md](COMPUTE_SOLVER.md) |
+| `copilot/safe_eval.py` | Evaluates one model-written expression | `extract_expression(text)`, `safe_eval(expr, timeout)`, `SafeEvalError` | AST whitelist, no free `exec`, time limit |
+| `copilot/values.py` | Option values and matching | `parse_number`, `numeric_options`, `match_option(value, options)` | "12 cm", "1,5", "3/4" read as numbers; None when ambiguous |
 | `copilot/embed.py` | Embeddings | `embed(texts, query=False)` → unit vectors | Truncates to 1400 characters (about 512 tokens). Adds the query prefix only when `query=True` |
 | `copilot/rag.py` | Vector index in SQLite | `build(db_path, problems)` (generator), `Index(db_path).search(problem, k, exclude_id)` | Table `problems(key='id\|lang', problem JSON, vec float32 BLOB)`. Loads everything into RAM. `exclude_id` skips the same problem in every language |
 | `copilot/pipeline.py` | **The copilot.** One problem in, one letter out | `solve(problem, index=None, k=0, exclude_id=None, image_b64=None, llm_url=URL, time_limit=60)` | **Change this first.** `MARGIN = 3.0` s |
@@ -51,8 +56,9 @@
 | `build_index.py` | Builds `data/index.db` from the train set | CLI `--input --db --languages --only-with-options` | Deletes the existing DB first. Only the train set goes in |
 | `explorer/server.py` | Web app (stdlib `http.server`) to inspect problems | `GET /`, `/api/info`, `/api/problems`, `/api/problem?key=`, `/api/similar?key=`; `POST /api/check`, `/api/ask` | Default `127.0.0.1:8000`. Needs `data/images` for pictures. Can use the vision server on :8083 |
 | `laptop/prepare_m3kang.py` | Builds the dataset | see [03-data.md](03-data.md) | Laptop only; needs pip packages |
-| `board/*.sh` | Board setup, idempotent, sources `common.sh` → `config.env` | 00 check, 01 apt, 02 build llama.cpp, 03 models + SHA256, 04 systemd services, 05 smoke test | |
-| `board/systemd/*.service` | Templates with `@VAR@` placeholders, filled in by `04_install_services.sh` | | LLM: `--parallel 1 --cache-ram 0 --jinja --reasoning off`. Embed: `--embedding`, batch = ctx = 512 |
+| `board/*.sh` | Board setup, idempotent, sources `common.sh` → `config.env` | 00 check, 01 apt, 02 build llama.cpp, 03 models + SHA256, 04 systemd services, 05 smoke test, 06 compute server + warm-up | |
+| `board/warm_compute.py` | Run by `math-compute-warm` after boot: waits for `:8084`, then `compute.warm_up(force=True)` | | Always exits 0 |
+| `board/systemd/*.service` | Templates with `@VAR@` placeholders, filled in by `04_install_services.sh` (`math-compute*` by `06_compute_server.sh`) | | LLM: `--parallel 1 --cache-ram 0 --jinja --reasoning off`. Embed: `--embedding`, batch = ctx = 512 |
 
 ## Extension points (where our idea will plug in)
 

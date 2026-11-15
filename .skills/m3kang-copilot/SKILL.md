@@ -30,7 +30,8 @@ After every change, run `python3 predict.py --input data/sample_problems.jsonl -
 | File | What it does |
 | --- | --- |
 | `copilot/pipeline.py` | `solve(problem, index, k, exclude_id, image_b64)`: one problem in, `{"answer", "seconds", "status", "prompt_tokens", "examples"}` out. Change this first. |
-| `copilot/llm.py` | `format_problem`, `build_messages`, `answer_letter`. The grammar `root ::= [A-E]` with `max_tokens: 1` forces one letter. Keep `SYSTEM` stable: `cache_prompt` reuses the start of the prompt. |
+| `copilot/llm.py` | `format_problem`, `build_messages`, `answer_letter`. With `SOLVER=letter`, the grammar `root ::= [A-E]` with `max_tokens: 1` forces one letter. Keep `SYSTEM` stable: `cache_prompt` reuses the start of the prompt. |
+| `copilot/compute.py` | With `SOLVER=compute` (the default), `answer_letter` hands the problem here: a code model on port 8084 writes one Python expression, `safe_eval.py` computes it and `values.py` matches it to A–E; blind try, informed try, feedback retry, then a guess. Falls back to the letter call if the server is down. See `docs/COMPUTE_SOLVER.md`. |
 | `copilot/rag.py` | `build(db, problems)` and `Index(db).search(problem, k, exclude_id)`, returning `(score, problem)` pairs, best first |
 | `copilot/embed.py` | `embed(texts, query=False)`. Queries get the bge prefix from `config.env`; stored documents don't. |
 | `copilot/client.py` | `post(url, payload, timeout)` and `get(url)`, JSON over `urllib` |

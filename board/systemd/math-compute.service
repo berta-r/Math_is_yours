@@ -1,0 +1,13 @@
+[Unit]
+Description=Math on the Edge: code model for the compute-first solver (llama.cpp, port @COMPUTE_PORT@)
+After=local-fs.target
+
+[Service]
+Type=simple
+User=@USER@
+ExecStart=@LLAMA_SERVER@ -m @COMPUTE_PATH@ --host 127.0.0.1 --port @COMPUTE_PORT@ --threads @COMPUTE_THREADS@ --ctx-size @COMPUTE_CTX@ --parallel 2 --cache-ram 0 --ctx-checkpoints 2 --jinja --alias @COMPUTE_ALIAS@
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

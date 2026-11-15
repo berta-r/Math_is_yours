@@ -28,6 +28,15 @@ The reference points are random guessing at 20%, always-D at about 25%, and the 
 -->
 
 | 2026-11-14 | usb-setup-v1 | c081129 + uncommitted setup work; solver unchanged | UNO Q val / eng / 30 (`--limit 50`, only 30 available) | 0 | 36.7% (11/30) | 8.3 | 12.3 | 0 | Five sample contract rows valid, all 30 validation statuses ok. Same aggregate answers as prior development baseline; always-D remains 43.3%. This checks deployment continuity, not a reasoning improvement or main-release result. |
+| 2026-11-15 | practice-set main predict.py (laptop) | 8eb528d | organizers' practice set, 50 problems × eng,cat / 100 | 0 | 24% ±4 | — | — | — | New 2026 problems, labels balanced 20 each (always-D = 20%). D×77 |
+| 2026-11-15 | compute-first, first planner (board) | infra/compute-solver (uncommitted) | practice set / eng,cat / 30 | 0 | 46.7% (14/30) | 28.3 | 56.1 | 0 | `SOLVER=compute`, Qwen2.5-Coder 1.5B on :8084. First time planner |
+| 2026-11-15 | compute-first, final planner (board) | infra/compute-solver (uncommitted) | practice set / eng,cat / 30 (same rows) | 0 | 50.0% (15/30) | 26.2 | 56.0 | 0 | 9 guessed (6 need their figure), 3 guesses right; 12/21 right where the model answered; eng 9/15, cat 6/15; examples written after seeing the practice set, so optimistic. See [COMPUTE_SOLVER.md](COMPUTE_SOLVER.md) |
+| 2026-11-15 | compute-first (laptop, same GGUF) | infra/compute-solver (uncommitted) | practice set / eng,cat / 100 | 0 | 49% | — | — | — | Same model file on the laptop; latency not representative of the board |
+
+### Findings: compute-first solver (2026-11-15)
+
+- The one-letter format measures position bias, not maths: on 100 trivial additions the 0.8B picks the right letter 19% of the time (always A) but writes the right number 82% of the time. That is why the solver asks for a value, not a letter.
+- The first `predict.py` after a reboot reads the solver's examples once (379 s on the board). `math-compute-warm` does it at boot, so the official run does not pay for it.
 
 ## Error notes
 
